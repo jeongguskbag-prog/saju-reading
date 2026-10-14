@@ -1,0 +1,4 @@
+# Netlify는 Next.js를 자동 감지해 OpenNext 어댑터로 배포합니다.
+[build]
+  command = "npm run build"
+  publish = ".next"
