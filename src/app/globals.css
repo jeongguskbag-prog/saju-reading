@@ -129,6 +129,9 @@ details.advanced[open] summary { margin-bottom: 10px; }
 .glyph {
   border-radius: 10px;
   padding: 8px 0 6px;
+  /* color-mix를 모르는 구형 WebView(Chrome 111 미만)용 대체값 */
+  background: var(--surface-2);
+  border: 1px solid var(--el);
   background: color-mix(in oklab, var(--el) 14%, var(--surface));
   border: 1px solid color-mix(in oklab, var(--el) 45%, var(--border));
 }

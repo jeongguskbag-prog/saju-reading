@@ -6,7 +6,30 @@ import { generateReading, isAiEnabled, ReadingError } from "@/lib/reading";
 // 풀이 생성은 30~90초 걸릴 수 있다.
 export const maxDuration = 120;
 
+// Android 앱의 WebView 출처. 앱에서 이 API를 호출할 수 있도록 CORS를 허용한다.
+const APP_ORIGIN = "https://appassets.androidplatform.net";
+
+function withCors(request: Request, response: NextResponse) {
+  if (request.headers.get("origin") === APP_ORIGIN) {
+    response.headers.set("Access-Control-Allow-Origin", APP_ORIGIN);
+    response.headers.set("Vary", "Origin");
+  }
+  return response;
+}
+
+export function OPTIONS(request: Request) {
+  const response = withCors(request, new NextResponse(null, { status: 204 }));
+  response.headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  response.headers.set("Access-Control-Allow-Headers", "Content-Type");
+  response.headers.set("Access-Control-Max-Age", "86400");
+  return response;
+}
+
 export async function POST(request: Request) {
+  return withCors(request, await handle(request));
+}
+
+async function handle(request: Request): Promise<NextResponse> {
   if (!isAiEnabled()) {
     return NextResponse.json({ error: "AI 풀이가 설정되지 않았습니다." }, { status: 503 });
   }

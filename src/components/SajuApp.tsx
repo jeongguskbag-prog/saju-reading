@@ -15,7 +15,7 @@ type ReadingState =
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
 
-async function postJson<T>(url: string, body: unknown): Promise<T> {
+export async function postJson<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -26,7 +26,18 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-export default function SajuApp({ aiEnabled }: { aiEnabled: boolean }) {
+interface Props {
+  aiEnabled: boolean;
+  /** 명식 계산. 기본은 서버 API, 앱(APK)에서는 기기 안에서 계산한다. */
+  computeChart?: (input: BirthInput) => Promise<SajuChart>;
+  /** AI 풀이 요청. 기본은 같은 서버의 /api/reading. */
+  requestReading?: (input: BirthInput) => Promise<Reading>;
+}
+
+const serverChart = (input: BirthInput) => postJson<{ chart: SajuChart }>("/api/chart", input).then((r) => r.chart);
+const serverReading = (input: BirthInput) => postJson<{ reading: Reading }>("/api/reading", input).then((r) => r.reading);
+
+export default function SajuApp({ aiEnabled, computeChart = serverChart, requestReading = serverReading }: Props) {
   const [name, setName] = useState("");
   const [gender, setGender] = useState<BirthInput["gender"]>("female");
   const [calendar, setCalendar] = useState<BirthInput["calendar"]>("solar");
@@ -63,13 +74,12 @@ export default function SajuApp({ aiEnabled }: { aiEnabled: boolean }) {
     };
     setSubmitting(true);
     try {
-      const { chart } = await postJson<{ chart: SajuChart }>("/api/chart", input);
-      setChart(chart);
+      setChart(await computeChart(input));
       requestAnimationFrame(() => document.getElementById("result")?.scrollIntoView({ behavior: "smooth" }));
       if (aiEnabled) {
         setReading({ status: "loading" });
-        postJson<{ reading: Reading }>("/api/reading", input)
-          .then(({ reading }) => setReading({ status: "done", reading }))
+        requestReading(input)
+          .then((reading) => setReading({ status: "done", reading }))
           .catch((err: Error) => setReading({ status: "error", message: err.message }));
       }
     } catch (err) {
@@ -179,7 +189,7 @@ function ReadingSection({ aiEnabled, state }: { aiEnabled: boolean; state: Readi
     return (
       <section className="card">
         <h2>항목별 풀이</h2>
-        <p className="muted">AI 풀이가 설정되지 않아 계산 결과만 보여 드립니다. (서버에 ANTHROPIC_API_KEY를 설정하면 풀이가 표시됩니다.)</p>
+        <p className="muted">AI 풀이가 연결되지 않아 계산 결과만 보여 드립니다.</p>
       </section>
     );
   }

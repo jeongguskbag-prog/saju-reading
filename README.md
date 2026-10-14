@@ -44,6 +44,29 @@ API 키는 서버에서만 읽으며 브라우저로 전달되지 않습니다. 
 ### Netlify
 `netlify.toml`이 포함되어 있습니다. 사이트를 연결하고 Site configuration → Environment variables에 `ANTHROPIC_API_KEY`를 추가한 뒤 배포합니다. 다만 Netlify 동기 함수는 실행 시간 한도가 짧아(기본 10초, 요청 시 최대 26초 — 배포 전 현재 한도 확인 필요) 풀이 생성이 타임아웃될 가능성이 높습니다. AI 풀이까지 쓰려면 Vercel을 권장합니다.
 
+## Android 앱(APK)
+
+같은 화면을 WebView로 감싼 Android 앱을 Gradle 없이 SDK 명령줄 도구만으로 빌드합니다.
+명식 계산은 기기 안에서 하므로 인터넷 없이 동작하고, AI 풀이는 배포한 웹 서버의 `/api/reading`을 호출합니다.
+
+```bash
+# Ubuntu 기준 도구 설치
+sudo apt-get install aapt dalvik-exchange zipalign apksigner android-sdk-platform-23
+
+# AI 풀이 없이 (계산 결과만)
+npm run build:android
+
+# 배포한 웹 서버로 AI 풀이 연결
+SAJU_API_BASE=https://내-배포-주소.vercel.app npm run build:android
+```
+
+결과물: `android/build/saju-reading.apk` (minSdk 23 / targetSdk 34, Android 6.0 이상).
+
+- `SAJU_API_BASE`의 서버에는 `ANTHROPIC_API_KEY`가 설정되어 있어야 합니다. API 키는 앱에 넣지 않습니다.
+- `/api/reading`은 앱 출처(`https://appassets.androidplatform.net`)에 대해서만 CORS를 허용합니다. 다만 인증·사용량 제한이 없으므로, 앱을 널리 배포하기 전에는 요청 제한을 추가해야 합니다.
+- `android/debug.keystore`는 테스트용 디버그 서명 키입니다(비밀번호 `android`). 같은 키로 빌드해야 기존 설치본 위에 업데이트됩니다. 스토어 배포용은 `KEYSTORE`, `KEYSTORE_PASS`, `KEY_ALIAS` 환경변수로 별도 키를 지정하세요.
+- 런처 아이콘은 `python3 scripts/make-icon.py`로 다시 만들 수 있습니다.
+
 ## 구조
 
 ```
@@ -55,6 +78,9 @@ src/
   app/api/chart           POST: 입력 → 명식 계산
   app/api/reading         POST: 입력 → 명식 계산 → AI 풀이
   components/             입력 폼, 명식표, 오행 차트, 대운, 풀이 화면
+mobile/main.tsx           Android 앱용 진입점 (기기 내 계산)
+android/                  매니페스트, MainActivity(WebView), 리소스
+scripts/build-android.sh  APK 빌드 스크립트
 tests/                    단위 테스트
 ```
 
