@@ -1,5 +1,6 @@
 import { Lunar, LunarMonth, LunarYear, Solar } from "lunar-javascript";
 import { analyze, type Analysis } from "./analysis";
+import { computeGrade, type Grade } from "./grade";
 import { branchTenGod, splitGanZhi, tenGod, yearGanZhi } from "./gods";
 import {
   BRANCHES,
@@ -99,6 +100,8 @@ export interface SajuChart {
   yearLuck: LuckPillar & { year: number };
   /** 격국·참고 용신·대운 점수·월별 흐름·개운 요소 */
   analysis: Analysis;
+  /** 사주 등급·희소도 */
+  grade: Grade;
   warnings: string[];
 }
 
@@ -203,7 +206,7 @@ function strengthLabel(score: number): string {
   return "극신강";
 }
 
-export function calculateSaju(input: BirthInput, now: Date = new Date()): SajuChart {
+export function calculateSaju(input: BirthInput, now: Date = new Date(), internal: { skipMonthly?: boolean } = {}): SajuChart {
   const warnings: string[] = [];
   const opts = input.options ?? {};
   const correction = opts.solarTimeCorrection ?? true;
@@ -329,6 +332,9 @@ export function calculateSaju(input: BirthInput, now: Date = new Date()): SajuCh
     warnings.push("음력 변환은 중국 음력 기준 라이브러리를 사용합니다. 드물게 한국 음력과 하루 차이 날 수 있습니다.");
   }
 
+  const analysis = analyze({ pillars, weighted, tenGodCounts, strengthScore: score, daeun: periods, now, skipMonthly: internal.skipMonthly });
+  const grade = computeGrade({ pillars, counts, weighted, strengthScore: score, analysis, gyeokguk: analysis.gyeokguk.name });
+
   return {
     input,
     solarDate: `${date.y}-${pad(date.m)}-${pad(date.d)}`,
@@ -342,7 +348,8 @@ export function calculateSaju(input: BirthInput, now: Date = new Date()): SajuCh
     strength: { score, label: strengthLabel(score) },
     daeun: { forward: yun.isForward(), startAge: periods[0]?.startAge ?? 0, periods, current },
     yearLuck: { ...luckPillar(ys, yb, dayStem), year: thisYear },
-    analysis: analyze({ pillars, weighted, tenGodCounts, strengthScore: score, daeun: periods, now }),
+    analysis,
+    grade,
     warnings,
   };
 }

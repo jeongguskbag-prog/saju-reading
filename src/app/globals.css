@@ -362,6 +362,31 @@ details.advanced[open] summary { margin-bottom: 10px; }
   .print-footer { display: none !important; }
 }
 
+/* 사주 등급 */
+.grade-hero { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; margin-bottom: 14px; }
+.grade-level { width: 96px; height: 96px; border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: baseline; justify-content: center; padding-top: 18px; color: var(--accent); }
+.grade-num { font-size: 46px; font-weight: 700; line-height: 1; font-family: "Noto Serif KR", serif; }
+.grade-unit { font-size: 14px; font-weight: 700; margin-left: 2px; }
+.grade-text b { font-size: 19px; letter-spacing: -0.01em; }
+.grade-text p { margin: 2px 0 0; font-size: 14px; color: var(--text-2); }
+.grade-text .grade-top { margin-top: 6px; color: var(--text); }
+.grade-top strong { color: var(--accent); font-size: 17px; }
+.grade-ladder { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 4px; }
+.grade-ladder li { display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; align-items: center; padding: 7px 12px; border-radius: 8px; background: var(--surface-2); font-size: 14px; color: var(--text-2); }
+.grade-ladder .lv { font-weight: 700; }
+.grade-ladder .sh { font-size: 12px; font-variant-numeric: tabular-nums; }
+.grade-ladder li.mine { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.grade-ladder li.mine .sh { font-size: 13px; font-weight: 700; }
+.grade-kv { margin-bottom: 4px; }
+.grade-fill { background: var(--accent); }
+.grade .bar-row { grid-template-columns: 96px 1fr 64px; }
+@media (max-width: 400px) {
+  .grade-hero { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+}
+@media print {
+  .card.grade { break-after: page; }
+}
+
 /* 연도: 직접 입력(네 자리) + 오른쪽 ▼로 목록 선택 */
 .row > .year-field { position: relative; flex: 1.3 1 0; }
 .year-field input { padding-right: 32px; }

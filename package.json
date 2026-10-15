@@ -8,7 +8,8 @@
     "start": "next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build:android": "bash scripts/build-android.sh"
+    "build:android": "bash scripts/build-android.sh",
+    "build:grade-stats": "esbuild scripts/build-grade-stats.ts --bundle --platform=node --format=esm --alias:@=./src --outfile=.cache/build-grade-stats.mjs --log-level=warning && node .cache/build-grade-stats.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",

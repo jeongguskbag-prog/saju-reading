@@ -150,8 +150,10 @@ export function analyze(params: {
   strengthScore: number;
   daeun: DaeunPeriod[];
   now: Date;
+  /** 월별 흐름 계산을 건너뛴다(등급 통계를 대량으로 만들 때만 사용). */
+  skipMonthly?: boolean;
 }): Analysis {
-  const { pillars, weighted, tenGodCounts, strengthScore, daeun, now } = params;
+  const { pillars, weighted, tenGodCounts, strengthScore, daeun, now, skipMonthly } = params;
   const dayElement = STEM_ELEMENT[pillars.day.stem];
   const others = [pillars.year, pillars.day, pillars.hour].filter((p): p is Pillar => p !== null);
   const usefulness = determineUsefulness(dayElement, strengthScore, weighted);
@@ -167,7 +169,7 @@ export function analyze(params: {
       ganzhi: d.stem + d.branch,
       score: ganzhiScore(STEM_ELEMENT[d.stem], branchElementOf(d.branch), usefulness),
     })),
-    monthly: [...monthlyFlow(reportYears[0], pillars.day.stem, usefulness), ...monthlyFlow(reportYears[1], pillars.day.stem, usefulness)],
+    monthly: skipMonthly ? [] : [...monthlyFlow(reportYears[0], pillars.day.stem, usefulness), ...monthlyFlow(reportYears[1], pillars.day.stem, usefulness)],
     lucky: { ...LUCKY_BY_ELEMENT[usefulness.yongsin], element: usefulness.yongsin },
     tenGodGuide: (Object.keys(TEN_GOD_MODERN) as TenGod[])
       .filter((g) => (tenGodCounts[g] ?? 0) > 0)

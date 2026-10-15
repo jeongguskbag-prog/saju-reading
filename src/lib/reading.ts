@@ -68,6 +68,7 @@ export function chartForPrompt(chart: SajuChart) {
     월별흐름: a.monthly.map(
       (m) => `${m.year}년 절입 ${m.startDate.slice(5)}~ ${m.stem}${m.branch} (${m.stemTenGod}/${m.branchTenGod}) ${m.mark}`,
     ),
+    사주등급: `${chart.grade.tier.level}등급 ${chart.grade.tier.name} (상위 ${chart.grade.topPercent}%, ${chart.grade.score}/100) · 대운 전성기 ${chart.grade.peak ? `${chart.grade.peak.startAge}~${chart.grade.peak.endAge}세` : "-"} · 귀인 ${chart.grade.nobles.filter((n) => n.has).map((n) => n.name).join(", ") || "없음"}`,
     개운요소: { 오행: ELEMENT_KO[a.lucky.element], 색상: a.lucky.colors, 숫자: a.lucky.numbers, 방위: a.lucky.direction, 습관: a.lucky.habits },
   };
 }

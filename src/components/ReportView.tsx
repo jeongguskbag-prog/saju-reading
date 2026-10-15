@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { SajuChart } from "@/lib/saju/calc";
 import { CHAPTERS, CHAPTER_KEYS, withYears, type Chapter, type ChapterKey, type Intro, type PartKey, type PartResult } from "@/lib/report-shared";
 import { AnalysisCard, DaeunCard, ElementCard, LuckyCard, PillarsCard, YearFlowCard } from "./ChartView";
+import GradeCard from "./GradeCard";
 import MethodBox from "./MethodBox";
 
 export type PartState = { status: "loading" } | { status: "done"; result: PartResult } | { status: "error"; message: string };
@@ -147,6 +148,8 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry }: Props) 
   return (
     <div className="report">
       <Cover chart={chart} intro={intro} />
+
+      <GradeCard chart={chart} />
 
       {aiEnabled && (
         <section className="card preface">
