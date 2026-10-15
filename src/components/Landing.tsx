@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BRAND, PRODUCT, won } from "@/lib/product";
+import { BRAND, PRODUCT_ORDER, PRODUCTS, REPORT_VALID_DAYS, withProductYears, won } from "@/lib/product";
 import { CHAPTERS, CHAPTER_KEYS, withYears } from "@/lib/report-shared";
 import { GRADE_TIERS } from "@/lib/saju/grade";
 import stats from "@/lib/saju/grade-stats.json";
@@ -77,11 +77,12 @@ export default function Landing({ form, checkoutOpen = false }: { form: ReactNod
             </p>
             <h1>태어난 순간의 여덟 글자로 100년의 흐름을 적어 드립니다</h1>
             <p className="lp-hero-sub">
-              절기를 분 단위로 맞춘 만세력으로 사주를 세우고, 내 사주가 다섯 등급 가운데 어디에 드는지 무료로 알려 드립니다.
+              하늘의 기밀을 열어 인생의 나침반을 밝힙니다. 사주 원국과 대운의 흐름을 정밀하게 계산해, 의뢰인 한 분만을 위한 맞춤 감정서를
+              엮어 드립니다. 내 사주의 등급은 무료로 먼저 확인하세요.
             </p>
             <div className="lp-cta-row">
               <a className="lp-cta" href="#saju-form">내 사주 등급 보기</a>
-              <a className="lp-cta-ghost on-cover" href="#contents">리포트 구성 보기</a>
+              <a className="lp-cta-ghost on-cover" href="#price">감정서 안내</a>
             </div>
           </div>
         </div>
@@ -129,34 +130,45 @@ export default function Landing({ form, checkoutOpen = false }: { form: ReactNod
         </ol>
       </Section>
 
-      <Section id="price" title="등급까지는 무료로 봅니다">
-        <div className="lp-plans">
-          <div className="lp-plan">
-            <h3>무료</h3>
-            <ul>
-              <li>사주 명식과 오행 비중</li>
-              <li>사주 등급과 상위 비율</li>
-              <li>같은 사주 조합의 희소도</li>
-              <li>귀인 여부와 대운 전성기</li>
-            </ul>
-            <a className="lp-cta-ghost" href="#saju-form">무료로 보기</a>
-          </div>
-          <div className="lp-plan paid">
-            <h3>{PRODUCT.name}</h3>
-            <p className="lp-price">{won(PRODUCT.price)}</p>
-            <ul>
-              <li>다섯 부로 엮은 풀이 전문</li>
-              <li>0세부터의 10년 대운표와 전환점</li>
-              <li>올해·내년 월별 흐름과 개운법</li>
-              <li>내 이름이 들어간 책자형 PDF 소장</li>
-            </ul>
-            {checkoutOpen ? (
-              <a className="lp-cta" href="#saju-form">생년월일시 넣고 리포트 받기</a>
-            ) : (
-              <p className="lp-soon">결제는 준비 중입니다. 열리면 이 자리에서 바로 받을 수 있습니다.</p>
-            )}
-          </div>
+      <Section
+        id="price"
+        title="천기록 주요 감정 안내"
+        lead="바람의 방향을 아는 배는 길을 잃지 않습니다. 지금 가장 풀리지 않는 고민이나 마주한 전환점이 있다면, 사주 원국과 대운의 흐름으로 그 길을 함께 살펴 드립니다."
+      >
+        <div className="lp-products">
+          {PRODUCT_ORDER.map((id) => {
+            const p = PRODUCTS[id];
+            const featured = id === "full";
+            return (
+              <div key={id} className={`lp-plan${featured ? " paid" : ""}${p.available ? "" : " soon"}`}>
+                {featured && <span className="lp-pick">추천</span>}
+                <h3>{p.name}</h3>
+                <p className="lp-price">{won(p.price)}</p>
+                <p className="lp-plan-sum">{withProductYears(p.summary, years)}</p>
+                {p.available ? (
+                  <p className="lp-plan-parts">
+                    {p.parts.length - 1 === 5 ? "1~5부 전체" : "1부 천명 · 5부 세운과 개운법"} · 등급표·대운 곡선·월별 흐름표 · 책자형 PDF
+                  </p>
+                ) : (
+                  <p className="lp-soon">준비 중입니다</p>
+                )}
+                {p.available &&
+                  (checkoutOpen ? (
+                    <a className={featured ? "lp-cta" : "lp-cta-ghost"} href="#saju-form">
+                      생년월일시 넣고 신청하기
+                    </a>
+                  ) : (
+                    <p className="lp-soon">결제는 준비 중입니다.</p>
+                  ))}
+              </div>
+            );
+          })}
         </div>
+        <ol className="lp-steps">
+          <li><b>무료 확인</b> 생년월일시를 넣으면 사주 명식과 등급·희소도를 바로 보여 드립니다.</li>
+          <li><b>감정서 신청</b> 감정서를 고르고 성함과 이메일을 적어 결제합니다.</li>
+          <li><b>완성 메일</b> 결제 즉시 작성을 시작하고, 완성되면 감정서 링크를 메일로 보내 드립니다. 링크는 {REPORT_VALID_DAYS}일 동안 열 수 있고 PDF로 저장할 수 있습니다.</li>
+        </ol>
       </Section>
 
       <Section id="method" tone="sunk" title="이렇게 계산합니다">
@@ -178,8 +190,11 @@ export default function Landing({ form, checkoutOpen = false }: { form: ReactNod
 
       <section id="saju-form" className="lp-section lp-form" aria-labelledby="saju-form-h">
         <div className="lp-inner narrow">
-          <h2 id="saju-form-h">생년월일시를 적어 주세요</h2>
-          <p className="lp-lead">계산은 바로 끝납니다. 결과 맨 위에 내 사주의 등급이 찍힙니다.</p>
+          <h2 id="saju-form-h">1:1 맞춤 감정 신청</h2>
+          <p className="lp-lead">
+            생년월일시를 적으면 사주 명식과 등급이 바로 나옵니다. 결과 아래에서 감정서를 골라 신청할 수 있습니다. 태어난 시간을 모르면
+            &lsquo;모름&rsquo;을 고르세요. 시주를 빼고 분석합니다.
+          </p>
           {form}
         </div>
       </section>

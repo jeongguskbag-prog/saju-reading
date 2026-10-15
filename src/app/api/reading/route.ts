@@ -3,7 +3,9 @@ import { calculateSaju, InputError } from "@/lib/saju/calc";
 import { parseBirthInput } from "@/lib/input";
 import { generatePart, isAiEnabled, isFreeReading, ReadingError } from "@/lib/reading";
 import { PART_KEYS, type PartKey } from "@/lib/report-shared";
-import { getReport, getSavedPart, lockPart, savePart, unlockPart } from "@/lib/orders";
+import { getReport } from "@/lib/orders";
+import { ensurePart } from "@/lib/fulfill";
+import { originFrom } from "@/lib/site";
 import { StoreError } from "@/lib/store";
 
 // 파트 하나 생성에 1~2분 걸릴 수 있다.
@@ -40,7 +42,7 @@ async function handle(request: Request): Promise<NextResponse> {
   const part = body?.part as PartKey;
   if (!PART_KEYS.includes(part)) return NextResponse.json({ error: "요청한 파트가 올바르지 않습니다." }, { status: 400 });
 
-  if (typeof body?.token === "string") return paidPart(body.token, part);
+  if (typeof body?.token === "string") return paidPart(request, body.token, part);
   if (!isFreeReading()) return NextResponse.json({ error: "풀이는 리포트를 구매한 뒤 볼 수 있습니다." }, { status: 402 });
 
   const parsed = parseBirthInput(body?.input);
@@ -55,21 +57,16 @@ async function handle(request: Request): Promise<NextResponse> {
 }
 
 /** 결제한 리포트의 파트. 한 번 쓴 풀이는 저장해 두고 다시 열 때 그대로 돌려준다. */
-async function paidPart(token: string, part: PartKey): Promise<NextResponse> {
+async function paidPart(request: Request, token: string, part: PartKey): Promise<NextResponse> {
   try {
     const report = await getReport(token);
     if (!report) return NextResponse.json({ error: "리포트를 찾을 수 없습니다. 링크를 다시 확인해 주세요." }, { status: 404 });
-    const saved = await getSavedPart(token, part);
-    if (saved) return NextResponse.json(saved);
-    // 다른 창에서 같은 파트를 쓰는 중이면 잠시 뒤 다시 물어보게 한다.
-    if (!(await lockPart(token, part))) return NextResponse.json({ pending: true }, { status: 202 });
-    try {
-      const result = await generatePart(report.chart, part);
-      await savePart(token, part, result);
-      return NextResponse.json(result);
-    } finally {
-      await unlockPart(token, part);
-    }
+    if (report.expired) return NextResponse.json({ error: "감정서 열람 기간이 지났습니다." }, { status: 410 });
+    if (!report.product.parts.includes(part)) return NextResponse.json({ error: "이 감정서에 들어 있지 않은 파트입니다." }, { status: 400 });
+    const r = await ensurePart(report, part, originFrom(request.headers));
+    // 다른 곳(결제 직후 서버 작업이나 다른 창)에서 같은 파트를 쓰는 중이면 잠시 뒤 다시 물어보게 한다.
+    if (r.status === "pending") return NextResponse.json({ pending: true }, { status: 202 });
+    return NextResponse.json(r.result);
   } catch (error) {
     return errorResponse(error);
   }

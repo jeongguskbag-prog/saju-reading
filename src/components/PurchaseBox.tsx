@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import type { BirthInput } from "@/lib/saju/calc";
-import { PRODUCT, won } from "@/lib/product";
+import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withProductYears, won, type ProductId } from "@/lib/product";
 
 export interface CheckoutInfo {
   enabled: boolean;
-  price: number;
   testMode: boolean;
 }
 
@@ -35,24 +34,29 @@ function loadSdk(): Promise<NonNullable<Window["TossPayments"]>> {
   });
 }
 
-/** 무료 결과의 등급 카드 아래: 이메일을 받고 토스 결제창을 연다. */
-export default function PurchaseBox({ input, checkout }: { input: BirthInput; checkout: CheckoutInfo }) {
+/** 무료 결과의 등급 카드 아래: 감정서를 고르고, 성함·이메일을 받아 토스 결제창을 연다. */
+export default function PurchaseBox({ input, checkout, years }: { input: BirthInput; checkout: CheckoutInfo; years: [number, number] }) {
+  const products = sellableProducts();
+  const [productId, setProductId] = useState<ProductId>(DEFAULT_PRODUCT);
+  const [name, setName] = useState(input.name ?? "");
   const [email, setEmail] = useState("");
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const product = PRODUCTS[productId];
 
   async function onBuy(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return setError("리포트 링크를 받을 이메일 주소를 확인해 주세요.");
+    if (!name.trim()) return setError("감정서에 들어갈 성함을 적어 주세요.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return setError("감정서를 받을 이메일 주소를 확인해 주세요.");
     if (!agree) return setError("주문 내용과 청약철회 안내에 동의해 주세요.");
     setBusy(true);
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input, email: email.trim(), agree }),
+        body: JSON.stringify({ input: { ...input, name: name.trim() }, email: email.trim(), agree, productId }),
       });
       const order = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(order.error ?? "주문을 만들지 못했습니다.");
@@ -66,7 +70,7 @@ export default function PurchaseBox({ input, checkout }: { input: BirthInput; ch
         successUrl: `${location.origin}/pay/success`,
         failUrl: `${location.origin}/pay/fail`,
         customerEmail: order.customerEmail,
-        ...(input.name ? { customerName: input.name } : {}),
+        customerName: order.customerName,
       });
     } catch (err) {
       // 결제창을 닫은 경우 등. 화면에 남아 다시 시도할 수 있게 한다.
@@ -79,16 +83,30 @@ export default function PurchaseBox({ input, checkout }: { input: BirthInput; ch
 
   return (
     <section className="card purchase no-print" aria-labelledby="purchase-h">
-      <h2 id="purchase-h">{PRODUCT.name}</h2>
+      <h2 id="purchase-h">1:1 맞춤 감정서 신청</h2>
       <p className="purchase-lead">
-        이 명식을 바탕으로 다섯 부의 풀이를 써서 한 권으로 엮어 드립니다. 0세부터의 대운, 재물과 인연, 올해·내년 월별 흐름과 개운법까지
-        담기고, 링크로 언제든 다시 열거나 PDF로 저장할 수 있습니다.
+        이 명식을 바탕으로 의뢰인 한 분만을 위한 감정서를 써서 책자로 엮어 드립니다. 결제하면 바로 작성을 시작하고, 완성되면 이메일로 감정서
+        링크를 보내 드립니다.
       </p>
-      <p className="purchase-price">{won(checkout.price)}</p>
       {checkout.enabled ? (
         <form className="form-grid" onSubmit={onBuy} noValidate>
+          <fieldset className="plan-pick">
+            <legend className="label">감정서 고르기</legend>
+            {products.map((p) => (
+              <label key={p.id} className={`plan-option${productId === p.id ? " on" : ""}`}>
+                <input type="radio" name="product" value={p.id} checked={productId === p.id} onChange={() => setProductId(p.id)} />
+                <span className="plan-name">{p.name}</span>
+                <span className="plan-price">{won(p.price)}</span>
+                <span className="plan-sum">{withProductYears(p.summary, years)}</span>
+              </label>
+            ))}
+          </fieldset>
           <div className="field">
-            <label htmlFor="buy-email">리포트 링크를 받을 이메일</label>
+            <label htmlFor="buy-name">의뢰인 성함</label>
+            <input id="buy-name" type="text" autoComplete="name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="홍길동" />
+          </div>
+          <div className="field">
+            <label htmlFor="buy-email">감정서를 받을 이메일</label>
             <input
               id="buy-email"
               type="email"
@@ -103,15 +121,16 @@ export default function PurchaseBox({ input, checkout }: { input: BirthInput; ch
           <label className="check purchase-agree">
             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
             <span>
-              위 생년월일시로 리포트를 만드는 데 동의하고,{" "}
+              위 생년월일시로 감정서를 만드는 데 동의하고,{" "}
               <a href="/terms" target="_blank" rel="noopener">이용약관</a>·<a href="/refund" target="_blank" rel="noopener">환불 규정</a>·
-              <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>을 확인했습니다. 리포트는 결제 즉시 작성되는 디지털
+              <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>을 확인했습니다. 감정서는 결제 즉시 작성되는 디지털
               콘텐츠라 작성이 시작된 뒤에는 청약철회가 제한됩니다.
             </span>
           </label>
           <button className="btn-primary" type="submit" disabled={busy}>
-            {busy ? "결제창을 여는 중…" : `${won(checkout.price)} 결제하고 리포트 받기`}
+            {busy ? "결제창을 여는 중…" : `${won(product.price)} 결제하고 감정서 신청`}
           </button>
+          <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
           {checkout.testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}
           {error && (
             <p className="error" role="alert">
@@ -120,7 +139,7 @@ export default function PurchaseBox({ input, checkout }: { input: BirthInput; ch
           )}
         </form>
       ) : (
-        <p className="muted">결제는 준비 중입니다. 열리면 이 자리에서 바로 받을 수 있습니다.</p>
+        <p className="muted">감정서 결제는 준비 중입니다. 열리면 이 자리에서 바로 신청할 수 있습니다.</p>
       )}
     </section>
   );

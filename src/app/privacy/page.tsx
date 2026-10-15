@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import PolicyPage from "@/components/PolicyPage";
-import { BRAND, BUSINESS, orPending } from "@/lib/product";
+import { BRAND, BUSINESS, REPORT_VALID_DAYS, orPending } from "@/lib/product";
 
 export const metadata: Metadata = { title: `개인정보처리방침 — ${BRAND.name}` };
 
@@ -22,8 +22,8 @@ const OVERSEAS = [
   {
     to: "Upstash, Inc.",
     country: "미국",
-    items: "주문 정보(주문번호, 이메일, 생년월일시·성별·이름(선택), 결제 금액·일시·결제키), 작성된 리포트",
-    purpose: "주문·리포트 저장",
+    items: "주문 정보(주문번호, 성함, 이메일, 생년월일시·성별, 결제 금액·일시·결제키), 작성된 감정서",
+    purpose: "주문·감정서 저장",
     keep: "아래 '보유 기간'과 같음",
   },
 ];
@@ -50,9 +50,9 @@ export default function Privacy() {
             <td>사주 계산 결과 표시. 계산 후 저장하지 않습니다.</td>
           </tr>
           <tr>
-            <td>리포트 구매</td>
-            <td>위 항목 + 이메일</td>
-            <td>리포트 작성·제공, 리포트 링크 안내, 문의·환불 대응</td>
+            <td>감정서 신청</td>
+            <td>생년월일, 태어난 시각, 성별, 양력·음력, 성함, 이메일</td>
+            <td>감정서 작성·제공, 완성 메일 발송, 문의·환불 대응</td>
           </tr>
           <tr>
             <td>결제</td>
@@ -65,7 +65,8 @@ export default function Privacy() {
       <h2>2. 보유 기간</h2>
       <ul>
         <li>결제하지 않은 주문: 주문 후 48시간이 지나면 자동으로 삭제합니다.</li>
-        <li>결제한 주문과 리포트: 이용자가 리포트를 다시 열 수 있도록 서비스를 제공하는 동안 보관하며, 삭제를 요청하면 지체 없이 삭제합니다.</li>
+        <li>작성된 감정서 풀이: 결제일로부터 {REPORT_VALID_DAYS}일(열람 기간)이 지나고 하루 뒤 자동으로 삭제합니다.</li>
+        <li>결제한 주문 정보(성함·생년월일시·이메일 등): 아래 법정 보관 기간 동안 보관하며, 삭제를 요청하면 법정 보관 대상(결제 기록)을 제외하고 지체 없이 삭제합니다.</li>
         <li>
           다만 「전자상거래 등에서의 소비자보호에 관한 법률」에 따라 계약·청약철회 및 대금 결제 기록은 5년, 소비자 불만·분쟁 처리 기록은 3년간
           보관합니다(주문번호, 이메일, 결제 금액·일시에 한함).
@@ -80,9 +81,9 @@ export default function Privacy() {
         <tbody>
           <tr><td>토스페이먼츠(주)</td><td>결제 처리</td></tr>
           <tr><td>Vercel Inc.</td><td>웹사이트 호스팅</td></tr>
-          <tr><td>Upstash, Inc.</td><td>주문·리포트 저장</td></tr>
+          <tr><td>Upstash, Inc.</td><td>주문·감정서 저장</td></tr>
           <tr><td>Anthropic, PBC</td><td>AI 풀이 작성</td></tr>
-          <tr><td>Resend, Inc.(사용하는 경우)</td><td>리포트 링크 메일 발송</td></tr>
+          <tr><td>Resend, Inc.</td><td>감정서 완성 메일 발송</td></tr>
         </tbody>
       </table>
 
@@ -105,9 +106,9 @@ export default function Privacy() {
             </tr>
           ))}
           <tr>
-            <td>Resend, Inc.(미국, 사용하는 경우)</td>
-            <td>이메일, 이름(입력한 경우), 리포트 링크</td>
-            <td>리포트 링크 메일 발송</td>
+            <td>Resend, Inc.(미국)</td>
+            <td>이메일, 성함, 감정서 링크</td>
+            <td>감정서 완성 메일 발송</td>
             <td>발송 후 Resend의 보존 정책에 따름</td>
           </tr>
         </tbody>
@@ -124,7 +125,7 @@ export default function Privacy() {
 
       <h2>7. 안전성 확보 조치</h2>
       <p>
-        모든 통신은 암호화(HTTPS)되며, 저장소 접근 키는 서버에서만 사용합니다. 리포트 링크에는 추측하기 어려운 무작위 값을 쓰고 검색엔진에
+        모든 통신은 암호화(HTTPS)되며, 저장소 접근 키는 서버에서만 사용합니다. 감정서 링크에는 추측하기 어려운 무작위 값을 쓰고 검색엔진에
         노출하지 않습니다.
       </p>
 

@@ -3,7 +3,7 @@ import type { SajuChart } from "@/lib/saju/calc";
 import { CHAPTERS, CHAPTER_KEYS, withYears, type Chapter, type ChapterKey, type Intro, type PartKey, type PartResult } from "@/lib/report-shared";
 import { AnalysisCard, DaeunCard, ElementCard, LuckyCard, PillarsCard, YearFlowCard } from "./ChartView";
 import GradeCard from "./GradeCard";
-import BrandSeal from "./BrandSeal";
+import BrandSeal, { Glyph } from "./BrandSeal";
 import { BRAND } from "@/lib/product";
 import MethodBox from "./MethodBox";
 
@@ -17,6 +17,10 @@ interface Props {
   onRetry: (part: PartKey) => void;
   /** 등급 카드 바로 아래에 넣을 내용(무료 결과의 구매 상자, 리포트의 링크 안내 등) */
   afterGrade?: ReactNode;
+  /** 감정서에 담을 파트(상품별). 없으면 다섯 파트 모두 */
+  include?: readonly ChapterKey[];
+  /** 표지에 적을 감정서 이름 */
+  title?: string;
 }
 
 const clientName = (chart: SajuChart) => chart.input.name?.trim() || "의뢰인";
@@ -41,44 +45,93 @@ function birthLine(chart: SajuChart) {
   return `${input.gender === "male" ? "남성" : "여성"} · ${date} · ${time}`;
 }
 
-function Cover({ chart, intro }: { chart: SajuChart; intro: Intro | null }) {
+const KO_DATE = (d: Date) => {
+  const k = new Date(d.getTime() + 9 * 3_600_000); // 한국 시간
+  return `${k.getUTCFullYear()}년 ${String(k.getUTCMonth() + 1).padStart(2, "0")}월 ${String(k.getUTCDate()).padStart(2, "0")}일`;
+};
+
+/** 생년월일 줄: "1989년 05월 14일 (양력) 巳時" */
+function coverBirth(chart: SajuChart) {
+  const { input } = chart;
+  const [y, m, d] = chart.solarDate.split("-");
+  const date = input.calendar === "lunar" ? `음력 ${chart.lunarDate} (양력 ${y}.${m}.${d})` : `${y}년 ${m}월 ${d}일 (양력)`;
+  const hour = chart.pillars.hour ? `${chart.pillars.hour.branch}時` : "태어난 시각 미상";
+  return `${date} ${hour}`;
+}
+
+/** PDF 표지(한 쪽 전체). 쪽빛 고서 표지에 이중 테두리, 天機錄 제목, 의뢰인 명식 카드, 낙관 직인. */
+function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null; title?: string }) {
   const [y1, y2] = chart.analysis.reportYears;
+  const order = [chart.pillars.hour, chart.pillars.day, chart.pillars.month, chart.pillars.year];
   return (
     <section className="cover print-only">
-      <div className="cover-brand">
-        <BrandSeal size={88} title={BRAND.name} />
-        <span>
-          {BRAND.name} · {BRAND.tagline}
-        </span>
+      <div className="cover-frame" aria-hidden />
+      <div className="cover-top">
+        <p className="cover-eyebrow">天 機 錄 · 百年綜合四柱</p>
+        <svg className="cover-emblem" viewBox="0 0 100 100" aria-hidden>
+          <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <g fill="currentColor">
+            <Glyph ch="天" x={27} y={27} w={46} h={46} />
+          </g>
+        </svg>
       </div>
-      <div className="cover-years">{y1}-{y2}</div>
-      <h1 className="cover-title">
-        {clientName(chart)}님 맞춤형
-        <br />
-        인생 나침반
-      </h1>
-      <div className="cover-pillars">
-        {[chart.pillars.hour, chart.pillars.day, chart.pillars.month, chart.pillars.year]
-          .filter((p) => p !== null)
-          .map((p) => (
-            <span key={p.label}>{p.stem}{p.branch}</span>
+
+      <div className="cover-mid">
+        <p className="cover-sub">{title ?? "1:1 맞춤 정밀 사주 감정서"}</p>
+        <svg className="cover-hanja" viewBox="0 0 3300 1000" role="img" aria-label={BRAND.hanja}>
+          <g fill="currentColor">
+            <Glyph ch="天" x={0} y={0} w={1000} h={1000} />
+            <Glyph ch="機" x={1150} y={0} w={1000} h={1000} />
+            <Glyph ch="錄" x={2300} y={0} w={1000} h={1000} />
+          </g>
+        </svg>
+        <p className="cover-tagline">
+          하늘이 정해둔 당신의 그릇과 때(時)를 읽다
+          <br />
+          인생의 전환점을 밝히는 지혜로운 나침반
+        </p>
+        <p className="cover-years">
+          {y1} – {y2}
+        </p>
+      </div>
+
+      <div className="cover-card">
+        <p className="cover-name">
+          {clientName(chart)} 님 <span>{chart.input.gender === "male" ? "乾命" : "坤命"}</span>
+        </p>
+        <p className="cover-pillars" aria-label="사주 팔자(시·일·월·년)">
+          {order.map((p, i) => (
+            <span key={i}>{p ? `${p.stem}${p.branch}` : "□□"}</span>
           ))}
+        </p>
+        {intro && <p className="cover-keywords">{intro.coverKeywords.slice(0, 3).join(" · ")}</p>}
+        <p className="cover-meta">
+          생년월일 {coverBirth(chart)}
+          <br />
+          발행일자 {KO_DATE(new Date())} · {BRAND.name} 운명연구원 봉정
+        </p>
       </div>
-      {intro && <p className="cover-keywords">{intro.coverKeywords.slice(0, 3).join(" · ")}</p>}
-      <p className="cover-meta">{birthLine(chart)}</p>
-      <p className="cover-meta">발행일 {new Date().toLocaleDateString("ko-KR")}</p>
+
+      <div className="cover-foot">
+        <p>
+          天機錄 運命分析室
+          <br />
+          의뢰인 본인 열람용 비밀 문서 · Strictly Confidential &amp; Personal
+        </p>
+        <BrandSeal size={84} title={`${BRAND.name} 직인`} />
+      </div>
     </section>
   );
 }
 
-function Toc({ chart }: { chart: SajuChart }) {
+function Toc({ chart, keys }: { chart: SajuChart; keys: readonly ChapterKey[] }) {
   const years = chart.analysis.reportYears;
   return (
     <section className="toc print-only">
       <h2>목차</h2>
       <ol>
         <li><span>발간사</span></li>
-        {CHAPTER_KEYS.map((k) => (
+        {keys.map((k) => (
           <li key={k}>
             <span>{CHAPTERS[k].label}. {withYears(CHAPTERS[k].title, years)}</span>
             <small>{CHAPTERS[k].sections.map((s) => withYears(s, years)).join(" · ")}</small>
@@ -134,7 +187,7 @@ function ChapterText({ chapter }: { chapter: Chapter }) {
   );
 }
 
-export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrade }: Props) {
+export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrade, include = CHAPTER_KEYS, title }: Props) {
   const years = chart.analysis.reportYears;
   const intro = introOf(parts);
   const visuals: Partial<Record<ChapterKey, ReactNode>> = {
@@ -156,7 +209,7 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
 
   return (
     <div className="report">
-      <Cover chart={chart} intro={intro} />
+      <Cover chart={chart} intro={intro} title={title} />
 
       <GradeCard chart={chart} />
       {afterGrade}
@@ -177,7 +230,7 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
         </section>
       )}
 
-      <Toc chart={chart} />
+      <Toc chart={chart} keys={include} />
 
       {!aiEnabled && !afterGrade && (
         <section className="card no-print">
@@ -186,7 +239,7 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
         </section>
       )}
 
-      {CHAPTER_KEYS.map((key) => {
+      {include.map((key) => {
         const meta = CHAPTERS[key];
         const chapter = chapterOf(parts, key);
         if (!aiEnabled && !visuals[key]) return null;
@@ -203,7 +256,7 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
         );
       })}
 
-      <MethodBox chart={chart} hasReading={aiEnabled && CHAPTER_KEYS.some((k) => chapterOf(parts, k))} />
+      <MethodBox chart={chart} hasReading={aiEnabled && include.some((k) => chapterOf(parts, k))} />
       <div className="print-footer print-only">{watermark(chart)}</div>
       {/* PDF 각 쪽 하단의 워터마크와 쪽 번호(표지 제외). 이름이 들어가므로 여기서 만든다. */}
       <style>{`@media print {

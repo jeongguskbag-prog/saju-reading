@@ -2,12 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { SajuChart } from "@/lib/saju/calc";
-import { PART_KEYS, type PartKey, type PartResult } from "@/lib/report-shared";
+import type { ChapterKey, PartKey, PartResult } from "@/lib/report-shared";
 import ReportView, { type PartStates } from "./ReportView";
 import ResultActions from "./ResultActions";
+import { josa } from "@/lib/josa";
 
 interface Props {
   token: string;
+  /** 상품에 담긴 파트 */
+  partKeys: PartKey[];
+  productName: string;
+  /** 열람 마감(ISO) */
+  expiresAt: string;
   chart: SajuChart;
   initialParts: Partial<Record<PartKey, PartResult>>;
   justPaid: boolean;
@@ -73,7 +79,7 @@ function whenVisible(): Promise<void> {
   });
 }
 
-export default function ReportClient({ token, chart, initialParts, justPaid, email, mailEnabled, orderId }: Props) {
+export default function ReportClient({ token, partKeys, productName, expiresAt, chart, initialParts, justPaid, email, mailEnabled, orderId }: Props) {
   const [parts, setParts] = useState<PartStates>(() =>
     Object.fromEntries(Object.entries(initialParts).map(([k, result]) => [k, { status: "done", result }])),
   );
@@ -90,7 +96,7 @@ export default function ReportClient({ token, chart, initialParts, justPaid, ema
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    PART_KEYS.filter((p) => !initialParts[p]).forEach(load);
+    partKeys.filter((p) => !initialParts[p]).forEach(load);
     // 결제 직후 주소의 ?new=1은 지워 두어, 링크를 복사해도 깔끔하게 한다.
     if (justPaid) history.replaceState(null, "", location.pathname);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -102,7 +108,7 @@ export default function ReportClient({ token, chart, initialParts, justPaid, ema
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== "visible") return;
-      PART_KEYS.filter((p) => partsRef.current[p]?.status === "error").forEach(load);
+      partKeys.filter((p) => partsRef.current[p]?.status === "error").forEach(load);
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
@@ -110,7 +116,7 @@ export default function ReportClient({ token, chart, initialParts, justPaid, ema
   }, []);
 
   const busy = Object.values(parts).some((p) => p?.status === "loading");
-  const doneCount = PART_KEYS.filter((p) => parts[p]?.status === "done").length;
+  const doneCount = partKeys.filter((p) => parts[p]?.status === "done").length;
 
   async function copyLink() {
     try {
@@ -122,27 +128,40 @@ export default function ReportClient({ token, chart, initialParts, justPaid, ema
     }
   }
 
+  const until = new Date(new Date(expiresAt).getTime() + 9 * 3_600_000);
+  const untilText = `${until.getUTCFullYear()}년 ${until.getUTCMonth() + 1}월 ${until.getUTCDate()}일`;
   const notice = (
     <section className="card report-notice no-print" aria-live="polite">
-      {justPaid && <h2>결제가 끝났습니다</h2>}
+      {justPaid && <h2>신청이 접수되었습니다</h2>}
       <p>
         {busy
-          ? `풀이를 쓰고 있습니다(${doneCount}/${PART_KEYS.length}). 1~2분 걸리며, 이 창을 닫아도 작성은 이어집니다.`
-          : "모든 풀이가 준비됐습니다."}
+          ? `${josa(productName, "을", "를")} 쓰고 있습니다(${doneCount}/${partKeys.length}). 몇 분 걸리며, 이 창을 닫아도 작성은 이어집니다.`
+          : `${josa(productName, "이", "가")} 완성되었습니다.`}
       </p>
       <p className="muted">
-        {mailEnabled ? `${email}로 이 리포트 링크를 보냈습니다. ` : "이 페이지 주소가 리포트 열쇠입니다. 아래 버튼으로 복사해 두세요. "}
-        링크를 아는 사람은 누구나 볼 수 있으니 공유에 주의해 주세요. 주문번호 {orderId}
+        {mailEnabled
+          ? `완성되면 ${email}로 감정서 링크를 보내 드립니다. `
+          : "이 페이지 주소가 감정서 열쇠입니다. 아래 버튼으로 복사해 두세요. "}
+        감정서는 {untilText}까지 열 수 있으니 기간 안에 PDF로 저장해 두세요. 링크를 아는 사람은 누구나 볼 수 있으니 공유에
+        주의해 주세요. 주문번호 {orderId}
       </p>
       <button type="button" className="btn-secondary" onClick={copyLink}>
-        {copied ? "링크를 복사했습니다" : "리포트 링크 복사"}
+        {copied ? "링크를 복사했습니다" : "감정서 링크 복사"}
       </button>
     </section>
   );
 
   return (
     <div id="result">
-      <ReportView chart={chart} aiEnabled parts={parts} onRetry={load} afterGrade={notice} />
+      <ReportView
+        chart={chart}
+        aiEnabled
+        parts={parts}
+        onRetry={load}
+        afterGrade={notice}
+        include={partKeys.filter((p): p is ChapterKey => p !== "intro")}
+        title={productName}
+      />
       <ResultActions chart={chart} busy={busy} />
     </div>
   );

@@ -108,15 +108,15 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
     <>
       <form className="card form-grid no-print" onSubmit={onSubmit} noValidate>
         <div className="field">
-          <label htmlFor="name">이름 (선택)</label>
+          <label htmlFor="name">의뢰인 성함 (선택)</label>
           <input id="name" type="text" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="홍길동" />
         </div>
 
         <div className="field">
           <span className="label">성별</span>
           <div className="segmented" role="group" aria-label="성별">
-            <button type="button" aria-pressed={gender === "female"} onClick={() => setGender("female")}>여성</button>
-            <button type="button" aria-pressed={gender === "male"} onClick={() => setGender("male")}>남성</button>
+            <button type="button" aria-pressed={gender === "female"} onClick={() => setGender("female")}>여성(坤命)</button>
+            <button type="button" aria-pressed={gender === "male"} onClick={() => setGender("male")}>남성(乾命)</button>
           </div>
         </div>
 
@@ -195,7 +195,7 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
             aiEnabled={aiEnabled}
             parts={parts}
             onRetry={(part) => lastInput.current && loadPart(lastInput.current, part, run.current)}
-            afterGrade={checkout && !aiEnabled && lastInput.current ? <PurchaseBox input={lastInput.current} checkout={checkout} /> : undefined}
+            afterGrade={checkout && !aiEnabled && lastInput.current ? <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} /> : undefined}
           />
           <ResultActions chart={chart} busy={anyLoading} />
         </div>

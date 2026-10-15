@@ -1,23 +1,19 @@
+import { after } from "next/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import SiteShell from "@/components/SiteShell";
-import { sendReportEmail } from "@/lib/mail";
+import { completeReport } from "@/lib/fulfill";
 import { confirmOrder, OrderError } from "@/lib/orders";
+import { originFrom } from "@/lib/site";
 import { StoreError } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
+// 결제 승인 뒤 감정서 전체 작성(최대 몇 분)을 이 요청 뒤에 이어서 돌린다.
+export const maxDuration = 300;
 
 type Params = Promise<{ paymentKey?: string; orderId?: string; amount?: string }>;
 
-async function siteOrigin(): Promise<string> {
-  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, "");
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
-
-/** 토스 결제창에서 돌아오는 곳: 결제를 승인하고 리포트로 보낸다. */
+/** 토스 결제창에서 돌아오는 곳: 결제를 승인하고, 서버에서 감정서를 쓰기 시작한 뒤 리포트로 보낸다. */
 export default async function PaySuccess({ searchParams }: { searchParams: Params }) {
   const { paymentKey, orderId, amount } = await searchParams;
   let token: string | null = null;
@@ -26,7 +22,12 @@ export default async function PaySuccess({ searchParams }: { searchParams: Param
     try {
       const { order, justPaid } = await confirmOrder({ paymentKey, orderId, amount: Number(amount) });
       token = order.token ?? null;
-      if (justPaid && token) await sendReportEmail(order, `${await siteOrigin()}/r/${token}`);
+      if (justPaid && token) {
+        const origin = originFrom(await headers());
+        const t = token;
+        // 손님이 창을 닫아도 감정서를 끝까지 쓰고, 다 되면 완성 메일을 보낸다.
+        after(() => completeReport(t, origin));
+      }
     } catch (error) {
       if (error instanceof OrderError) message = error.message;
       else if (error instanceof StoreError) message = "주문 저장소에 연결하지 못했습니다. 잠시 후 이 페이지를 새로고침해 주세요.";

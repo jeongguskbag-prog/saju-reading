@@ -1,7 +1,7 @@
 // 주문 → 결제 승인 → 리포트 토큰 발급(서버 전용).
 import { randomBytes, randomUUID } from "node:crypto";
 import { calculateSaju, type BirthInput, type SajuChart } from "./saju/calc";
-import { PRODUCT } from "./product";
+import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, SALES_OPEN, sellableProducts, type Product, type ProductId } from "./product";
 import type { PartKey, PartResult } from "./report-shared";
 import { getStore, requireStore } from "./store";
 import { isAiEnabled } from "./reading";
@@ -12,6 +12,8 @@ export interface Order {
   customerKey: string;
   input: BirthInput;
   email: string;
+  /** 상품. 예전 주문(상품 구분 전)은 종합 감정서로 본다. */
+  productId?: ProductId;
   amount: number;
   orderName: string;
   status: "pending" | "paid";
@@ -45,14 +47,19 @@ export function isValidEmail(email: string): boolean {
 }
 
 /** 토스 결제창·승인 키와 저장소, AI 키가 모두 있어야 결제를 연다. */
-export function checkoutConfig(): { enabled: boolean; clientKey: string | null; price: number; testMode: boolean } {
+export function checkoutConfig(): { enabled: boolean; clientKey: string | null; testMode: boolean } {
   const clientKey = process.env.TOSS_CLIENT_KEY || null;
   const secret = process.env.TOSS_SECRET_KEY;
-  const enabled = PRODUCT.checkoutOpen !== false && Boolean(clientKey && secret && getStore() && isAiEnabled());
-  return { enabled, clientKey: enabled ? clientKey : null, price: PRODUCT.price, testMode: Boolean(clientKey?.startsWith("test_")) };
+  const enabled = SALES_OPEN && Boolean(clientKey && secret && getStore() && isAiEnabled());
+  return { enabled, clientKey: enabled ? clientKey : null, testMode: Boolean(clientKey?.startsWith("test_")) };
 }
 
-export async function createOrder(input: BirthInput, email: string, now = new Date()): Promise<Order> {
+export const productOf = (order: Pick<Order, "productId">): Product => PRODUCTS[order.productId ?? DEFAULT_PRODUCT] ?? PRODUCTS[DEFAULT_PRODUCT];
+
+export async function createOrder(input: BirthInput, email: string, productId: ProductId = DEFAULT_PRODUCT, now = new Date()): Promise<Order> {
+  const product = sellableProducts().find((p) => p.id === productId);
+  if (!product) throw new OrderError("지금은 신청할 수 없는 상품입니다.");
+  if (!input.name?.trim()) throw new OrderError("감정서에 들어갈 성함을 적어 주세요.");
   if (!isValidEmail(email)) throw new OrderError("이메일 주소를 확인해 주세요.");
   calculateSaju(input, now); // 입력 오류(InputError)는 호출한 쪽에서 메시지로 돌려준다.
   const ymd = now.toISOString().slice(0, 10).replace(/-/g, "");
@@ -61,8 +68,9 @@ export async function createOrder(input: BirthInput, email: string, now = new Da
     customerKey: randomUUID(),
     input,
     email,
-    amount: PRODUCT.price,
-    orderName: PRODUCT.name,
+    productId: product.id,
+    amount: product.price,
+    orderName: product.name,
     status: "pending",
     createdAt: now.toISOString(),
   };
@@ -140,18 +148,35 @@ export async function confirmOrder(
 
 export interface Report {
   order: Order;
+  product: Product;
   chart: SajuChart;
+  /** 열람 마감 시각(ISO) */
+  expiresAt: string;
+  expired: boolean;
 }
 
-/** 결제한 리포트. 감정 연도가 바뀌지 않도록 결제 시점 기준으로 명식을 계산한다. */
-export async function getReport(token: string): Promise<Report | null> {
+const DAY = 86_400_000;
+
+/**
+ * 결제한 리포트. 감정 연도가 바뀌지 않도록 결제 시점 기준으로 명식을 계산한다.
+ * 결제 후 REPORT_VALID_DAYS일이 지나면 expired로 돌려준다(풀이는 열지 않는다).
+ */
+export async function getReport(token: string, now = new Date()): Promise<Report | null> {
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
   const store = requireStore();
   const orderId = await store.get<string>(reportKey(token));
   if (!orderId) return null;
   const order = await getOrder(orderId);
   if (!order || order.status !== "paid" || order.token !== token) return null;
-  return { order, chart: calculateSaju(order.input, new Date(order.paidAt ?? order.createdAt)) };
+  const paidAt = new Date(order.paidAt ?? order.createdAt);
+  const expiresAt = new Date(paidAt.getTime() + REPORT_VALID_DAYS * DAY);
+  return {
+    order,
+    product: productOf(order),
+    chart: calculateSaju(order.input, paidAt),
+    expiresAt: expiresAt.toISOString(),
+    expired: now.getTime() > expiresAt.getTime(),
+  };
 }
 
 export async function getSavedPart(token: string, part: PartKey): Promise<PartResult | null> {
@@ -169,8 +194,19 @@ export async function getSavedParts(token: string, parts: readonly PartKey[]): P
   return out;
 }
 
-export async function savePart(token: string, part: PartKey, result: PartResult): Promise<void> {
-  await requireStore().set(partKey(token, part), result);
+/** 풀이는 열람 기간이 끝나고 하루 뒤 저장소에서 지운다. */
+export async function savePart(token: string, part: PartKey, result: PartResult, expiresAt?: string, now = new Date()): Promise<void> {
+  const ttl = expiresAt ? Math.max(3600, Math.ceil((new Date(expiresAt).getTime() + DAY - now.getTime()) / 1000)) : undefined;
+  await requireStore().set(partKey(token, part), result, ttl);
+}
+
+/** 완성 메일을 한 번만 보내기 위한 표시. 처음 표시하면 true. */
+export async function markMailed(orderId: string): Promise<boolean> {
+  return requireStore().setIfAbsent(`mailed:${orderId}`, new Date().toISOString());
+}
+
+export async function unmarkMailed(orderId: string): Promise<void> {
+  await requireStore().del(`mailed:${orderId}`);
 }
 
 /** 같은 파트를 두 곳에서 동시에 쓰지 않도록 5분짜리 잠금. 잠금을 얻으면 true. */

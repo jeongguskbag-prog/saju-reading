@@ -306,14 +306,40 @@ details.advanced[open] summary { margin-bottom: 10px; }
 .card.method li + li { margin-top: 4px; }
 
 /* 표지·목차 (PDF·HTML 전용) */
-.cover { text-align: center; padding: 48px 16px; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 16px; background: var(--surface); }
-.cover-brand { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.cover-brand span { font-family: var(--display); font-size: 15px; color: var(--text-2); letter-spacing: 0.08em; }
-.cover-years { margin-top: 40px; font-size: 18px; letter-spacing: 0.3em; color: var(--text-2); }
-.cover-title { font-size: 34px; line-height: 1.35; margin: 10px 0 28px; letter-spacing: -0.02em; font-family: var(--display); font-weight: 400; }
-.cover-pillars { display: flex; justify-content: center; gap: 14px; font-size: 26px; font-family: var(--display); color: var(--accent); }
-.cover-keywords { margin: 24px 0 0; font-size: 16px; font-weight: 600; }
-.cover-meta { margin: 6px 0 0; font-size: 13px; color: var(--text-2); }
+/* PDF 표지: 쪽빛 고서 표지, 이중 테두리 */
+.cover {
+  position: relative;
+  text-align: center;
+  background-color: #24324f;
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px);
+  color: #ece9e1;
+  padding: 64px 40px 48px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  min-height: 900px;
+}
+.cover-frame { position: absolute; inset: 18px; border: 1px solid rgba(217, 207, 180, 0.6); pointer-events: none; }
+.cover-frame::after { content: ""; position: absolute; inset: 6px; border: 0.5px solid rgba(217, 207, 180, 0.3); }
+.cover-top, .cover-mid, .cover-card, .cover-foot { position: relative; }
+.cover-eyebrow { margin: 0 0 14px; font-size: 12px; letter-spacing: 0.4em; color: #d9cfb4; }
+.cover-emblem { width: 52px; height: 52px; color: #d9cfb4; display: block; margin: 0 auto; }
+.cover-sub { margin: 0 0 22px; font-family: var(--display); font-size: 18px; letter-spacing: 0.25em; color: #c9c2b2; }
+.cover-hanja { width: 62%; max-width: 420px; height: auto; color: #f5efe6; display: block; margin: 0 auto; }
+.cover-tagline { margin: 28px 0 0; font-family: var(--display); font-size: 15px; line-height: 1.9; letter-spacing: 0.12em; color: #a7a293; }
+.cover-years { margin: 14px 0 0; font-size: 13px; letter-spacing: 0.3em; color: #8f8a7c; }
+.cover-card { max-width: 440px; width: 100%; margin: 0 auto; padding: 22px 28px; border: 1px solid rgba(217, 207, 180, 0.35); background: rgba(0, 0, 0, 0.16); border-radius: 4px; }
+.cover-name { margin: 0 0 10px; font-family: var(--display); font-size: 22px; letter-spacing: 0.12em; color: #f1e6d2; }
+.cover-name span { font-size: 15px; color: #d9cfb4; margin-left: 6px; }
+.cover-pillars { display: flex; justify-content: center; gap: 16px; margin: 0 0 10px; font-family: var(--display); font-size: 22px; color: #e8a49c; }
+.cover-keywords { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #ece9e1; }
+.cover-meta { margin: 0; font-size: 12.5px; line-height: 1.8; color: #a7a293; }
+.cover-foot { display: flex; justify-content: space-between; align-items: flex-end; text-align: left; padding: 0 8px; }
+.cover-foot p { margin: 0; font-size: 11px; line-height: 1.7; letter-spacing: 0.05em; color: #8f8a7c; }
+.cover-foot .brand-seal { color: #b0262c; }
 .toc { padding: 8px 4px 16px; }
 .toc h2 { font-size: 22px; }
 .toc ol { list-style: none; padding: 0; margin: 0; counter-reset: none; }
@@ -354,9 +380,10 @@ details.advanced[open] summary { margin-bottom: 10px; }
   .action-plan { break-inside: avoid; }
 
   /* 표지는 한 쪽 전체, 목차·각 파트·고지는 새 쪽에서 시작 */
-  .cover { height: 250mm; border: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; margin: 0; break-after: page; }
-  .cover-title { font-size: 40px; }
-  .cover-pillars { font-size: 32px; }
+  @page :first { margin: 0; }
+  .cover { display: flex; width: 210mm; height: 297mm; min-height: 0; margin: 0; padding: 26mm 22mm 20mm; border-radius: 0; break-after: page; }
+  .cover-frame { inset: 10mm; }
+  .cover-hanja { max-width: 120mm; }
   .preface { border: 0; padding: 0 2px; break-after: page; }
   .toc { break-after: page; }
   .part { break-before: page; margin-top: 0; }
@@ -614,3 +641,26 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .policy ol, .policy ul { padding-left: 20px; }
 .policy .table { margin: 8px 0; font-size: 14px; }
 .policy a, .purchase-agree a { color: var(--accent); }
+
+/* 감정 안내(상품) */
+.lp-products { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 8px; align-items: stretch; }
+.lp-products .lp-plan { position: relative; align-content: start; }
+.lp-products .lp-plan.soon { opacity: 0.72; border-style: dashed; }
+.lp-pick { position: absolute; top: -11px; left: 20px; background: var(--accent); color: var(--accent-ink); font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 4px; }
+.lp-plan-sum { margin: 0; font-size: 15px; line-height: 1.7; word-break: keep-all; }
+.lp-plan-parts { margin: 0; font-size: 13px; color: var(--text-3); word-break: keep-all; }
+.lp-steps { margin: 36px 0 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+.lp-steps li { counter-increment: step; display: grid; grid-template-columns: 34px 1fr; gap: 4px 12px; font-size: 15px; color: var(--text-2); line-height: 1.7; word-break: keep-all; }
+.lp-steps li::before { content: counter(step); grid-row: span 2; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--accent); color: var(--accent); display: grid; place-items: center; font-family: var(--display); }
+.lp-steps b { color: var(--text); font-weight: 600; }
+@media (max-width: 760px) { .lp-products { grid-template-columns: 1fr; gap: 22px; } }
+
+/* 구매 상자: 감정서 고르기 */
+.plan-pick { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.plan-pick legend { margin-bottom: 6px; }
+.plan-option { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; align-items: center; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: var(--surface); }
+.plan-option.on { border: 2px solid var(--accent); padding: 11px 13px; }
+.plan-option input { margin: 0; accent-color: var(--accent); }
+.plan-name { font-family: var(--display); font-size: 17px; }
+.plan-price { font-weight: 700; font-variant-numeric: tabular-nums; }
+.plan-sum { grid-column: 2 / 4; font-size: 13px; color: var(--text-2); word-break: keep-all; }

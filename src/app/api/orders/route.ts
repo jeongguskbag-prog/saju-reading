@@ -13,13 +13,14 @@ export async function POST(request: Request) {
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   if (body?.agree !== true) return NextResponse.json({ error: "주문 내용과 청약철회 안내에 동의해 주세요." }, { status: 400 });
   try {
-    const order = await createOrder(parsed.value, String(body?.email ?? "").trim());
+    const order = await createOrder(parsed.value, String(body?.email ?? "").trim(), body?.productId);
     return NextResponse.json({
       orderId: order.id,
       orderName: order.orderName,
       amount: order.amount,
       customerKey: order.customerKey,
       customerEmail: order.email,
+      customerName: order.input.name,
       clientKey: config.clientKey,
     });
   } catch (error) {

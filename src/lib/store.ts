@@ -79,7 +79,7 @@ function memoryStore(map = new Map<string, Entry>()): Store {
   };
 }
 
-/** 개발용: 프로세스를 다시 띄워도 남도록 파일에 쓴다. 동시성은 보장하지 않는다. */
+/** 개발용: 프로세스를 다시 띄워도 남도록 파일에 쓴다. setIfAbsent만 원자적으로 처리한다. */
 function fileStore(dir: string): Store {
   const path = (key: string) => join(dir, `${encodeURIComponent(key)}.json`);
   const read = async (key: string): Promise<Entry | null> => {
@@ -100,9 +100,20 @@ function fileStore(dir: string): Store {
     },
     set: write,
     async setIfAbsent(key, value, ttl) {
-      if (await read(key)) return false;
-      await write(key, value, ttl);
-      return true;
+      // 파일을 "없을 때만 만들기"(wx)로 써서, 동시에 두 곳이 불러도 한 곳만 성공하게 한다.
+      await mkdir(dir, { recursive: true });
+      const body = JSON.stringify({ value, expires: ttl ? Date.now() + ttl * 1000 : null });
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          await writeFile(path(key), body, { flag: "wx" });
+          return true;
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+          if (await read(key)) return false;
+          await rm(path(key), { force: true }); // 기한이 지난 값이면 지우고 한 번 더
+        }
+      }
+      return false;
     },
     async del(key) {
       await rm(path(key), { force: true });
