@@ -1,6 +1,7 @@
 import type { SajuChart } from "@/lib/saju/calc";
 import { GRADE_TIERS, type GradeParts } from "@/lib/saju/grade";
 import stats from "@/lib/saju/grade-stats.json";
+import Seal from "./Seal";
 
 const PART_LABELS: { key: keyof GradeParts; label: string; max: number }[] = [
   { key: "balance", label: "오행 균형", max: 30 },
@@ -20,10 +21,7 @@ export default function GradeCard({ chart }: { chart: SajuChart }) {
       <h2 id="grade-title">내 사주 등급</h2>
 
       <div className="grade-hero">
-        <div className="grade-level">
-          <span className="grade-num">{g.tier.level}</span>
-          <span className="grade-unit">등급</span>
-        </div>
+        <Seal level={g.tier.level} size="lg" animate label={`${g.tier.level}등급`} />
         <div className="grade-text">
           <b>{g.tier.name}</b>
           <p>{g.tier.desc}</p>

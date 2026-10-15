@@ -1,4 +1,4 @@
-import AppShell from "@/components/AppShell";
+import Landing from "@/components/Landing";
 import SajuApp from "@/components/SajuApp";
 import { isAiEnabled } from "@/lib/reading";
 
@@ -6,9 +6,5 @@ import { isAiEnabled } from "@/lib/reading";
 export const dynamic = "force-dynamic";
 
 export default function Home() {
-  return (
-    <AppShell>
-      <SajuApp aiEnabled={isAiEnabled()} />
-    </AppShell>
-  );
+  return <Landing form={<SajuApp aiEnabled={isAiEnabled()} />} />;
 }
