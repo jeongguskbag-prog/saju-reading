@@ -7,7 +7,11 @@ import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withPro
 export interface CheckoutInfo {
   enabled: boolean;
   testMode: boolean;
+  /** 휴대폰 결제를 열었는지(토스 계약 후 TOSS_MOBILE_PHONE=1) */
+  mobilePhone: boolean;
 }
+
+type PayMethod = "CARD" | "MOBILE_PHONE";
 
 interface TossPaymentsInstance {
   payment(opts: { customerKey: string }): {
@@ -41,6 +45,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [name, setName] = useState(input.name ?? "");
   const [email, setEmail] = useState("");
   const [agree, setAgree] = useState(false);
+  const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const product = PRODUCTS[productId];
@@ -63,7 +68,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       const TossPayments = await loadSdk();
       const payment = TossPayments(order.clientKey).payment({ customerKey: order.customerKey });
       await payment.requestPayment({
-        method: "CARD",
+        method: checkout.mobilePhone ? payMethod : "CARD",
         amount: { currency: "KRW", value: order.amount },
         orderId: order.orderId,
         orderName: order.orderName,
@@ -118,6 +123,19 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               placeholder="name@example.com"
             />
           </div>
+          {checkout.mobilePhone && (
+            <div className="field">
+              <span className="label">결제 수단</span>
+              <div className="segmented" role="group" aria-label="결제 수단">
+                <button type="button" aria-pressed={payMethod === "CARD"} onClick={() => setPayMethod("CARD")}>
+                  카드·간편결제
+                </button>
+                <button type="button" aria-pressed={payMethod === "MOBILE_PHONE"} onClick={() => setPayMethod("MOBILE_PHONE")}>
+                  휴대폰 결제
+                </button>
+              </div>
+            </div>
+          )}
           <label className="check purchase-agree">
             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
             <span>

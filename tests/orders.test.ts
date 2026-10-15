@@ -269,3 +269,16 @@ describe("저장소 잠금", () => {
     vi.restoreAllMocks();
   });
 });
+
+describe("휴대폰 결제 설정", () => {
+  it("TOSS_MOBILE_PHONE=1일 때만 휴대폰 결제를 연다", () => {
+    vi.stubEnv("TOSS_CLIENT_KEY", "test_ck_x");
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant-x");
+    vi.stubEnv("TOSS_MOBILE_PHONE", "");
+    expect(checkoutConfig().mobilePhone).toBe(false);
+    vi.stubEnv("TOSS_MOBILE_PHONE", "1");
+    expect(checkoutConfig().mobilePhone).toBe(true);
+    vi.stubEnv("TOSS_SECRET_KEY", "");
+    expect(checkoutConfig().mobilePhone).toBe(false); // 결제가 닫히면 휴대폰 결제도 닫힘
+  });
+});

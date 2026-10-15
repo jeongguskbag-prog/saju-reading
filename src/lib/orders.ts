@@ -47,11 +47,17 @@ export function isValidEmail(email: string): boolean {
 }
 
 /** 토스 결제창·승인 키와 저장소, AI 키가 모두 있어야 결제를 연다. */
-export function checkoutConfig(): { enabled: boolean; clientKey: string | null; testMode: boolean } {
+export function checkoutConfig(): { enabled: boolean; clientKey: string | null; testMode: boolean; mobilePhone: boolean } {
   const clientKey = process.env.TOSS_CLIENT_KEY || null;
   const secret = process.env.TOSS_SECRET_KEY;
   const enabled = SALES_OPEN && Boolean(clientKey && secret && getStore() && isAiEnabled());
-  return { enabled, clientKey: enabled ? clientKey : null, testMode: Boolean(clientKey?.startsWith("test_")) };
+  return {
+    enabled,
+    clientKey: enabled ? clientKey : null,
+    testMode: Boolean(clientKey?.startsWith("test_")),
+    // 휴대폰 결제는 토스페이먼츠와 별도 계약이 필요해, 계약 후 TOSS_MOBILE_PHONE=1로 켠다.
+    mobilePhone: enabled && process.env.TOSS_MOBILE_PHONE === "1",
+  };
 }
 
 export const productOf = (order: Pick<Order, "productId">): Product => PRODUCTS[order.productId ?? DEFAULT_PRODUCT] ?? PRODUCTS[DEFAULT_PRODUCT];
