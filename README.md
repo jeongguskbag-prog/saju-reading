@@ -10,6 +10,11 @@
 - 안드로이드 앱 아이콘: `python3 scripts/make-icon.py`(낙관을 한지색 원 위에 얹음)
 - 공유 미리보기 이미지 주소는 `SITE_URL`(없으면 Vercel 실제 사이트 주소) 기준
 
+## 상담
+
+- 홈 오른쪽 아래 '카톡 상담' 버튼, 홈의 '도움이 필요하신가요?' 칸, 구매 상자 아래에 카카오톡 1:1 상담과 이메일 문의(`BUSINESS.email`)
+- 카톡 상담 주소: Vercel 환경변수 `NEXT_PUBLIC_KAKAO_CHANNEL_URL`(예: `https://pf.kakao.com/_AbCdE`) 또는 `src/lib/product.ts`의 `SUPPORT`. 비어 있으면 카톡 버튼은 숨고 이메일만 보인다
+
 ## 약관·사업자 정보
 
 - `/terms`(이용약관), `/privacy`(개인정보처리방침), `/refund`(환불 규정). 모든 화면 하단에 링크와 사업자 정보 표시

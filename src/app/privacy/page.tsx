@@ -55,6 +55,11 @@ export default function Privacy() {
             <td>감정서 작성·제공, 완성 메일 발송, 문의·환불 대응</td>
           </tr>
           <tr>
+            <td>상담·문의</td>
+            <td>카카오톡 프로필 이름, 이메일 주소, 상담 내용(이용자가 보낸 정보)</td>
+            <td>결제·이용 방법 안내, 문의 답변. 상담 기록은 소비자 불만·분쟁 처리 기록으로 3년간 보관</td>
+          </tr>
+          <tr>
             <td>결제</td>
             <td>주문번호, 결제 금액·수단·일시, 결제 키</td>
             <td>결제 확인, 환불, 법령에 따른 거래 기록 보관. 카드번호 등은 토스페이먼츠가 처리하며 회사는 받지 않습니다.</td>
@@ -80,6 +85,7 @@ export default function Privacy() {
         </thead>
         <tbody>
           <tr><td>토스페이먼츠(주)</td><td>결제 처리</td></tr>
+          <tr><td>(주)카카오</td><td>카카오톡 채널 1:1 상담(카카오톡 상담을 이용하는 경우)</td></tr>
           <tr><td>Vercel Inc.</td><td>웹사이트 호스팅</td></tr>
           <tr><td>Upstash, Inc.</td><td>주문·감정서 저장</td></tr>
           <tr><td>Anthropic, PBC</td><td>AI 풀이 작성</td></tr>

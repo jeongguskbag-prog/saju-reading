@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { BRAND } from "@/lib/product";
 import BrandSeal from "./BrandSeal";
 import SiteFooter from "./SiteFooter";
+import { FloatingKakao } from "./SupportLinks";
 
 /** 결제·리포트·안내 화면의 머리와 꼬리. 브랜드를 눌러 첫 화면으로 돌아간다. */
 export default function SiteShell({ children }: { children: ReactNode }) {
@@ -16,6 +17,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
       </header>
       <main className="container">{children}</main>
       <SiteFooter />
+      <FloatingKakao />
     </>
   );
 }

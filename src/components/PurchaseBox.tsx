@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { BirthInput } from "@/lib/saju/calc";
+import { SupportBox } from "./SupportLinks";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withProductYears, won, type ProductId } from "@/lib/product";
 
 export interface CheckoutInfo {
@@ -150,6 +151,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
           </button>
           <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
           {checkout.testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}
+          <SupportBox compact />
           {error && (
             <p className="error" role="alert">
               {error}
@@ -157,7 +159,10 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
           )}
         </form>
       ) : (
-        <p className="muted">감정서 결제는 준비 중입니다. 열리면 이 자리에서 바로 신청할 수 있습니다.</p>
+        <>
+          <p className="muted">감정서 결제는 준비 중입니다. 열리면 이 자리에서 바로 신청할 수 있습니다.</p>
+          <SupportBox compact />
+        </>
       )}
     </section>
   );

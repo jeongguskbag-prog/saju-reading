@@ -6,6 +6,7 @@ import stats from "@/lib/saju/grade-stats.json";
 import Seal from "./Seal";
 import BrandSeal from "./BrandSeal";
 import SiteFooter from "./SiteFooter";
+import { FloatingKakao, SupportBox } from "./SupportLinks";
 
 const fmt = (n: number) => n.toLocaleString("ko-KR");
 const HANJA_NUM = ["一", "二", "三", "四", "五"];
@@ -39,6 +40,10 @@ function Section({ id, title, lead, children, tone }: { id?: string; title: stri
 }
 
 const FAQ = [
+  {
+    q: "결제를 어떻게 하는지 잘 모르겠어요.",
+    a: "생년월일시를 넣고 '사주 보기'를 누르면 결과 아래에 감정서 신청 칸이 나옵니다. 감정서를 고르고 성함·이메일을 적은 뒤 결제 버튼을 누르면 결제창이 열립니다. 중간에 막히면 아래 상담 안내로 연락 주세요. 하나씩 도와 드립니다.",
+  },
   {
     q: "태어난 시간을 모르면 어떻게 하나요?",
     a: "시주를 뺀 여섯 글자로 계산합니다. 등급과 풀이는 그대로 볼 수 있지만, 시주가 들어간 해석은 빠지고 등급에도 '6글자 기준'이라고 표시됩니다.",
@@ -199,6 +204,10 @@ export default function Landing({ form, checkoutOpen = false }: { form: ReactNod
         </div>
       </section>
 
+      <Section id="help" tone="sunk" title="도움이 필요하신가요?">
+        <SupportBox />
+      </Section>
+
       <Section id="faq" title="자주 묻는 질문">
         <div className="lp-faq">
           {FAQ.map((f) => (
@@ -211,6 +220,7 @@ export default function Landing({ form, checkoutOpen = false }: { form: ReactNod
       </Section>
 
       <SiteFooter />
+      <FloatingKakao />
     </div>
   );
 }

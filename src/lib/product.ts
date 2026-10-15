@@ -74,11 +74,29 @@ export const BUSINESS = {
   mailOrderNumber: "", // 통신판매업 신고번호 제0000-지역-0000호
   address: "", // 사업장 주소
   phone: "", // 고객센터 전화
-  email: "", // 고객센터 이메일
+  email: "pjk6322@gmail.com", // 고객센터 이메일(기타 문의)
   privacyOfficer: "", // 개인정보 보호책임자(이름)
 };
 
 export const orPending = (v: string) => v || "등록 예정";
+
+/**
+ * 카카오톡 채널 1:1 상담. 카카오톡 채널 관리자센터에서 채널을 만들고 '1:1 채팅'을 켠 뒤,
+ * 채널 주소(예: https://pf.kakao.com/_AbCdE)를 여기 넣거나 Vercel 환경변수 NEXT_PUBLIC_KAKAO_CHANNEL_URL에 넣는다.
+ * 비어 있으면 카톡 상담 버튼은 숨기고 이메일만 보여 준다.
+ */
+export const SUPPORT = {
+  kakaoChannelUrl: "",
+};
+
+/** 카톡 1:1 채팅으로 바로 열리는 주소. 채널 주소 뒤에 /chat을 붙인다. */
+export function kakaoChatUrl(): string | null {
+  // Vercel 환경변수 NEXT_PUBLIC_KAKAO_CHANNEL_URL이 있으면 그 값을 쓴다(코드 수정 없이 설정 가능, 바꾸면 다시 배포).
+  const fromEnv = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_KAKAO_CHANNEL_URL : undefined;
+  const u = (fromEnv || SUPPORT.kakaoChannelUrl).trim().replace(/\/+$/, "");
+  if (!u) return null;
+  return u.endsWith("/chat") ? u : `${u}/chat`;
+}
 
 /** 약관·방침 시행일 */
 export const POLICY_EFFECTIVE_DATE = "2026년 10월 16일";
