@@ -4,6 +4,7 @@ import { Solar } from "lunar-javascript";
 import { CONTROLS, ELEMENTS, GENERATES, HIDDEN_STEMS, STEM_ELEMENT, type Element, type TenGod } from "./constants";
 import { branchTenGod, splitGanZhi, tenGod, yearGanZhi } from "./gods";
 import type { DaeunPeriod, Pillar } from "./calc";
+import { engineText, gyeokgukLabel, LUCKY_BY_ELEMENT_ZH, TEN_GOD_MODERN_ZH, type Locale } from "./locale";
 
 /** 십신을 현대적·심리학적 언어로 옮긴 표현. 화면, PDF, AI 지시문이 함께 쓴다. */
 export const TEN_GOD_MODERN: Record<TenGod, string> = {
@@ -52,7 +53,8 @@ export interface MonthFlow {
 }
 
 export interface Analysis {
-  gyeokguk: { name: string; basis: string };
+  /** name은 내부 키(한국어, 등급 통계 조합에 쓰임), label은 화면용 */
+  gyeokguk: { name: string; label: string; basis: string };
   usefulness: Usefulness;
   /** 대운별 용신 부합도(0~100, 50이 중립) */
   daeunScores: { startAge: number; startYear: number; ganzhi: string; score: number }[];
@@ -67,7 +69,7 @@ export interface Analysis {
 }
 
 /** 월지 정기(본기)가 천간에 드러나면 그 십신, 아니면 월지 정기의 십신으로 격을 정한다. 비견·겁재는 건록·양인격으로 부른다. */
-export function determineGyeokguk(day: Pillar, month: Pillar, others: Pillar[]): { name: string; basis: string } {
+export function determineGyeokguk(day: Pillar, month: Pillar, others: Pillar[], locale: Locale = "ko"): Analysis["gyeokguk"] {
   const hidden = HIDDEN_STEMS[month.branch];
   const main = hidden[hidden.length - 1];
   const visibleStems = [month.stem, ...others.map((p) => p.stem)];
@@ -75,34 +77,34 @@ export function determineGyeokguk(day: Pillar, month: Pillar, others: Pillar[]):
   const base = revealed ?? main;
   const god = tenGod(day.stem, base);
   const name = god === "비견" ? "건록격" : god === "겁재" ? "양인격" : `${god}격`;
-  const basis = revealed ? `월지 ${month.branch}의 지장간 ${base}이(가) 천간에 드러남` : `월지 ${month.branch}의 정기 ${main} 기준`;
-  return { name, basis };
+  const basis = engineText(locale).gyeokgukBasis(month.branch, base, Boolean(revealed));
+  return { name, label: gyeokgukLabel(name, locale), basis };
 }
 
 const generatorOf = (e: Element) => ELEMENTS.find((x) => GENERATES[x] === e)!;
 const controllerOf = (e: Element) => ELEMENTS.find((x) => CONTROLS[x] === e)!;
 
 /** 억부(신강·신약)와 오행 균형으로 참고 용신을 고른다. */
-export function determineUsefulness(dayElement: Element, strengthScore: number, weighted: Record<Element, number>): Usefulness {
+export function determineUsefulness(dayElement: Element, strengthScore: number, weighted: Record<Element, number>, locale: Locale = "ko"): Usefulness {
   const resource = generatorOf(dayElement); // 인성
   const output = GENERATES[dayElement]; // 식상
   const wealth = CONTROLS[dayElement]; // 재성
   const officer = controllerOf(dayElement); // 관성
   let candidates: Element[];
-  let method: string;
+  let kind: "weak" | "strong" | "balanced";
   if (strengthScore < 40) {
     candidates = [resource, dayElement];
-    method = "신약하여 일간을 돕는 오행(인성·비겁) 중 부족한 쪽";
+    kind = "weak";
   } else if (strengthScore > 60) {
     candidates = [output, wealth, officer];
-    method = "신강하여 힘을 빼 주는 오행(식상·재성·관성) 중 부족한 쪽";
+    kind = "strong";
   } else {
     candidates = [...ELEMENTS];
-    method = "중화에 가까워 원국에서 가장 부족한 오행";
+    kind = "balanced";
   }
   // 동점이면 후보 순서를 따른다.
   const yongsin = candidates.reduce((best, e) => (weighted[e] < weighted[best] ? e : best), candidates[0]);
-  return { yongsin, huisin: generatorOf(yongsin), gisin: controllerOf(yongsin), method: `억부·균형 기준: ${method}` };
+  return { yongsin, huisin: generatorOf(yongsin), gisin: controllerOf(yongsin), method: engineText(locale).usefulnessMethod(kind) };
 }
 
 const elementScore = (e: Element, u: Usefulness) => (e === u.yongsin ? 2 : e === u.huisin ? 1 : e === u.gisin ? -2 : 0);
@@ -152,16 +154,18 @@ export function analyze(params: {
   now: Date;
   /** 월별 흐름 계산을 건너뛴다(등급 통계를 대량으로 만들 때만 사용). */
   skipMonthly?: boolean;
+  locale?: Locale;
 }): Analysis {
-  const { pillars, weighted, tenGodCounts, strengthScore, daeun, now, skipMonthly } = params;
+  const { pillars, weighted, tenGodCounts, strengthScore, daeun, now, skipMonthly, locale = "ko" } = params;
+  const zh = locale === "zh-Hant";
   const dayElement = STEM_ELEMENT[pillars.day.stem];
   const others = [pillars.year, pillars.day, pillars.hour].filter((p): p is Pillar => p !== null);
-  const usefulness = determineUsefulness(dayElement, strengthScore, weighted);
+  const usefulness = determineUsefulness(dayElement, strengthScore, weighted, locale);
   const thisYear = new Date(now.getTime() + 9 * 3_600_000).getUTCFullYear();
   const reportYears: [number, number] = [thisYear, thisYear + 1];
 
   return {
-    gyeokguk: determineGyeokguk(pillars.day, pillars.month, others.filter((p) => p !== pillars.day)),
+    gyeokguk: determineGyeokguk(pillars.day, pillars.month, others.filter((p) => p !== pillars.day), locale),
     usefulness,
     daeunScores: daeun.map((d) => ({
       startAge: d.startAge,
@@ -170,10 +174,10 @@ export function analyze(params: {
       score: ganzhiScore(STEM_ELEMENT[d.stem], branchElementOf(d.branch), usefulness),
     })),
     monthly: skipMonthly ? [] : [...monthlyFlow(reportYears[0], pillars.day.stem, usefulness), ...monthlyFlow(reportYears[1], pillars.day.stem, usefulness)],
-    lucky: { ...LUCKY_BY_ELEMENT[usefulness.yongsin], element: usefulness.yongsin },
+    lucky: { ...(zh ? LUCKY_BY_ELEMENT_ZH : LUCKY_BY_ELEMENT)[usefulness.yongsin], element: usefulness.yongsin },
     tenGodGuide: (Object.keys(TEN_GOD_MODERN) as TenGod[])
       .filter((g) => (tenGodCounts[g] ?? 0) > 0)
-      .map((g) => ({ god: g, count: tenGodCounts[g]!, modern: TEN_GOD_MODERN[g] })),
+      .map((g) => ({ god: g, count: tenGodCounts[g]!, modern: (zh ? TEN_GOD_MODERN_ZH : TEN_GOD_MODERN)[g] })),
     reportYears,
     yearScores: reportYears.map((y) => ({ year: y, ...yearScore(y, usefulness) })),
   };

@@ -2,6 +2,7 @@ import { Lunar, LunarMonth, LunarYear, Solar } from "lunar-javascript";
 import { analyze, type Analysis } from "./analysis";
 import { computeGrade, type Grade } from "./grade";
 import { branchTenGod, splitGanZhi, tenGod, yearGanZhi } from "./gods";
+import { engineText, REGION_INFO, tzOffsetMinutes, type EngineText, type Locale, type Region } from "./locale";
 import {
   BRANCHES,
   BRANCH_ANIMAL,
@@ -33,10 +34,14 @@ export interface BirthInput {
   /** 0~23, 모르면 null */
   hour: number | null;
   minute?: number | null;
+  /** 출생 지역(시간대·기본 경도). 기본 KR */
+  region?: Region;
+  /** 결과 문장의 언어. 기본 ko */
+  locale?: Locale;
   options?: {
     /** 출생지 경도로 진태양시(평균태양시) 보정. 기본 true */
     solarTimeCorrection?: boolean;
-    /** 출생지 경도(동경). 기본 서울 126.98 */
+    /** 출생지 경도(동경). 기본: 지역 대표 도시(서울 126.98, 타이베이 121.56, 홍콩 114.17) */
     longitude?: number;
     /** 자시 일주 변경 기준. at23: 23시에 다음 날 일주(기본), at0: 야자시(자정에 변경) */
     dayBoundary?: "at23" | "at0";
@@ -83,6 +88,8 @@ export interface SajuChart {
   input: BirthInput;
   solarDate: string;
   lunarDate: string;
+  /** 결과 문장의 언어 */
+  locale: Locale;
   /** 사주 계산에 실제로 쓴 시각 설명 */
   timeNote: string | null;
   pillars: { hour: Pillar | null; day: Pillar; month: Pillar; year: Pillar };
@@ -104,8 +111,6 @@ export interface SajuChart {
   grade: Grade;
   warnings: string[];
 }
-
-const SEOUL_LONGITUDE = 126.98;
 
 export { tenGod, branchTenGod, splitGanZhi, yearGanZhi } from "./gods";
 
@@ -142,27 +147,27 @@ function solarFromMs(ms: number): Solar {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-function resolveSolarDate(input: BirthInput): { y: number; m: number; d: number } {
+function resolveSolarDate(input: BirthInput, T: EngineText): { y: number; m: number; d: number } {
   const { year, month, day } = input;
-  if (!Number.isInteger(year) || year < 1900 || year > 2100) throw new InputError("연도는 1900~2100 사이로 입력해 주세요.");
+  if (!Number.isInteger(year) || year < 1900 || year > 2100) throw new InputError(T.yearRange);
   if (input.calendar === "solar") {
     const dt = new Date(Date.UTC(year, month - 1, day));
-    if (dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) throw new InputError("존재하지 않는 양력 날짜입니다.");
+    if (dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) throw new InputError(T.badSolarDate);
     return { y: year, m: month, d: day };
   }
   if (input.isLeapMonth && LunarYear.fromYear(year).getLeapMonth() !== month) {
-    throw new InputError(`${year}년 음력에는 윤${month}월이 없습니다.`);
+    throw new InputError(T.noLeapMonth(year, month));
   }
   const lm = input.isLeapMonth ? -month : month;
   const lunarMonth = LunarMonth.fromYm(year, lm);
-  if (!lunarMonth || day < 1 || day > lunarMonth.getDayCount()) throw new InputError("존재하지 않는 음력 날짜입니다.");
+  if (!lunarMonth || day < 1 || day > lunarMonth.getDayCount()) throw new InputError(T.badLunarDate);
   const s = Lunar.fromYmd(year, lm, day).getSolar();
   return { y: s.getYear(), m: s.getMonth(), d: s.getDay() };
 }
 
-/** 양력 날짜가 한국 시간 기준 오늘보다 뒤인지. */
-export function isAfterTodayInKorea(date: { y: number; m: number; d: number }, now: Date): boolean {
-  const today = new Date(now.getTime() + 9 * 3_600_000);
+/** 양력 날짜가 한국 시간(또는 offsetMinutes 시간대) 기준 오늘보다 뒤인지. */
+export function isAfterTodayInKorea(date: { y: number; m: number; d: number }, now: Date, offsetMinutes = 540): boolean {
+  const today = new Date(now.getTime() + offsetMinutes * 60_000);
   const todayKey = today.getUTCFullYear() * 10000 + (today.getUTCMonth() + 1) * 100 + today.getUTCDate();
   return date.y * 10000 + date.m * 100 + date.d > todayKey;
 }
@@ -198,7 +203,7 @@ function luckPillar(stem: Stem, branch: Branch, dayStem: Stem): LuckPillar {
   };
 }
 
-function strengthLabel(score: number): string {
+function strengthLabelKo(score: number): string {
   if (score < 20) return "극신약";
   if (score < 40) return "신약";
   if (score <= 60) return "중화";
@@ -208,35 +213,43 @@ function strengthLabel(score: number): string {
 
 export function calculateSaju(input: BirthInput, now: Date = new Date(), internal: { skipMonthly?: boolean } = {}): SajuChart {
   const warnings: string[] = [];
+  const locale: Locale = input.locale ?? "ko";
+  const region: Region = input.region ?? "KR";
+  const zone = REGION_INFO[region];
+  const T = engineText(locale);
   const opts = input.options ?? {};
   const correction = opts.solarTimeCorrection ?? true;
-  const longitude = opts.longitude ?? SEOUL_LONGITUDE;
+  const longitude = opts.longitude ?? zone.longitude;
   const sect: 1 | 2 = (opts.dayBoundary ?? "at23") === "at23" ? 1 : 2;
   const timeKnown = input.hour !== null && input.hour !== undefined;
 
   if (timeKnown && (!Number.isInteger(input.hour) || input.hour! < 0 || input.hour! > 23)) {
-    throw new InputError("시각은 0~23시로 입력해 주세요.");
+    throw new InputError(T.badHour);
   }
   const minute = input.minute ?? 0;
-  if (!Number.isInteger(minute) || minute < 0 || minute > 59) throw new InputError("분은 0~59로 입력해 주세요.");
+  if (!Number.isInteger(minute) || minute < 0 || minute > 59) throw new InputError(T.badMinute);
 
-  const date = resolveSolarDate(input);
-  if (isAfterTodayInKorea(date, now)) throw new InputError("생년월일이 오늘 이후입니다. 날짜를 다시 확인해 주세요.");
+  const date = resolveSolarDate(input, T);
+  if (isAfterTodayInKorea(date, now, zone.standardOffset)) throw new InputError(T.futureDate);
   const clockH = timeKnown ? input.hour! : 12;
   const clockM = timeKnown ? minute : 0;
 
   // 출생 순간(UTC).
-  const offset = koreaUtcOffsetMinutes(date.y, date.m, date.d, clockH, clockM);
+  // 한국은 법령 기준 표(koreaUtcOffsetMinutes), 대만·홍콩은 시간대 데이터(과거 서머타임 포함)를 쓴다.
+  const offset =
+    region === "KR"
+      ? koreaUtcOffsetMinutes(date.y, date.m, date.d, clockH, clockM)
+      : tzOffsetMinutes(zone.timeZone, date.y, date.m, date.d, clockH, clockM);
   const utcMs = Date.UTC(date.y, date.m - 1, date.d, clockH, clockM) - offset * 60_000;
-  if (offset === 510) warnings.push("1954~1961년 표준시(UTC+8:30)를 반영했습니다.");
-  if (offset === 600) warnings.push("1987~1988년 서머타임(1시간)을 반영했습니다.");
+  const offsetNote = T.offsetNote(region, offset);
+  if (offsetNote) warnings.push(offsetNote);
 
   // 년·월주와 대운: 절기 시각이 중국 표준시(UTC+8) 기준이므로 같은 순간을 UTC+8로 바꿔 계산.
   const beijingSolar = solarFromMs(utcMs + 8 * 3_600_000);
   const beijingEc = beijingSolar.getLunar().getEightChar();
 
   // 일·시주: 출생지의 평균태양시(보정 시) 또는 표준시 시계 기준.
-  const localMs = correction ? utcMs + longitude * 4 * 60_000 : utcMs + 540 * 60_000;
+  const localMs = correction ? utcMs + longitude * 4 * 60_000 : utcMs + zone.standardOffset * 60_000;
   const localSolar = timeKnown ? solarFromMs(localMs) : Solar.fromYmdHms(date.y, date.m, date.d, 12, 0, 0);
   const localEc = localSolar.getLunar().getEightChar();
   localEc.setSect(sect);
@@ -252,18 +265,16 @@ export function calculateSaju(input: BirthInput, now: Date = new Date(), interna
   let timeNote: string | null = null;
   if (timeKnown) {
     const f = fieldsOf(localMs);
-    timeNote = correction
-      ? `진태양시 보정 적용: ${f.y}-${pad(f.m)}-${pad(f.d)} ${pad(f.h)}:${pad(f.mi)} (동경 ${longitude}° 기준)`
-      : `표준시(UTC+9) 기준: ${pad(f.h)}:${pad(f.mi)}`;
+    timeNote = correction ? T.timeNoteCorrected(f, longitude) : T.timeNoteClock(zone.standardOffset, f.h, f.mi);
   } else {
-    warnings.push("태어난 시각을 몰라 시주 없이 6글자로 분석했습니다.");
+    warnings.push(T.noHour);
     // 절입일이면 시각에 따라 월주가 달라질 수 있다.
     const lunar = Solar.fromYmd(date.y, date.m, date.d).getLunar();
     const jie = lunar.getPrevJie(true).getSolar();
     const jieNext = lunar.getNextJie(true).getSolar();
     for (const s of [jie, jieNext]) {
       if (s.getYear() === date.y && s.getMonth() === date.m && Math.abs(s.getDay() - date.d) <= 1) {
-        warnings.push("절기가 바뀌는 날 전후라 태어난 시각에 따라 월주(또는 년주)가 달라질 수 있습니다.");
+        warnings.push(T.jieBoundary);
         break;
       }
     }
@@ -327,25 +338,24 @@ export function calculateSaju(input: BirthInput, now: Date = new Date(), interna
 
   const lunar = Solar.fromYmd(date.y, date.m, date.d).getLunar();
   const lunarMonth = lunar.getMonth();
-  const lunarDate = `${lunar.getYear()}년 ${lunarMonth < 0 ? "윤" : ""}${Math.abs(lunarMonth)}월 ${lunar.getDay()}일`;
-  if (input.calendar === "lunar") {
-    warnings.push("음력 변환은 중국 음력 기준 라이브러리를 사용합니다. 드물게 한국 음력과 하루 차이 날 수 있습니다.");
-  }
+  const lunarDate = T.lunarDate(lunar.getYear(), Math.abs(lunarMonth), lunar.getDay(), lunarMonth < 0);
+  if (input.calendar === "lunar") warnings.push(T.lunarLibrary(region));
 
-  const analysis = analyze({ pillars, weighted, tenGodCounts, strengthScore: score, daeun: periods, now, skipMonthly: internal.skipMonthly });
-  const grade = computeGrade({ pillars, counts, weighted, strengthScore: score, analysis, gyeokguk: analysis.gyeokguk.name });
+  const analysis = analyze({ pillars, weighted, tenGodCounts, strengthScore: score, daeun: periods, now, skipMonthly: internal.skipMonthly, locale });
+  const grade = computeGrade({ pillars, counts, weighted, strengthScore: score, analysis, gyeokguk: analysis.gyeokguk.name, locale });
 
   return {
     input,
+    locale,
     solarDate: `${date.y}-${pad(date.m)}-${pad(date.d)}`,
     lunarDate,
     timeNote,
     pillars,
     dayMaster: { stem: dayStem, ko: STEM_KO[dayStem], element: dayEl, polarity: STEM_POLARITY[dayStem] },
-    zodiac: BRANCH_ANIMAL[pillars.year.branch],
+    zodiac: T.zodiac(BRANCH_ANIMAL[pillars.year.branch]),
     elements: { counts, weighted },
     tenGodCounts,
-    strength: { score, label: strengthLabel(score) },
+    strength: { score, label: T.strength(strengthLabelKo(score)) },
     daeun: { forward: yun.isForward(), startAge: periods[0]?.startAge ?? 0, periods, current },
     yearLuck: { ...luckPillar(ys, yb, dayStem), year: thisYear },
     analysis,

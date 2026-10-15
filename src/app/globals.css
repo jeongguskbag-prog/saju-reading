@@ -684,3 +684,10 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 }
 .kakao-float:focus-visible, .kakao-btn:focus-visible, .mail-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media print { .kakao-float, .support-box { display: none !important; } }
+
+/* 대만·홍콩 앱(번체). 명조는 Noto Serif TC, 본문은 기기의 번체 글꼴. */
+.zh {
+  --display: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+.zh .daeun .gz, .zh .donut-center, .zh .table.months td:nth-child(2), .zh .year-scores b { font-family: "Noto Serif TC", serif; }

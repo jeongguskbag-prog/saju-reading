@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import type { SajuChart } from "@/lib/saju/calc";
-import { CHAPTERS, CHAPTER_KEYS, withYears, type Chapter, type ChapterKey, type Intro, type PartKey, type PartResult } from "@/lib/report-shared";
+import { chaptersFor, CHAPTER_KEYS, withYears, type Chapter, type ChapterKey, type Intro, type PartKey, type PartResult } from "@/lib/report-shared";
 import { AnalysisCard, DaeunCard, ElementCard, LuckyCard, PillarsCard, YearFlowCard } from "./ChartView";
 import GradeCard from "./GradeCard";
 import BrandSeal, { Glyph } from "./BrandSeal";
 import { BRAND } from "@/lib/product";
 import MethodBox from "./MethodBox";
+import { useLocale, useT } from "./LocaleProvider";
+import type { Messages } from "@/lib/messages";
 
 export type PartState = { status: "loading" } | { status: "done"; result: PartResult } | { status: "error"; message: string };
 export type PartStates = Partial<Record<PartKey, PartState>>;
@@ -23,8 +25,8 @@ interface Props {
   title?: string;
 }
 
-const clientName = (chart: SajuChart) => chart.input.name?.trim() || "의뢰인";
-const watermark = (chart: SajuChart) => `${BRAND.name} · ${clientName(chart)}님 전용 감정서 · 무단 복제 및 재배포 금지`;
+const clientName = (chart: SajuChart, t: Messages) => chart.input.name?.trim() || t.client;
+const watermark = (chart: SajuChart, t: Messages) => t.watermark(clientName(chart, t));
 /** CSS content 문자열로 안전하게 감싼다(따옴표·역슬래시·꺾쇠 이스케이프). */
 const cssString = (text: string) => `"${text.replace(/[\\"<>]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `)}"`;
 
@@ -38,29 +40,23 @@ function chapterOf(parts: PartStates, key: ChapterKey): Chapter | null {
   return s?.status === "done" && s.result.part === key ? s.result.chapter : null;
 }
 
-function birthLine(chart: SajuChart) {
-  const { input } = chart;
-  const date = input.calendar === "lunar" ? `음력 ${chart.lunarDate} (양력 ${chart.solarDate})` : `양력 ${chart.solarDate}`;
-  const time = input.hour === null ? "시각 미상" : `${input.hour}시 ${input.minute ?? 0}분`;
-  return `${input.gender === "male" ? "남성" : "여성"} · ${date} · ${time}`;
-}
-
-const KO_DATE = (d: Date) => {
+const ISSUE_DATE = (d: Date, t: Messages) => {
   const k = new Date(d.getTime() + 9 * 3_600_000); // 한국 시간
-  return `${k.getUTCFullYear()}년 ${String(k.getUTCMonth() + 1).padStart(2, "0")}월 ${String(k.getUTCDate()).padStart(2, "0")}일`;
+  return t.issueDate(k.getUTCFullYear(), String(k.getUTCMonth() + 1).padStart(2, "0"), String(k.getUTCDate()).padStart(2, "0"));
 };
 
 /** 생년월일 줄: "1989년 05월 14일 (양력) 巳時" */
-function coverBirth(chart: SajuChart) {
+function coverBirth(chart: SajuChart, t: Messages) {
   const { input } = chart;
   const [y, m, d] = chart.solarDate.split("-");
-  const date = input.calendar === "lunar" ? `음력 ${chart.lunarDate} (양력 ${y}.${m}.${d})` : `${y}년 ${m}월 ${d}일 (양력)`;
-  const hour = chart.pillars.hour ? `${chart.pillars.hour.branch}時` : "태어난 시각 미상";
+  const date = input.calendar === "lunar" ? t.coverLunar(chart.lunarDate, y, m, d) : t.coverSolar(y, m, d);
+  const hour = chart.pillars.hour ? `${chart.pillars.hour.branch}時` : t.coverHourUnknown;
   return `${date} ${hour}`;
 }
 
 /** PDF 표지(한 쪽 전체). 쪽빛 고서 표지에 이중 테두리, 天機錄 제목, 의뢰인 명식 카드, 낙관 직인. */
 function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null; title?: string }) {
+  const t = useT();
   const [y1, y2] = chart.analysis.reportYears;
   const order = [chart.pillars.hour, chart.pillars.day, chart.pillars.month, chart.pillars.year];
   return (
@@ -77,7 +73,7 @@ function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null;
       </div>
 
       <div className="cover-mid">
-        <p className="cover-sub">{title ?? "1:1 맞춤 정밀 사주 감정서"}</p>
+        <p className="cover-sub">{title ?? t.coverSub}</p>
         <svg className="cover-hanja" viewBox="0 0 3300 1000" role="img" aria-label={BRAND.hanja}>
           <g fill="currentColor">
             <Glyph ch="天" x={0} y={0} w={1000} h={1000} />
@@ -86,9 +82,9 @@ function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null;
           </g>
         </svg>
         <p className="cover-tagline">
-          하늘이 정해둔 당신의 그릇과 때(時)를 읽다
+          {t.coverTagline[0]}
           <br />
-          인생의 전환점을 밝히는 지혜로운 나침반
+          {t.coverTagline[1]}
         </p>
         <p className="cover-years">
           {y1} – {y2}
@@ -97,18 +93,18 @@ function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null;
 
       <div className="cover-card">
         <p className="cover-name">
-          {clientName(chart)} 님 <span>{chart.input.gender === "male" ? "乾命" : "坤命"}</span>
+          {t.coverName(clientName(chart, t))} <span>{chart.input.gender === "male" ? "乾命" : "坤命"}</span>
         </p>
-        <p className="cover-pillars" aria-label="사주 팔자(시·일·월·년)">
+        <p className="cover-pillars" aria-label={t.coverPillarsAria}>
           {order.map((p, i) => (
             <span key={i}>{p ? `${p.stem}${p.branch}` : "□□"}</span>
           ))}
         </p>
         {intro && <p className="cover-keywords">{intro.coverKeywords.slice(0, 3).join(" · ")}</p>}
         <p className="cover-meta">
-          생년월일 {coverBirth(chart)}
+          {t.coverBirth} {coverBirth(chart, t)}
           <br />
-          발행일자 {KO_DATE(new Date())} · {BRAND.name} 운명연구원 봉정
+          {t.coverIssued(ISSUE_DATE(new Date(), t))}
         </p>
       </div>
 
@@ -116,38 +112,41 @@ function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null;
         <p>
           天機錄 運命分析室
           <br />
-          의뢰인 본인 열람용 비밀 문서 · Strictly Confidential &amp; Personal
+          {t.coverConfidential} · Strictly Confidential &amp; Personal
         </p>
-        <BrandSeal size={84} title={`${BRAND.name} 직인`} />
+        <BrandSeal size={84} title={t.sealTitle} />
       </div>
     </section>
   );
 }
 
 function Toc({ chart, keys }: { chart: SajuChart; keys: readonly ChapterKey[] }) {
+  const t = useT();
+  const CHAPTERS = chaptersFor(useLocale());
   const years = chart.analysis.reportYears;
   return (
     <section className="toc print-only">
-      <h2>목차</h2>
+      <h2>{t.toc}</h2>
       <ol>
-        <li><span>발간사</span></li>
+        <li><span>{t.preface}</span></li>
         {keys.map((k) => (
           <li key={k}>
             <span>{CHAPTERS[k].label}. {withYears(CHAPTERS[k].title, years)}</span>
             <small>{CHAPTERS[k].sections.map((s) => withYears(s, years)).join(" · ")}</small>
           </li>
         ))}
-        <li><span>감정서 작성 방식 및 고지</span></li>
+        <li><span>{t.methodToc}</span></li>
       </ol>
     </section>
   );
 }
 
 function Pending({ state, onRetry, label }: { state: PartState | undefined; onRetry: () => void; label: string }) {
+  const t = useT();
   if (!state || state.status === "loading") {
     return (
       <div className="card loading no-print" aria-live="polite">
-        <span className="spinner" aria-hidden /> {label} 풀이를 작성하고 있습니다. 1~2분 정도 걸립니다.
+        <span className="spinner" aria-hidden /> {t.writing(label)}
       </div>
     );
   }
@@ -155,7 +154,7 @@ function Pending({ state, onRetry, label }: { state: PartState | undefined; onRe
     return (
       <div className="card no-print">
         <p className="error" role="alert">{label}: {state.message}</p>
-        <button type="button" className="btn-secondary" onClick={onRetry}>이 파트 다시 작성</button>
+        <button type="button" className="btn-secondary" onClick={onRetry}>{t.retryPart}</button>
       </div>
     );
   }
@@ -163,6 +162,7 @@ function Pending({ state, onRetry, label }: { state: PartState | undefined; onRe
 }
 
 function ChapterText({ chapter }: { chapter: Chapter }) {
+  const t = useT();
   return (
     <section className="card chapter">
       {chapter.sections.map((s, i) => (
@@ -175,7 +175,7 @@ function ChapterText({ chapter }: { chapter: Chapter }) {
       ))}
       {chapter.actionPlan.length > 0 && (
         <div className="action-plan">
-          <h4>실천 개운법</h4>
+          <h4>{t.actionPlan}</h4>
           <ul>
             {chapter.actionPlan.map((t, i) => (
               <li key={i}>{t}</li>
@@ -188,6 +188,8 @@ function ChapterText({ chapter }: { chapter: Chapter }) {
 }
 
 export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrade, include = CHAPTER_KEYS, title }: Props) {
+  const t = useT();
+  const CHAPTERS = chaptersFor(useLocale());
   const years = chart.analysis.reportYears;
   const intro = introOf(parts);
   const visuals: Partial<Record<ChapterKey, ReactNode>> = {
@@ -216,7 +218,7 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
 
       {aiEnabled && (
         <section className="card preface">
-          <h2>발간사</h2>
+          <h2>{t.preface}</h2>
           {intro ? (
             <>
               <p className="summary">{intro.summary}</p>
@@ -225,7 +227,7 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
               ))}
             </>
           ) : (
-            <Pending state={parts.intro} onRetry={() => onRetry("intro")} label="발간사" />
+            <Pending state={parts.intro} onRetry={() => onRetry("intro")} label={t.preface} />
           )}
         </section>
       )}
@@ -234,8 +236,8 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
 
       {!aiEnabled && !afterGrade && (
         <section className="card no-print">
-          <h2>항목별 풀이</h2>
-          <p className="muted">AI 풀이가 연결되지 않아 계산 결과만 보여 드립니다.</p>
+          <h2>{t.partsTitle}</h2>
+          <p className="muted">{t.noAi}</p>
         </section>
       )}
 
@@ -257,10 +259,10 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
       })}
 
       <MethodBox chart={chart} hasReading={aiEnabled && include.some((k) => chapterOf(parts, k))} />
-      <div className="print-footer print-only">{watermark(chart)}</div>
+      <div className="print-footer print-only">{watermark(chart, t)}</div>
       {/* PDF 각 쪽 하단의 워터마크와 쪽 번호(표지 제외). 이름이 들어가므로 여기서 만든다. */}
       <style>{`@media print {
-  @page { @bottom-center { content: ${cssString(watermark(chart))}; font-size: 8.5pt; color: #9a978d; }
+  @page { @bottom-center { content: ${cssString(watermark(chart, t))}; font-size: 8.5pt; color: #9a978d; }
           @bottom-right { content: counter(page); font-size: 8.5pt; color: #9a978d; } }
   @page :first { @bottom-center { content: none; } @bottom-right { content: none; } }
 }`}</style>

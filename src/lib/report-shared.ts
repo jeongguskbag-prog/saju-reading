@@ -47,6 +47,42 @@ export const CHAPTERS: Record<ChapterKey, ChapterMeta> = {
   },
 };
 
+/** 대만·홍콩 앱(번체)의 감정서 구조. 소제목 순서는 한국어판과 같다. */
+export const CHAPTERS_ZH: Record<ChapterKey, ChapterMeta> = {
+  part1: {
+    label: "Part 1",
+    title: "我的天命",
+    lead: "解讀與生俱來的性格、格局與五行平衡。",
+    sections: ["從日主看天生性格", "格局與用神：人生的核心軸", "五行平衡與補強策略"],
+  },
+  part2: {
+    label: "Part 2",
+    title: "財富與事業",
+    lead: "解讀財富進出與留存的方式，以及適合的工作型態。",
+    sections: ["現金流模式與財富格局", "上班族 vs 創業型適合度", "風險管理與招財開運法"],
+  },
+  part3: {
+    label: "Part 3",
+    title: "感情與姻緣",
+    lead: "解讀你愛人的方式與緣分的特質。",
+    sections: ["感情傾向與配偶宮（日支）解讀", "助我貴人的特徵", "改善關係的具體方法"],
+  },
+  part4: {
+    label: "Part 4",
+    title: "十年大運走勢",
+    lead: "以十年為單位，解讀人生的大方向與轉捩點。",
+    sections: ["大運走勢一覽", "目前大運的課題", "人生巔峰時機與轉捩點指南"],
+  },
+  part5: {
+    label: "Part 5",
+    title: "{Y1}-{Y2} 流年與開運法",
+    lead: "整理未來兩年的運勢走向與生活中的開運方法。",
+    sections: ["{Y1} 年整體運勢", "{Y2} 年整體運勢", "流月運用指南", "健康管理重點", "幸運色・數字・方位運用法"],
+  },
+};
+
+export const chaptersFor = (locale: "ko" | "zh-Hant" = "ko") => (locale === "zh-Hant" ? CHAPTERS_ZH : CHAPTERS);
+
 export const withYears = (text: string, years: [number, number]) =>
   text.replace(/\{Y1\}/g, String(years[0])).replace(/\{Y2\}/g, String(years[1]));
 

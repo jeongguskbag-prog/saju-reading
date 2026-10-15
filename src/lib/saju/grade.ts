@@ -5,6 +5,7 @@ import { ELEMENTS, HIDDEN_STEMS, STEM_ELEMENT, type Branch, type Element, type S
 import type { Analysis } from "./analysis";
 import type { Pillar } from "./calc";
 import stats from "./grade-stats.json";
+import { engineText, type Locale } from "./locale";
 
 /** 천을귀인: 일간 기준으로 지지에 이 글자가 있으면 귀인이 있다. */
 const CHEONEUL: Record<Stem, Branch[]> = {
@@ -36,6 +37,16 @@ export const GRADE_TIERS: GradeTier[] = [
   { level: 4, name: "때를 만나 크는 사주", desc: "원국의 빈자리를 대운이 채워 줄 때 크게 움직이는 구성입니다.", share: 35 },
   { level: 5, name: "스스로 길을 내는 사주", desc: "치우친 기운이 뚜렷해, 그 기운을 다루는 법을 알면 오히려 개성이 되는 구성입니다.", share: 15 },
 ];
+
+export const GRADE_TIERS_ZH: GradeTier[] = [
+  { level: 1, name: "天生握福之命", desc: "命局平衡、用神有力、大運相助，三者兼備的少見組合。", share: 3 },
+  { level: 2, name: "氣勢鮮明之命", desc: "優勢明確，大運也能推動這份優勢的組合。", share: 12 },
+  { level: 3, name: "均衡穩健之命", desc: "偏頗較少，擅長穩紮穩打、持續累積的組合。", share: 35 },
+  { level: 4, name: "逢時而起之命", desc: "當大運補足命局的空缺時，便能大展身手的組合。", share: 35 },
+  { level: 5, name: "自闢蹊徑之命", desc: "氣勢偏向鮮明，懂得駕馭這股能量時，反而成為獨特個性的組合。", share: 15 },
+];
+
+export const gradeTiers = (locale: Locale = "ko") => (locale === "zh-Hant" ? GRADE_TIERS_ZH : GRADE_TIERS);
 
 export interface GradeParts {
   /** 오행 균형 0~30 */
@@ -133,18 +144,17 @@ function percentAtOrAbove(st: GradeStats, score: number): number {
   return (above / st.total) * 100;
 }
 
-export function tierFor(topPercent: number): GradeTier {
+export function tierFor(topPercent: number, locale: Locale = "ko"): GradeTier {
+  const tiers = gradeTiers(locale);
   let cum = 0;
-  for (const t of GRADE_TIERS) {
+  for (const t of tiers) {
     cum += t.share;
     if (topPercent <= cum) return t;
   }
-  return GRADE_TIERS[GRADE_TIERS.length - 1];
+  return tiers[tiers.length - 1];
 }
 
-const ELEMENT_NAME: Record<Element, string> = { wood: "목", fire: "화", earth: "토", metal: "금", water: "수" };
-
-export function computeGrade(params: Parameters<typeof gradeParts>[0] & { gyeokguk: string }, st: GradeStats = stats as GradeStats): Grade {
+export function computeGrade(params: Parameters<typeof gradeParts>[0] & { gyeokguk: string; locale?: Locale }, st: GradeStats = stats as GradeStats): Grade {
   const { parts, nobles } = gradeParts(params);
   const score = round1(parts.balance + parts.harmony + parts.yongsin + parts.daeun + parts.noble);
   const topPercent = Math.max(0.1, round1(percentAtOrAbove(st, score)));
@@ -157,11 +167,11 @@ export function computeGrade(params: Parameters<typeof gradeParts>[0] & { gyeokg
   return {
     score,
     parts,
-    tier: tierFor(topPercent),
+    tier: tierFor(topPercent, params.locale),
     topPercent,
     rarity: {
       key,
-      label: `${day.stem}${day.branch}일주 · ${params.gyeokguk} · 용신 ${ELEMENT_NAME[params.analysis.usefulness.yongsin]}`,
+      label: engineText(params.locale).rarityLabel(`${day.stem}${day.branch}`, params.gyeokguk, params.analysis.usefulness.yongsin),
       perThousand: round1(share * 1000),
       oneIn: share > 0 ? Math.round(1 / share) : st.total,
     },

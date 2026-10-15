@@ -17,9 +17,9 @@ declare global {
 }
 
 /** 파일 이름으로 쓸 수 없는 문자를 걷어 낸다. */
-export function resultFileName(name: string | undefined, solarDate: string): string {
-  const who = (name ?? "").replace(/[\\/:*?"<>|\s]+/g, "").slice(0, 20) || "결과";
-  return `천기록_${who}_${solarDate}`;
+export function resultFileName(name: string | undefined, solarDate: string, t: { brand: string; fileResult: string } = { brand: "천기록", fileResult: "결과" }): string {
+  const who = (name ?? "").replace(/[\\/:*?"<>|\s]+/g, "").slice(0, 20) || t.fileResult;
+  return `${t.brand}_${who}_${solarDate}`;
 }
 
 export function exportPdf(fileName: string) {
@@ -57,13 +57,13 @@ function collectCss(): string {
  * 결과 영역을 하나의 HTML 파일로 만든다. 스타일을 파일 안에 넣어 인터넷 연결 없이도 같은 모양으로 열린다.
  * 버튼 등 화면 전용 요소는 빼고, PDF에만 나오던 출력 정보와 작성 방식 박스는 포함한다.
  */
-export function buildResultHtml(result: HTMLElement, title: string): string {
+export function buildResultHtml(result: HTMLElement, title: string, lang = "ko"): string {
   const clone = result.cloneNode(true) as HTMLElement;
   clone.removeAttribute("id");
   clone.querySelectorAll(".no-print, .tip").forEach((el) => el.remove());
   const css = collectCss();
   return `<!doctype html>
-<html lang="ko">
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -75,7 +75,7 @@ ${css}
 </style>
 </head>
 <body>
-<main class="container">
+<main class="container${lang === "zh-Hant" ? " zh" : ""}">
 ${clone.outerHTML}
 </main>
 </body>

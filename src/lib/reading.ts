@@ -2,9 +2,10 @@ import { timingSafeEqual } from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { TEN_GOD_MODERN } from "./saju/analysis";
 import { ELEMENT_KO } from "./saju/constants";
+import { ELEMENT_ZH, TEN_GOD_MODERN_ZH, TEN_GOD_ZH, type Locale } from "./saju/locale";
 import type { LuckPillar, Pillar, SajuChart } from "./saju/calc";
 import {
-  CHAPTERS,
+  chaptersFor,
   chapterSchema,
   introSchema,
   withYears,
@@ -25,6 +26,18 @@ const SYSTEM_PROMPT = `당신은 정통 명리학에 밝고, 그 개념을 현�
 - 건강은 오행 균형에 따른 생활 습관 제안까지만 쓰고, 특정 질병을 예언하거나 진단하지 않습니다. 투자 종목·시점 같은 구체적 금융 조언은 하지 않습니다.
 - 의뢰인의 구체적인 경험이나 사건을 지어내지 않습니다.
 - 각 파트의 다른 파트와 내용이 겹치지 않도록, 지시된 소제목의 범위 안에서만 씁니다.`;
+
+const SYSTEM_PROMPT_ZH = `你是一位精通正統子平八字命理，並能以現代心理學、商業與生活語言深入淺出解說的資深命理師。你正在為付費命書（A4 冊子）撰寫其中一個章節。讀者是台灣與香港的委託人。
+
+原則：
+- 全文使用繁體中文（台灣用語），不得出現簡體字、韓文或日文。
+- 只以輸入的【命盤 JSON】為依據。不得杜撰 JSON 中沒有的干支、十神、大運、格局或用神；提及的數值必須與 JSON 一致。格局與參考用神直接沿用 JSON 的內容。
+- 不要堆砌古典術語，改以現代語言說明。十神優先使用【十神現代語】表中的說法，必要時以括號附上原術語。例如：「專案型的創收能力（偏財）」。
+- 語氣優雅、可信、溫和，使用「您」。避免斷言，以「傾向於……」等方式描述趨勢。
+- 不使用引發恐懼的說法（因凶煞而破敗、短命、重大事故、斷言離婚等）。提到弱點時，必須同時提出具體可行的開運行動方案（Action Plan）。
+- 健康僅依五行平衡提出生活習慣建議，不預言或診斷特定疾病。不提供具體投資標的或進出場時機等金融建議。
+- 不杜撰委託人的具體經歷或事件。
+- 為避免與其他章節重複，只在指定的小標題範圍內撰寫。`;
 
 function pillarSummary(p: Pillar | null) {
   if (!p) return null;
@@ -74,8 +87,51 @@ export function chartForPrompt(chart: SajuChart) {
   };
 }
 
+/** 번체 감정서용 명식 데이터. 키와 값을 모두 번체로 바꿔 한국어가 풀이에 섞이지 않게 한다. */
+export function chartForPromptZh(chart: SajuChart) {
+  const { pillars, analysis: a } = chart;
+  const u = a.usefulness;
+  const g = (x: keyof typeof TEN_GOD_ZH) => TEN_GOD_ZH[x];
+  const pillar = (p: Pillar | null) =>
+    p && {
+      干支: `${p.stem}${p.branch}`,
+      天干: { 字: p.stem, 五行: ELEMENT_ZH[p.stemElement], 十神: p.stemTenGod ? g(p.stemTenGod) : "日主（本人）" },
+      地支: { 字: p.branch, 五行: ELEMENT_ZH[p.branchElement], 十神: g(p.branchTenGod) },
+      藏干: p.hiddenStems.map((h) => `${h.stem}(${g(h.tenGod)})`).join("、"),
+    };
+  const luckZh = (l: LuckPillar) => `${l.stem}${l.branch} 天干${g(l.stemTenGod)}／地支${g(l.branchTenGod)}`;
+  const mark = { 좋음: "佳", 보통: "平", 주의: "留意" } as const;
+  return {
+    性別: chart.input.gender === "male" ? "男性（乾命）" : "女性（坤命）",
+    出生年: Number(chart.solarDate.slice(0, 4)),
+    出生時間: pillars.hour ? "已知" : "不詳（未排時柱）",
+    命局: { 年柱: pillar(pillars.year), 月柱: pillar(pillars.month), 日柱: pillar(pillars.day), 時柱: pillar(pillars.hour) },
+    日主: `${chart.dayMaster.stem} ${chart.dayMaster.polarity === "yang" ? "陽" : "陰"}${ELEMENT_ZH[chart.dayMaster.element]}`,
+    五行字數: Object.fromEntries(Object.entries(chart.elements.counts).map(([k, v]) => [ELEMENT_ZH[k as keyof typeof ELEMENT_ZH], v])),
+    十神分布: Object.fromEntries(Object.entries(chart.tenGodCounts).map(([k, v]) => [g(k as keyof typeof TEN_GOD_ZH), v])),
+    身強身弱: `${chart.strength.label}（${chart.strength.score}/100，參考值）`,
+    格局: `${a.gyeokguk.label}（${a.gyeokguk.basis}）`,
+    參考用神: `${ELEMENT_ZH[u.yongsin]}／喜神 ${ELEMENT_ZH[u.huisin]}／忌神 ${ELEMENT_ZH[u.gisin]}（${u.method}）`,
+    大運: {
+      方向: chart.daeun.forward ? "順行" : "逆行",
+      列表: chart.daeun.periods.map(
+        (p, i) => `${p.startAge}歲起（${p.startYear}～${p.endYear}）${luckZh(p)}・用神契合度 ${a.daeunScores[i]?.score ?? "-"}/100`,
+      ),
+      目前大運: chart.daeun.current ? luckZh(chart.daeun.current) : "尚未起運",
+    },
+    流年: a.yearScores.map((y) => `${y.year}年 ${y.ganzhi}・用神契合度 ${y.score}/100`),
+    流月: a.monthly.map((m) => `${m.year}年 交節 ${m.startDate.slice(5)}起 ${m.stem}${m.branch}（${g(m.stemTenGod)}／${g(m.branchTenGod)}）${mark[m.mark]}`),
+    命格等級: `第${chart.grade.tier.level}級 ${chart.grade.tier.name}（前 ${chart.grade.topPercent}%，${chart.grade.score}/100）・大運巔峰 ${chart.grade.peak ? `${chart.grade.peak.startAge}～${chart.grade.peak.endAge}歲` : "-"}・貴人 ${chart.grade.nobles.filter((n) => n.has).map((n) => (n.name === "천을귀인" ? "天乙貴人" : "文昌貴人")).join("、") || "無"}`,
+    開運要素: { 五行: ELEMENT_ZH[a.lucky.element], 顏色: a.lucky.colors, 數字: a.lucky.numbers, 方位: a.lucky.direction, 習慣: a.lucky.habits },
+  };
+}
+
 const TEN_GOD_TABLE = Object.entries(TEN_GOD_MODERN)
   .map(([g, m]) => `- ${g}: ${m}`)
+  .join("\n");
+
+const TEN_GOD_TABLE_ZH = (Object.keys(TEN_GOD_MODERN_ZH) as (keyof typeof TEN_GOD_ZH)[])
+  .map((g) => `- ${TEN_GOD_ZH[g]}：${TEN_GOD_MODERN_ZH[g]}`)
   .join("\n");
 
 const chapterJsonSchema = {
@@ -110,6 +166,21 @@ const introJsonSchema = {
   additionalProperties: false,
 };
 
+function partInstructionZh(part: PartKey, years: [number, number]): string {
+  if (part === "intro") {
+    return `撰寫命書的開頭。
+- coverKeywords：封面上代表此人的 3 個核心關鍵字（例：「溫暖的領導者」「深刻的直覺」），每個 2～6 字。
+- summary：一兩句話總結整個命盤。
+- preface：寫給委託人的序言 3～4 段（共約 500～800 字）。說明如何閱讀與運用這份命書，並描繪命盤的整體印象，但不要提前寫出各章節的細節。`;
+  }
+  const meta = chaptersFor("zh-Hant")[part];
+  const headings = meta.sections.map((s, i) => `${i + 1}. ${withYears(s, years)}`).join("\n");
+  return `撰寫${meta.label}「${withYears(meta.title, years)}」章節。（${meta.lead}）
+sections 必須依照下列小標題的順序與文字原樣作為 heading，每個小標題寫 3～5 段（每段約 150～280 字）。整個章節約 3,000～4,500 字。
+${headings}
+actionPlan：符合本章內容的開運行動建議 3～5 條。`;
+}
+
 function partInstruction(part: PartKey, years: [number, number]): string {
   if (part === "intro") {
     return `감정서 첫머리를 작성합니다.
@@ -117,7 +188,7 @@ function partInstruction(part: PartKey, years: [number, number]): string {
 - summary: 명식 전체 요약 한두 문장.
 - preface: 의뢰인에게 건네는 발간사 3~4개 문단(총 600~900자). 이 감정서를 어떻게 읽고 활용하면 좋은지, 명식의 큰 인상을 담되 본문 파트의 세부 내용은 미리 쓰지 않습니다.`;
   }
-  const meta = CHAPTERS[part];
+  const meta = chaptersFor("ko")[part];
   const headings = meta.sections.map((s, i) => `${i + 1}. ${withYears(s, years)}`).join("\n");
   return `${meta.label}. ${withYears(meta.title, years)} 파트를 작성합니다. (${meta.lead})
 sections는 아래 소제목을 이 순서, 이 문구 그대로 heading으로 쓰고, 소제목마다 3~5개 문단(문단당 200~350자)으로 씁니다. 파트 전체 분량은 한국어 약 3,500~5,000자입니다.
@@ -155,11 +226,48 @@ export function isAppRequest(key: string | null): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+const ERRORS = {
+  ko: {
+    noKey: "ANTHROPIC_API_KEY가 설정되지 않았습니다.",
+    auth: "API 키가 올바르지 않습니다.",
+    rate: "요청이 많습니다. 잠시 후 다시 시도해 주세요.",
+    api: (s: string) => `AI 호출 오류(${s}).`,
+    network: "네트워크",
+    refusal: "AI가 이 파트의 풀이를 생성하지 못했습니다.",
+    maxTokens: "풀이가 너무 길어 중간에 끊겼습니다. 다시 시도해 주세요.",
+    parse: "AI 응답을 해석하지 못했습니다.",
+    shape: "AI 응답 형식이 올바르지 않습니다.",
+  },
+  "zh-Hant": {
+    noKey: "尚未設定 ANTHROPIC_API_KEY。",
+    auth: "API 金鑰不正確。",
+    rate: "目前請求過多，請稍後再試。",
+    api: (s: string) => `AI 呼叫錯誤（${s}）。`,
+    network: "網路",
+    refusal: "AI 無法產生此章節的解讀。",
+    maxTokens: "解讀內容過長而中斷，請再試一次。",
+    parse: "無法解析 AI 的回應。",
+    shape: "AI 回應的格式不正確。",
+  },
+} satisfies Record<Locale, unknown>;
+
 export async function generatePart(chart: SajuChart, part: PartKey): Promise<PartResult> {
-  if (!isAiEnabled()) throw new ReadingError("ANTHROPIC_API_KEY가 설정되지 않았습니다.", 503);
+  // 예전에 저장된 명식에는 locale이 없다(한국어).
+  const locale: Locale = chart.locale ?? "ko";
+  const E = ERRORS[locale];
+  if (!isAiEnabled()) throw new ReadingError(E.noKey, 503);
 
   const years = chart.analysis.reportYears;
-  const userContent = `${partInstruction(part, years)}
+  const userContent =
+    locale === "zh-Hant"
+      ? `${partInstructionZh(part, years)}
+
+【十神現代語】
+${TEN_GOD_TABLE_ZH}
+
+【命盤 JSON】
+${JSON.stringify(chartForPromptZh(chart), null, 2)}`
+      : `${partInstruction(part, years)}
 
 [십신 현대어]
 ${TEN_GOD_TABLE}
@@ -180,18 +288,18 @@ ${JSON.stringify(chartForPrompt(chart), null, 2)}`;
         effort: "medium",
         format: { type: "json_schema", schema: part === "intro" ? introJsonSchema : chapterJsonSchema },
       },
-      system: SYSTEM_PROMPT,
+      system: locale === "zh-Hant" ? SYSTEM_PROMPT_ZH : SYSTEM_PROMPT,
       messages: [{ role: "user", content: userContent }],
     });
   } catch (error) {
-    if (error instanceof Anthropic.AuthenticationError) throw new ReadingError("API 키가 올바르지 않습니다.", 502);
-    if (error instanceof Anthropic.RateLimitError) throw new ReadingError("요청이 많습니다. 잠시 후 다시 시도해 주세요.", 429);
-    if (error instanceof Anthropic.APIError) throw new ReadingError(`AI 호출 오류(${error.status ?? "네트워크"}).`, 502);
+    if (error instanceof Anthropic.AuthenticationError) throw new ReadingError(E.auth, 502);
+    if (error instanceof Anthropic.RateLimitError) throw new ReadingError(E.rate, 429);
+    if (error instanceof Anthropic.APIError) throw new ReadingError(E.api(String(error.status ?? E.network)), 502);
     throw error;
   }
 
-  if (message.stop_reason === "refusal") throw new ReadingError("AI가 이 파트의 풀이를 생성하지 못했습니다.", 502);
-  if (message.stop_reason === "max_tokens") throw new ReadingError("풀이가 너무 길어 중간에 끊겼습니다. 다시 시도해 주세요.", 502);
+  if (message.stop_reason === "refusal") throw new ReadingError(E.refusal, 502);
+  if (message.stop_reason === "max_tokens") throw new ReadingError(E.maxTokens, 502);
 
   const text = message.content
     .filter((b): b is Extract<typeof b, { type: "text" }> => b.type === "text")
@@ -201,15 +309,15 @@ ${JSON.stringify(chartForPrompt(chart), null, 2)}`;
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new ReadingError("AI 응답을 해석하지 못했습니다.", 502);
+    throw new ReadingError(E.parse, 502);
   }
 
   if (part === "intro") {
     const r = introSchema.safeParse(parsed);
-    if (!r.success) throw new ReadingError("AI 응답 형식이 올바르지 않습니다.", 502);
+    if (!r.success) throw new ReadingError(E.shape, 502);
     return { part, intro: r.data };
   }
   const r = chapterSchema.safeParse(parsed);
-  if (!r.success) throw new ReadingError("AI 응답 형식이 올바르지 않습니다.", 502);
+  if (!r.success) throw new ReadingError(E.shape, 502);
   return { part: part as ChapterKey, chapter: r.data };
 }

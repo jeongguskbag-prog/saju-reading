@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { BirthInput } from "./saju/calc";
+import { engineText } from "./saju/locale";
 
 export const birthInputSchema = z.object({
   name: z.string().max(40).optional(),
@@ -11,6 +12,8 @@ export const birthInputSchema = z.object({
   isLeapMonth: z.boolean().optional(),
   hour: z.number().int().min(0).max(23).nullable(),
   minute: z.number().int().min(0).max(59).nullable().optional(),
+  region: z.enum(["KR", "TW", "HK"]).optional(),
+  locale: z.enum(["ko", "zh-Hant"]).optional(),
   options: z
     .object({
       solarTimeCorrection: z.boolean().optional(),
@@ -22,6 +25,9 @@ export const birthInputSchema = z.object({
 
 export function parseBirthInput(body: unknown): { ok: true; value: BirthInput } | { ok: false; error: string } {
   const r = birthInputSchema.safeParse(body);
-  if (!r.success) return { ok: false, error: "입력값을 확인해 주세요." };
+  if (!r.success) {
+    const locale = (body as { locale?: unknown } | null)?.locale === "zh-Hant" ? "zh-Hant" : "ko";
+    return { ok: false, error: engineText(locale).inputError };
+  }
   return { ok: true, value: r.data };
 }

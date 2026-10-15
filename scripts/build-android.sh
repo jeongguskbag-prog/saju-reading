@@ -7,6 +7,8 @@
 # 앱은 천기록 웹사이트의 앱 전용 화면(/app, 결제 없음)을 띄우는 WebView 앱이다.
 #
 # 환경변수:
+#   SAJU_LOCALE     ko(기본, 한국어 앱 → /app) 또는 zh-Hant(대만·홍콩 번체 앱 天機錄 → /app/zh).
+#                   번체 앱은 패키지 이름이 kr.saju.reading.zh라 한국어 앱과 함께 설치된다.
 #   SAJU_SITE_URL   앱이 띄울 사이트 주소 (기본: https://saju-reading-azure.vercel.app)
 #   SAJU_APP_KEY    무료 풀이용 앱 접근 키(16자 이상). Vercel 환경변수 APP_ACCESS_KEY와 같아야 한다.
 #                   비우면 앱에서도 명식·등급 계산까지만 보인다.
@@ -21,6 +23,12 @@ OUT="$SRC/build"
 ANDROID_JAR="${ANDROID_JAR:-/usr/lib/android-sdk/platforms/android-23/android.jar}"
 SAJU_SITE_URL="${SAJU_SITE_URL:-https://saju-reading-azure.vercel.app}"
 SAJU_APP_KEY="${SAJU_APP_KEY:-}"
+SAJU_LOCALE="${SAJU_LOCALE:-ko}"
+case "$SAJU_LOCALE" in
+  ko) APP_PATH="/app"; ZH=false; APP_NAME="천기록"; PACKAGE="kr.saju.reading"; APK_NAME="saju-reading.apk" ;;
+  zh-Hant) APP_PATH="/app/zh"; ZH=true; APP_NAME="天機錄"; PACKAGE="kr.saju.reading.zh"; APK_NAME="saju-reading-zh-hant.apk" ;;
+  *) echo "SAJU_LOCALE은 ko 또는 zh-Hant여야 합니다." >&2; exit 1 ;;
+esac
 VERSION_CODE="${VERSION_CODE:-1}"
 VERSION_NAME="${VERSION_NAME:-0.1.0}"
 KEYSTORE="${KEYSTORE:-$SRC/debug.keystore}"
@@ -52,15 +60,21 @@ package kr.saju.reading;
 final class SiteConfig {
     static final String SITE_URL = "${SAJU_SITE_URL%/}";
     static final String APP_KEY = "${SAJU_APP_KEY}";
+    static final String APP_PATH = "${APP_PATH}";
+    static final boolean ZH = ${ZH};
 
     private SiteConfig() {}
 }
 JAVA
 
-echo "2/6 리소스 컴파일·링크"
-aapt2 compile --dir "$SRC/res" -o "$OUT/res.zip"
+echo "2/6 리소스 컴파일·링크 ($SAJU_LOCALE, $APP_NAME, $PACKAGE)"
+# 앱 이름만 언어에 맞게 바꾼 리소스 사본을 쓴다.
+cp -r "$SRC/res" "$OUT/res"
+sed -i "s#<string name=\"app_name\">[^<]*</string>#<string name=\"app_name\">${APP_NAME}</string>#" "$OUT/res/values/strings.xml"
+aapt2 compile --dir "$OUT/res" -o "$OUT/res.zip"
 aapt2 link -o "$OUT/unaligned.apk" -I "$ANDROID_JAR" \
   --manifest "$SRC/AndroidManifest.xml" \
+  --rename-manifest-package "$PACKAGE" \
   --min-sdk-version 23 --target-sdk-version 34 \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME" \
   --java "$OUT/gen" "$OUT/res.zip"
@@ -87,7 +101,7 @@ if [ ! -f "$KEYSTORE" ]; then
     -dname "CN=Saju Debug, O=Saju, C=KR" >/dev/null 2>&1
 fi
 apksigner sign --ks "$KEYSTORE" --ks-pass "pass:$KEYSTORE_PASS" --ks-key-alias "$KEY_ALIAS" \
-  --min-sdk-version 23 --out "$OUT/saju-reading.apk" "$OUT/aligned.apk"
-apksigner verify "$OUT/saju-reading.apk"
+  --min-sdk-version 23 --out "$OUT/$APK_NAME" "$OUT/aligned.apk"
+apksigner verify "$OUT/$APK_NAME"
 
-echo "완료: $OUT/saju-reading.apk ($(du -h "$OUT/saju-reading.apk" | cut -f1))"
+echo "완료: $OUT/$APK_NAME ($(du -h "$OUT/$APK_NAME" | cut -f1))"
