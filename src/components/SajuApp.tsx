@@ -11,10 +11,14 @@ import PurchaseBox, { type CheckoutInfo } from "./PurchaseBox";
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
 
-export async function postJson<T>(url: string, body: unknown): Promise<T> {
+async function postJson<T>(url: string, body: unknown): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  // Android 앱에서는 앱 접근 키를 함께 보내 결제 없이 풀이를 받는다(/app 화면).
+  const appKey = typeof window !== "undefined" ? window.AndroidBridge?.appKey?.() : undefined;
+  if (appKey) headers["x-app-key"] = appKey;
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
@@ -24,10 +28,6 @@ export async function postJson<T>(url: string, body: unknown): Promise<T> {
 
 interface Props {
   aiEnabled: boolean;
-  /** 명식 계산. 기본은 서버 API, 앱(APK)에서는 기기 안에서 계산한다. */
-  computeChart?: (input: BirthInput) => Promise<SajuChart>;
-  /** 감정서 파트 하나의 AI 풀이 요청. 기본은 같은 서버의 /api/reading. */
-  requestPart?: (input: BirthInput, part: PartKey) => Promise<PartResult>;
   /** 웹 판매용: 무료 결과 아래에 구매 상자를 띄운다. aiEnabled(무료 풀이)와 함께 쓰지 않는다. */
   checkout?: CheckoutInfo;
 }
@@ -35,7 +35,7 @@ interface Props {
 const serverChart = (input: BirthInput) => postJson<{ chart: SajuChart }>("/api/chart", input).then((r) => r.chart);
 const serverPart = (input: BirthInput, part: PartKey) => postJson<PartResult>("/api/reading", { input, part });
 
-export default function SajuApp({ aiEnabled, computeChart = serverChart, requestPart = serverPart, checkout }: Props) {
+export default function SajuApp({ aiEnabled, checkout }: Props) {
   const [name, setName] = useState("");
   const [gender, setGender] = useState<BirthInput["gender"]>("female");
   const [calendar, setCalendar] = useState<BirthInput["calendar"]>("solar");
@@ -59,7 +59,7 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
 
   function loadPart(input: BirthInput, part: PartKey, runId: number) {
     setParts((prev) => ({ ...prev, [part]: { status: "loading" } }));
-    requestPart(input, part)
+    serverPart(input, part)
       .then((result) => run.current === runId && setParts((prev) => ({ ...prev, [part]: { status: "done", result } })))
       .catch((err: Error) => run.current === runId && setParts((prev) => ({ ...prev, [part]: { status: "error", message: err.message } })));
   }
@@ -91,7 +91,7 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
     };
     setSubmitting(true);
     try {
-      const computed = await computeChart(input);
+      const computed = await serverChart(input);
       lastInput.current = input;
       setChart(computed);
       requestAnimationFrame(() => document.getElementById("result")?.scrollIntoView({ behavior: "smooth" }));

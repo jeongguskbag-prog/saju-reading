@@ -4,8 +4,12 @@
 # 필요 도구: aapt2, dalvik-exchange(dx) 또는 d8, zipalign, apksigner, javac, keytool
 #   Ubuntu: sudo apt-get install aapt dalvik-exchange zipalign apksigner android-sdk-platform-23
 #
+# 앱은 천기록 웹사이트의 앱 전용 화면(/app, 결제 없음)을 띄우는 WebView 앱이다.
+#
 # 환경변수:
-#   SAJU_API_BASE   AI 풀이를 요청할 웹 서버 주소 (예: https://saju.vercel.app). 비우면 계산 결과만 표시.
+#   SAJU_SITE_URL   앱이 띄울 사이트 주소 (기본: https://saju-reading-azure.vercel.app)
+#   SAJU_APP_KEY    무료 풀이용 앱 접근 키(16자 이상). Vercel 환경변수 APP_ACCESS_KEY와 같아야 한다.
+#                   비우면 앱에서도 명식·등급 계산까지만 보인다.
 #   ANDROID_JAR     android.jar 경로 (기본: /usr/lib/android-sdk/platforms/android-23/android.jar)
 #   KEYSTORE / KEYSTORE_PASS / KEY_ALIAS   서명 키. 없으면 android/debug.keystore(디버그용)를 만든다.
 #   VERSION_CODE / VERSION_NAME
@@ -15,7 +19,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/android"
 OUT="$SRC/build"
 ANDROID_JAR="${ANDROID_JAR:-/usr/lib/android-sdk/platforms/android-23/android.jar}"
-SAJU_API_BASE="${SAJU_API_BASE:-}"
+SAJU_SITE_URL="${SAJU_SITE_URL:-https://saju-reading-azure.vercel.app}"
+SAJU_APP_KEY="${SAJU_APP_KEY:-}"
 VERSION_CODE="${VERSION_CODE:-1}"
 VERSION_NAME="${VERSION_NAME:-0.1.0}"
 KEYSTORE="${KEYSTORE:-$SRC/debug.keystore}"
@@ -28,31 +33,29 @@ done
 [ -f "$ANDROID_JAR" ] || { echo "android.jar를 찾을 수 없습니다: $ANDROID_JAR" >&2; exit 1; }
 
 rm -rf "$OUT"
-mkdir -p "$OUT/assets/www" "$OUT/gen" "$OUT/classes"
+mkdir -p "$OUT/gen/kr/saju/reading" "$OUT/classes"
 
-echo "1/6 웹 화면 번들"
-cd "$ROOT"
-npx esbuild mobile/main.tsx --bundle --minify --format=iife --target=chrome80 \
-  --jsx=automatic --define:process.env.NODE_ENV='"production"' \
-  --define:SAJU_API_BASE="\"$SAJU_API_BASE\"" \
-  --outfile="$OUT/assets/www/app.js" --log-level=warning
-cp src/app/globals.css "$OUT/assets/www/app.css"
-cat > "$OUT/assets/www/index.html" <<'HTML'
-<!doctype html>
-<html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>천기록</title>
-<link href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css">
-</head>
-<body>
-<div id="root"></div>
-<script src="app.js"></script>
-</body>
-</html>
-HTML
+echo "1/6 사이트 주소 설정: $SAJU_SITE_URL"
+case "$SAJU_SITE_URL" in
+  https://*) ;;
+  *) echo "SAJU_SITE_URL은 https://로 시작해야 합니다." >&2; exit 1 ;;
+esac
+if [ -z "$SAJU_APP_KEY" ]; then
+  echo "  (SAJU_APP_KEY가 없어 AI 풀이 없이 계산 결과만 보이는 앱으로 만듭니다)"
+elif ! [[ "$SAJU_APP_KEY" =~ ^[A-Za-z0-9_-]{16,}$ ]]; then
+  echo "SAJU_APP_KEY는 영문·숫자·_·- 16자 이상이어야 합니다." >&2; exit 1
+fi
+cat > "$OUT/gen/kr/saju/reading/SiteConfig.java" <<JAVA
+package kr.saju.reading;
+
+/** 빌드 스크립트가 만든다. 앱이 띄울 사이트 주소. */
+final class SiteConfig {
+    static final String SITE_URL = "${SAJU_SITE_URL%/}";
+    static final String APP_KEY = "${SAJU_APP_KEY}";
+
+    private SiteConfig() {}
+}
+JAVA
 
 echo "2/6 리소스 컴파일·링크"
 aapt2 compile --dir "$SRC/res" -o "$OUT/res.zip"
@@ -60,7 +63,7 @@ aapt2 link -o "$OUT/unaligned.apk" -I "$ANDROID_JAR" \
   --manifest "$SRC/AndroidManifest.xml" \
   --min-sdk-version 23 --target-sdk-version 34 \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME" \
-  -A "$OUT/assets" --java "$OUT/gen" "$OUT/res.zip"
+  --java "$OUT/gen" "$OUT/res.zip"
 
 echo "3/6 Java 컴파일"
 javac -nowarn -Xlint:-options --release 8 -encoding UTF-8 -cp "$ANDROID_JAR" -d "$OUT/classes" \

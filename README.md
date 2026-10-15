@@ -113,24 +113,26 @@ API 키는 서버에서만 읽으며 브라우저로 전달되지 않습니다. 
 
 ## Android 앱(APK)
 
-같은 화면을 WebView로 감싼 Android 앱을 Gradle 없이 SDK 명령줄 도구만으로 빌드합니다.
-명식 계산은 기기 안에서 하므로 인터넷 없이 동작하고, AI 풀이는 배포한 웹 서버의 `/api/reading`을 호출합니다.
+천기록 웹사이트의 **앱 전용 화면(`/app`)** 을 띄우는 WebView 앱입니다. 랜딩·가격·결제 없이 바로 사주를 넣고 5개 파트 감정서를 받습니다.
+화면은 사이트에서 가져오므로, 사이트를 고쳐 배포하면 앱을 다시 설치하지 않아도 반영됩니다. Gradle 없이 SDK 명령줄 도구만으로 빌드합니다.
 
 ```bash
 # Ubuntu 기준 도구 설치
 sudo apt-get install aapt dalvik-exchange zipalign apksigner android-sdk-platform-23
 
-# AI 풀이 없이 (계산 결과만)
-npm run build:android
+# 앱 접근 키를 넣어 빌드 (Vercel의 APP_ACCESS_KEY와 같은 값)
+SAJU_APP_KEY=영문숫자16자이상 npm run build:android
 
-# 배포한 웹 서버로 AI 풀이 연결
-SAJU_API_BASE=https://내-배포-주소.vercel.app npm run build:android
+# 다른 주소(예: 자체 도메인)를 띄우려면 SAJU_SITE_URL=https://내-도메인 을 함께 지정
 ```
 
-결과물: `android/build/saju-reading.apk` (minSdk 23 / targetSdk 34, Android 6.0 이상).
+결과물: `android/build/saju-reading.apk` (minSdk 23 / targetSdk 34, Android 6.0 이상). 인터넷 연결이 필요합니다.
 
-- `SAJU_API_BASE`의 서버에는 `ANTHROPIC_API_KEY`가 설정되어 있어야 합니다. API 키는 앱에 넣지 않습니다.
-- `/api/reading`은 앱 출처(`https://appassets.androidplatform.net`)에 대해서만 CORS를 허용합니다. 다만 인증·사용량 제한이 없으므로, 앱을 널리 배포하기 전에는 요청 제한을 추가해야 합니다.
+- **무료 풀이(앱 전용):** 웹은 감정서를 구매해야 풀이가 나오지만, 앱은 접근 키(`SAJU_APP_KEY`)를 `x-app-key` 헤더로 보내 결제 없이 풀이를 받습니다. 서버의 `APP_ACCESS_KEY`(16자 이상)와 같을 때만 허용되고, 키가 없거나 다르면 명식·등급 계산까지만 보입니다. 일반 브라우저로 `/app`을 열어도 키가 없어 풀이는 나오지 않습니다.
+  - 키는 APK 안에 들어 있어 완전한 비밀은 아닙니다. 앱을 널리 배포하기 전에는 요청 횟수 제한을 추가하고, 키가 새면 Vercel의 `APP_ACCESS_KEY`를 바꾼 뒤 새 키로 앱을 다시 빌드하세요.
+- **PDF·HTML 저장:** WebView에는 인쇄와 파일 다운로드가 없어서 앱이 `AndroidBridge`로 시스템 인쇄 창(PDF로 저장)과 파일 저장 창을 엽니다. 우리 사이트가 떠 있을 때만 동작합니다.
+- **외부 앱:** 카카오톡(kakao.com), 메일(`mailto:`), 전화(`tel:`)와 앱 링크(`intent://`)는 해당 앱으로 엽니다.
+- **오프라인:** 연결이 끊기면 "다시 시도" 화면을 보여 줍니다.
 - `android/debug.keystore`는 테스트용 디버그 서명 키입니다(비밀번호 `android`). 같은 키로 빌드해야 기존 설치본 위에 업데이트됩니다. 스토어 배포용은 `KEYSTORE`, `KEYSTORE_PASS`, `KEY_ALIAS` 환경변수로 별도 키를 지정하세요.
 - 런처 아이콘은 `python3 scripts/make-icon.py`로 다시 만들 수 있습니다.
 
@@ -146,8 +148,7 @@ src/
   app/api/chart           POST: 입력 → 명식 계산
   app/api/reading         POST: 입력 → 명식 계산 → AI 풀이
   components/             입력 폼, 명식표, 오행 차트, 대운, 풀이 화면
-mobile/main.tsx           Android 앱용 진입점 (기기 내 계산)
-android/                  매니페스트, MainActivity(WebView), 리소스
+android/                  매니페스트, MainActivity(사이트를 띄우는 WebView), 리소스
 scripts/build-android.sh  APK 빌드 스크립트
 tests/                    단위 테스트
 ```

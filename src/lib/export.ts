@@ -6,6 +6,8 @@ interface AndroidBridge {
   print(jobName: string): void;
   /** 0.6.0 이후 앱에만 있다. */
   saveHtml?(fileName: string, html: string): void;
+  /** 앱 전용 화면(/app)의 무료 풀이용 접근 키. 앱 1.0 이후에만 있다. */
+  appKey?(): string;
 }
 
 declare global {

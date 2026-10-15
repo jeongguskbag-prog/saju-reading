@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { TEN_GOD_MODERN } from "./saju/analysis";
 import { ELEMENT_KO } from "./saju/constants";
@@ -140,6 +141,18 @@ export function isAiEnabled(): boolean {
 /** 예전처럼 생년월일만으로 풀이를 주는 무료 모드. 결제 없이 운영할 때만 FREE_READING=1로 켠다. */
 export function isFreeReading(): boolean {
   return process.env.FREE_READING === "1";
+}
+
+/**
+ * Android 앱(결제 없는 앱 전용 화면)이 보낸 요청인지. 앱에 넣은 키가 Vercel의 APP_ACCESS_KEY와 같으면 무료 풀이를 허용한다.
+ * 키는 APK 안에 들어 있어 완전한 비밀은 아니므로, 웹 결제를 우회하는 일반적인 시도를 막는 용도다.
+ */
+export function isAppRequest(key: string | null): boolean {
+  const expected = process.env.APP_ACCESS_KEY ?? "";
+  if (expected.length < 16 || !key) return false;
+  const a = Buffer.from(key);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export async function generatePart(chart: SajuChart, part: PartKey): Promise<PartResult> {

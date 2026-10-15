@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { calculateSaju, InputError } from "@/lib/saju/calc";
 import { parseBirthInput } from "@/lib/input";
-import { generatePart, isAiEnabled, isFreeReading, ReadingError } from "@/lib/reading";
+import { generatePart, isAiEnabled, isAppRequest, isFreeReading, ReadingError } from "@/lib/reading";
 import { PART_KEYS, type PartKey } from "@/lib/report-shared";
 import { getReport } from "@/lib/orders";
 import { ensurePart } from "@/lib/fulfill";
@@ -11,30 +11,7 @@ import { StoreError } from "@/lib/store";
 // 파트 하나 생성에 1~2분 걸릴 수 있다.
 export const maxDuration = 300;
 
-// Android 앱의 WebView 출처. 앱에서 이 API를 호출할 수 있도록 CORS를 허용한다.
-const APP_ORIGIN = "https://appassets.androidplatform.net";
-
-function withCors(request: Request, response: NextResponse) {
-  if (request.headers.get("origin") === APP_ORIGIN) {
-    response.headers.set("Access-Control-Allow-Origin", APP_ORIGIN);
-    response.headers.set("Vary", "Origin");
-  }
-  return response;
-}
-
-export function OPTIONS(request: Request) {
-  const response = withCors(request, new NextResponse(null, { status: 204 }));
-  response.headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type");
-  response.headers.set("Access-Control-Max-Age", "86400");
-  return response;
-}
-
-export async function POST(request: Request) {
-  return withCors(request, await handle(request));
-}
-
-async function handle(request: Request): Promise<NextResponse> {
+export async function POST(request: Request): Promise<NextResponse> {
   if (!isAiEnabled()) {
     return NextResponse.json({ error: "AI 풀이가 설정되지 않았습니다." }, { status: 503 });
   }
@@ -43,7 +20,7 @@ async function handle(request: Request): Promise<NextResponse> {
   if (!PART_KEYS.includes(part)) return NextResponse.json({ error: "요청한 파트가 올바르지 않습니다." }, { status: 400 });
 
   if (typeof body?.token === "string") return paidPart(request, body.token, part);
-  if (!isFreeReading()) return NextResponse.json({ error: "풀이는 리포트를 구매한 뒤 볼 수 있습니다." }, { status: 402 });
+  if (!isFreeReading() && !isAppRequest(request.headers.get("x-app-key"))) return NextResponse.json({ error: "풀이는 리포트를 구매한 뒤 볼 수 있습니다." }, { status: 402 });
 
   const parsed = parseBirthInput(body?.input);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
