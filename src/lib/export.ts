@@ -17,7 +17,7 @@ declare global {
 /** 파일 이름으로 쓸 수 없는 문자를 걷어 낸다. */
 export function resultFileName(name: string | undefined, solarDate: string): string {
   const who = (name ?? "").replace(/[\\/:*?"<>|\s]+/g, "").slice(0, 20) || "결과";
-  return `사주풀이_${who}_${solarDate}`;
+  return `천기록_${who}_${solarDate}`;
 }
 
 export function exportPdf(fileName: string) {

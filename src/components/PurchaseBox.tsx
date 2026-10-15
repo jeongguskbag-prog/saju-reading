@@ -103,8 +103,10 @@ export default function PurchaseBox({ input, checkout }: { input: BirthInput; ch
           <label className="check purchase-agree">
             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
             <span>
-              위 생년월일시로 리포트를 만드는 데 동의합니다. 리포트는 결제 즉시 작성되는 디지털 콘텐츠라 작성이 시작된 뒤에는 청약철회가
-              제한됩니다.
+              위 생년월일시로 리포트를 만드는 데 동의하고,{" "}
+              <a href="/terms" target="_blank" rel="noopener">이용약관</a>·<a href="/refund" target="_blank" rel="noopener">환불 규정</a>·
+              <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>을 확인했습니다. 리포트는 결제 즉시 작성되는 디지털
+              콘텐츠라 작성이 시작된 뒤에는 청약철회가 제한됩니다.
             </span>
           </label>
           <button className="btn-primary" type="submit" disabled={busy}>

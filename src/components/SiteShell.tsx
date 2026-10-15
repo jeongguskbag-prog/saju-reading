@@ -1,16 +1,21 @@
 import type { ReactNode } from "react";
 import { BRAND } from "@/lib/product";
+import BrandSeal from "./BrandSeal";
+import SiteFooter from "./SiteFooter";
 
-/** 결제·리포트 화면의 머리. 브랜드를 눌러 첫 화면으로 돌아간다. */
+/** 결제·리포트·안내 화면의 머리와 꼬리. 브랜드를 눌러 첫 화면으로 돌아간다. */
 export default function SiteShell({ children }: { children: ReactNode }) {
   return (
     <>
       <header className="site-bar no-print">
         <a href="/" className="site-bar-brand">
-          {BRAND.name} <span>{BRAND.hanja}</span>
+          <BrandSeal size={30} title="" />
+          <span className="site-bar-name">{BRAND.name}</span>
+          <span className="site-bar-sub">{BRAND.tagline}</span>
         </a>
       </header>
       <main className="container">{children}</main>
+      <SiteFooter />
     </>
   );
 }

@@ -4,6 +4,8 @@ import { CHAPTERS, CHAPTER_KEYS, withYears } from "@/lib/report-shared";
 import { GRADE_TIERS } from "@/lib/saju/grade";
 import stats from "@/lib/saju/grade-stats.json";
 import Seal from "./Seal";
+import BrandSeal from "./BrandSeal";
+import SiteFooter from "./SiteFooter";
 
 const fmt = (n: number) => n.toLocaleString("ko-KR");
 const HANJA_NUM = ["一", "二", "三", "四", "五"];
@@ -70,6 +72,7 @@ export default function Landing({ form, checkoutOpen = false }: { form: ReactNod
           </div>
           <div className="lp-hero-text">
             <p className="lp-brand">
+              <BrandSeal size={40} title="" />
               {BRAND.name} <span>{BRAND.tagline}</span>
             </p>
             <h1>태어난 순간의 여덟 글자로 100년의 흐름을 적어 드립니다</h1>
@@ -192,12 +195,7 @@ export default function Landing({ form, checkoutOpen = false }: { form: ReactNod
         </div>
       </Section>
 
-      <footer className="lp-footer">
-        <p>
-          {BRAND.name}({BRAND.hanja}). 명식은 만세력 계산 엔진이, 풀이 문장은 AI(Claude)가 작성합니다. 명리학 이론에 기반한 참고 자료이며
-          미래를 보장하지 않습니다.
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

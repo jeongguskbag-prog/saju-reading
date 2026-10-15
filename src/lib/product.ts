@@ -17,3 +17,23 @@ export const PRODUCT = {
 };
 
 export const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
+
+/**
+ * 사업자 정보(전자상거래법상 화면 하단 표시 의무). 빈 값은 화면에 "등록 예정"으로 나온다.
+ * 사업자등록·통신판매업 신고 후 채운다.
+ */
+export const BUSINESS = {
+  companyName: "", // 상호
+  ceo: "", // 대표자
+  bizNumber: "", // 사업자등록번호 000-00-00000
+  mailOrderNumber: "", // 통신판매업 신고번호 제0000-지역-0000호
+  address: "", // 사업장 주소
+  phone: "", // 고객센터 전화
+  email: "", // 고객센터 이메일
+  privacyOfficer: "", // 개인정보 보호책임자(이름)
+};
+
+export const orPending = (v: string) => v || "등록 예정";
+
+/** 약관·방침 시행일 */
+export const POLICY_EFFECTIVE_DATE = "2026년 10월 16일";

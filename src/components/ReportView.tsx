@@ -3,6 +3,8 @@ import type { SajuChart } from "@/lib/saju/calc";
 import { CHAPTERS, CHAPTER_KEYS, withYears, type Chapter, type ChapterKey, type Intro, type PartKey, type PartResult } from "@/lib/report-shared";
 import { AnalysisCard, DaeunCard, ElementCard, LuckyCard, PillarsCard, YearFlowCard } from "./ChartView";
 import GradeCard from "./GradeCard";
+import BrandSeal from "./BrandSeal";
+import { BRAND } from "@/lib/product";
 import MethodBox from "./MethodBox";
 
 export type PartState = { status: "loading" } | { status: "done"; result: PartResult } | { status: "error"; message: string };
@@ -18,7 +20,7 @@ interface Props {
 }
 
 const clientName = (chart: SajuChart) => chart.input.name?.trim() || "의뢰인";
-const watermark = (chart: SajuChart) => `${clientName(chart)}님 전용 감정서 · 무단 복제 및 재배포 금지`;
+const watermark = (chart: SajuChart) => `${BRAND.name} · ${clientName(chart)}님 전용 감정서 · 무단 복제 및 재배포 금지`;
 /** CSS content 문자열로 안전하게 감싼다(따옴표·역슬래시·꺾쇠 이스케이프). */
 const cssString = (text: string) => `"${text.replace(/[\\"<>]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `)}"`;
 
@@ -43,7 +45,12 @@ function Cover({ chart, intro }: { chart: SajuChart; intro: Intro | null }) {
   const [y1, y2] = chart.analysis.reportYears;
   return (
     <section className="cover print-only">
-      <div className="cover-badge">정밀 만세력 × 최신 AI 감정</div>
+      <div className="cover-brand">
+        <BrandSeal size={88} title={BRAND.name} />
+        <span>
+          {BRAND.name} · {BRAND.tagline}
+        </span>
+      </div>
       <div className="cover-years">{y1}-{y2}</div>
       <h1 className="cover-title">
         {clientName(chart)}님 맞춤형

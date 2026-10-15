@@ -18,16 +18,38 @@ interface Props {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** 저장된 파트는 바로 보여 주고, 없는 파트만 서버에 써 달라고 한다(다른 창에서 쓰는 중이면 기다린다). */
+/**
+ * 저장된 파트는 바로 보여 주고, 없는 파트만 서버에 써 달라고 한다.
+ * - 다른 창에서 같은 파트를 쓰는 중이면(202) 잠시 뒤 다시 묻는다.
+ * - 휴대폰에서 다른 앱으로 넘어가거나 화면이 꺼져 연결이 끊기면(네트워크 오류) 서버는 계속 쓰고 있으므로,
+ *   잠시 뒤 다시 연결해 저장된 결과를 받아 온다. 사용자가 버튼을 누를 필요가 없다.
+ */
 async function fetchPart(token: string, part: PartKey): Promise<PartResult> {
-  for (let attempt = 0; attempt < 40; attempt++) {
-    const res = await fetch("/api/reading", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, part }),
-    });
+  let networkFailures = 0;
+  for (let attempt = 0; attempt < 80; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch("/api/reading", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, part }),
+      });
+    } catch {
+      // 연결 끊김. 화면이 다시 보일 때까지 기다렸다가 점점 간격을 늘려 다시 시도한다.
+      networkFailures++;
+      if (networkFailures > 20) throw new Error("인터넷 연결을 확인한 뒤 '이 파트 다시 작성'을 눌러 주세요.");
+      await whenVisible();
+      await sleep(Math.min(2000 * networkFailures, 10_000));
+      continue;
+    }
+    networkFailures = 0;
     const data = await res.json().catch(() => ({}));
     if (res.status === 202) {
+      await sleep(5000);
+      continue;
+    }
+    // 504 등 서버 시간 초과: 서버가 이어서 저장했을 수 있으니 잠시 뒤 다시 묻는다.
+    if (res.status === 504 || (res.status === 502 && !data.error)) {
       await sleep(5000);
       continue;
     }
@@ -35,6 +57,20 @@ async function fetchPart(token: string, part: PartKey): Promise<PartResult> {
     return data as PartResult;
   }
   throw new Error("풀이 작성이 오래 걸리고 있습니다. 잠시 뒤 새로고침해 주세요.");
+}
+
+/** 탭이 백그라운드면 다시 보일 때까지 기다린다(백그라운드에서는 요청이 끊기기 쉽다). */
+function whenVisible(): Promise<void> {
+  if (typeof document === "undefined" || document.visibilityState === "visible") return Promise.resolve();
+  return new Promise((resolve) => {
+    const on = () => {
+      if (document.visibilityState === "visible") {
+        document.removeEventListener("visibilitychange", on);
+        resolve();
+      }
+    };
+    document.addEventListener("visibilitychange", on);
+  });
 }
 
 export default function ReportClient({ token, chart, initialParts, justPaid, email, mailEnabled, orderId }: Props) {
@@ -57,6 +93,19 @@ export default function ReportClient({ token, chart, initialParts, justPaid, ema
     PART_KEYS.filter((p) => !initialParts[p]).forEach(load);
     // 결제 직후 주소의 ?new=1은 지워 두어, 링크를 복사해도 깔끔하게 한다.
     if (justPaid) history.replaceState(null, "", location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 화면으로 돌아왔을 때 오류로 멈춘 파트가 있으면 자동으로 다시 시도한다.
+  const partsRef = useRef(parts);
+  partsRef.current = parts;
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      PART_KEYS.filter((p) => partsRef.current[p]?.status === "error").forEach(load);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

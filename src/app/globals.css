@@ -307,7 +307,8 @@ details.advanced[open] summary { margin-bottom: 10px; }
 
 /* 표지·목차 (PDF·HTML 전용) */
 .cover { text-align: center; padding: 48px 16px; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 16px; background: var(--surface); }
-.cover-badge { display: inline-block; font-size: 12px; font-weight: 700; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 3px 12px; }
+.cover-brand { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.cover-brand span { font-family: var(--display); font-size: 15px; color: var(--text-2); letter-spacing: 0.08em; }
 .cover-years { margin-top: 40px; font-size: 18px; letter-spacing: 0.3em; color: var(--text-2); }
 .cover-title { font-size: 34px; line-height: 1.35; margin: 10px 0 28px; letter-spacing: -0.02em; font-family: var(--display); font-weight: 400; }
 .cover-pillars { display: flex; justify-content: center; gap: 14px; font-size: 26px; font-family: var(--display); color: var(--accent); }
@@ -366,6 +367,9 @@ details.advanced[open] summary { margin-bottom: 10px; }
   .daeun .item { flex: 0 0 calc(25% - 6px); }
   .month-block { break-inside: avoid; }
 
+  /* 우리 화면(웹 #app-root, 앱 #root) 밖에 끼워 넣어진 요소는 PDF에 넣지 않는다. */
+  body > :not(#app-root):not(#root), html > :not(head):not(body) { display: none !important; }
+
   /* 워터마크는 @page 하단 여백(ReportView의 style)으로 모든 쪽에 넣는다. */
   .print-footer { display: none !important; }
 }
@@ -394,7 +398,10 @@ details.advanced[open] summary { margin-bottom: 10px; }
 .seal-lg { width: 132px; height: 132px; }
 .seal .seal-bg { fill: currentColor; }
 .seal .seal-line { fill: none; stroke: #f6f4ee; stroke-width: 2.2; }
-.seal .seal-char { fill: #f6f4ee; font-family: var(--display); font-size: 34px; }
+.seal .seal-glyph, .brand-seal .seal-glyph { fill: #f6f4ee; }
+.brand-seal { display: block; color: var(--accent); flex: none; }
+.brand-seal .seal-bg { fill: currentColor; }
+.brand-seal .seal-line { fill: none; stroke: #f6f4ee; stroke-width: 2; }
 .seal-stamp { transform: rotate(-4deg); }
 @media (prefers-reduced-motion: no-preference) {
   .seal-stamp.animate { animation: stamp 520ms cubic-bezier(.2,.9,.25,1.2) 250ms both; }
@@ -479,7 +486,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .slip-title { font-size: 72px; line-height: 1.12; }
 .slip-sub { font-size: 16px; line-height: 1.55; color: #57544d; padding-top: 10px; }
 .lp-hero-text { max-width: 34em; padding-bottom: 8px; }
-.lp-brand { margin: 0 0 18px; font-family: var(--display); font-size: 22px; }
+.lp-brand { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; font-family: var(--display); font-size: 22px; }
 .lp-brand span { font-family: inherit; font-size: 15px; opacity: 0.7; margin-left: 8px; }
 .lp-hero h1 {
   font-family: var(--display);
@@ -551,8 +558,6 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .lp-faq summary { cursor: pointer; font-size: 17px; font-weight: 600; list-style-position: outside; }
 .lp-faq p { margin: 10px 0 0; color: var(--text-2); font-size: 15px; line-height: 1.75; word-break: keep-all; }
 
-.lp-footer { padding: 40px 24px 56px; text-align: center; font-size: 13px; color: var(--text-3); }
-.lp-footer p { max-width: 640px; margin: 0 auto; word-break: keep-all; }
 
 @media (max-width: 760px) {
   .lp-hero { min-height: auto; }
@@ -568,12 +573,13 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   .lp-tiers .seal { width: 52px; height: 52px; }
   .lp-toc li { grid-template-columns: 1fr; gap: 4px; }
 }
-@media print { .lp-hero, .lp-section:not(.lp-form), .lp-footer, .lp-form > .lp-inner > h2, .lp-form .lp-lead { display: none !important; } .lp-form { padding: 0; border: 0; } }
+@media print { .lp-hero, .lp-section:not(.lp-form), .lp-form > .lp-inner > h2, .lp-form .lp-lead { display: none !important; } .lp-form { padding: 0; border: 0; } }
 
 /* 결제·리포트 */
-.site-bar { background: var(--cover); color: var(--cover-ink); padding: 14px 16px; }
-.site-bar-brand { display: block; max-width: 720px; margin: 0 auto; color: inherit; text-decoration: none; font-family: var(--display); font-size: 22px; }
-.site-bar-brand span { font-size: 15px; opacity: 0.7; margin-left: 6px; }
+.site-bar { background: var(--cover); color: var(--cover-ink); padding: 12px 16px; }
+.site-bar-brand { display: flex; align-items: center; gap: 10px; max-width: 720px; margin: 0 auto; color: inherit; text-decoration: none; }
+.site-bar-name { font-family: var(--display); font-size: 22px; line-height: 1; }
+.site-bar-sub { font-size: 13px; opacity: 0.7; }
 .purchase { border: 2px solid var(--accent); }
 .purchase-lead { margin: 0 0 10px; font-size: 15px; color: var(--text-2); word-break: keep-all; }
 .purchase-price { margin: 0 0 14px; font-family: var(--display); font-size: 32px; line-height: 1.1; }
@@ -584,3 +590,27 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .report-notice p { margin: 0 0 8px; }
 .pay-result p { margin: 0 0 10px; }
 .link-btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-top: 6px; }
+
+/* 앱 머리 */
+.app-brand { display: flex; align-items: center; gap: 10px; }
+
+/* 하단: 사업자 정보·약관 */
+.site-footer { border-top: 1px solid var(--border); background: var(--surface-2); color: var(--text-3); font-size: 13px; }
+.site-footer-inner { max-width: 880px; margin: 0 auto; padding: 32px 20px 48px; display: grid; gap: 14px; }
+.site-footer-brand { display: flex; align-items: center; gap: 8px; margin: 0; font-family: var(--display); font-size: 18px; color: var(--text); }
+.site-footer-links { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.site-footer-links a { color: var(--text-2); text-decoration: none; }
+.site-footer-links a:hover { text-decoration: underline; }
+.site-footer-biz { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0; }
+.site-footer-biz div { display: flex; gap: 6px; }
+.site-footer-biz dt { color: var(--text-3); }
+.site-footer-biz dd { margin: 0; color: var(--text-2); }
+.site-footer-note { margin: 0; line-height: 1.7; word-break: keep-all; max-width: 60em; }
+
+/* 약관·방침 */
+.policy h1 { font-family: var(--display); font-weight: 400; font-size: 28px; margin: 0 0 4px; }
+.policy h2 { font-size: 17px; margin: 28px 0 8px; }
+.policy p, .policy li { font-size: 15px; line-height: 1.8; word-break: keep-all; }
+.policy ol, .policy ul { padding-left: 20px; }
+.policy .table { margin: 8px 0; font-size: 14px; }
+.policy a, .purchase-agree a { color: var(--accent); }

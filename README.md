@@ -3,6 +3,19 @@
 > 브랜드: 천기록. 디자인은 쪽빛 고서 표지 · 닥종이 한지 · 먹 · 인주(붉은 도장) 콘셉트이며, 제목 글꼴은 송명(Song Myung)입니다.
 > 첫 화면은 판매용 랜딩 페이지(`src/components/Landing.tsx`)이고, 그 아래에 사주 입력 폼이 있습니다. 브랜드명·상품명·가격·판매 여부는 `src/lib/product.ts`에서 바꿉니다.
 
+## 브랜드 자산
+
+- 낙관(도장) 로고: `src/components/BrandSeal.tsx` — 天機錄을 글꼴이 아닌 도형 경로로 그려 어느 기기·PDF에서나 같은 모양. 글자 경로는 `python3 scripts/make-brand-glyphs.py`로 만든다(Noto Serif CJK KR Bold, OFL).
+- 이미지 파일: `public/brand/`(낙관 1024px, 가로형 로고, 정사각 로고), `src/app/icon.png`·`apple-icon.png`(파비콘), `src/app/opengraph-image.png`(카톡·문자 공유 미리보기 1200×630)
+- 안드로이드 앱 아이콘: `python3 scripts/make-icon.py`(낙관을 한지색 원 위에 얹음)
+- 공유 미리보기 이미지 주소는 `SITE_URL`(없으면 Vercel 실제 사이트 주소) 기준
+
+## 약관·사업자 정보
+
+- `/terms`(이용약관), `/privacy`(개인정보처리방침), `/refund`(환불 규정). 모든 화면 하단에 링크와 사업자 정보 표시
+- 사업자 정보는 `src/lib/product.ts`의 `BUSINESS`에 채운다. 빈 칸은 "등록 예정"으로 보인다
+- 약관 문안은 서비스 실제 동작(저장 항목·보관 기간·국외 이전)에 맞춘 초안이다. 정식 판매 전 전문가 검토 권장
+
 ## 판매 흐름
 
 1. 생년월일시 입력 → **무료**: 명식, 등급·희소도, 오행·대운 그래프
@@ -10,6 +23,8 @@
 3. 결제 성공 → `/pay/success`에서 금액 대조 후 토스 승인 API 호출 → 리포트 토큰 발급 → (설정 시) 메일 발송 → `/r/{토큰}`
 4. `/r/{토큰}`: 다섯 부 AI 풀이를 쓰고 저장. 다시 열면 저장된 풀이를 그대로 보여 줌(AI 비용 재발생 없음). 검색 노출 안 함
 5. 실패·취소 → `/pay/fail`
+6. 휴대폰에서 다른 앱으로 넘어가 연결이 끊겨도, 리포트 화면이 자동으로 다시 연결해 저장된 풀이를 받아 온다
+7. PDF로 저장할 때는 우리 화면(`#app-root`) 밖에 끼워 넣어진 요소(휴대폰 앱의 떠 있는 버튼 등)를 넣지 않는다
 
 결제가 열리는 조건: `checkoutOpen: true` + `TOSS_CLIENT_KEY`·`TOSS_SECRET_KEY` + 저장소(Upstash) + `ANTHROPIC_API_KEY`. 하나라도 없으면 "결제 준비 중"으로 표시됩니다.
 `/api/reading`은 결제한 리포트 토큰이 있어야 풀이를 줍니다. 예전처럼 무료로 풀이를 주려면 `FREE_READING=1`(기존 Android 앱도 이 설정이 있어야 풀이가 나옵니다).
