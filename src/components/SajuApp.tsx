@@ -7,7 +7,7 @@ import ChartView from "./ChartView";
 import YearField from "./YearField";
 import MethodBox from "./MethodBox";
 import ReadingView from "./ReadingView";
-import { exportPdf, pdfFileName } from "@/lib/export-pdf";
+import { buildResultHtml, exportHtml, exportPdf, resultFileName } from "@/lib/export";
 
 type ReadingState =
   | { status: "idle" }
@@ -194,18 +194,32 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
           <ReadingSection aiEnabled={aiEnabled} state={reading} />
           <MethodBox chart={chart} hasReading={reading.status === "done"} />
           <div className="result-actions no-print">
-            <button
-              type="button"
-              className="btn-secondary"
-              disabled={reading.status === "loading"}
-              onClick={() => exportPdf(pdfFileName(chart.input.name, chart.solarDate))}
-            >
-              PDF로 저장
-            </button>
+            <div className="action-buttons">
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={reading.status === "loading"}
+                onClick={() => exportPdf(resultFileName(chart.input.name, chart.solarDate))}
+              >
+                PDF로 저장
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={reading.status === "loading"}
+                onClick={() => {
+                  const fileName = resultFileName(chart.input.name, chart.solarDate);
+                  const result = document.getElementById("result");
+                  if (result) exportHtml(fileName, `saju-result_${chart.solarDate}`, buildResultHtml(result, fileName));
+                }}
+              >
+                HTML로 저장
+              </button>
+            </div>
             <p className="muted">
               {reading.status === "loading"
                 ? "풀이가 끝나면 풀이까지 포함해 저장할 수 있습니다."
-                : "인쇄 화면에서 대상(프린터)을 \u201cPDF로 저장\u201d으로 선택하세요."}
+                : "PDF는 인쇄 화면에서 \u201cPDF로 저장\u201d을 고르세요. PDF를 못 여는 분께는 HTML 파일을 보내 주세요(인터넷 브라우저로 열림)."}
             </p>
           </div>
         </div>

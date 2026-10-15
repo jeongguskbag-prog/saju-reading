@@ -14,8 +14,12 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import android.widget.Toast;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 /**
  * 앱에 묶인 웹 화면(assets/www)을 https://appassets.androidplatform.net 출처로 띄운다.
@@ -23,7 +27,10 @@ import java.io.InputStream;
  */
 public class MainActivity extends Activity {
     private static final String HOST = "appassets.androidplatform.net";
+    private static final int REQUEST_SAVE_HTML = 1;
     private WebView webView;
+    /** 저장 위치를 고르는 동안 들고 있는 HTML 내용. */
+    private String pendingHtml;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,7 +76,57 @@ public class MainActivity extends Activity {
         printManager.print(jobName, webView.createPrintDocumentAdapter(jobName), attributes);
     }
 
+    /** 시스템 '파일 저장' 화면을 열어 사용자가 고른 위치에 HTML을 저장한다(권한 불필요). */
+    private void saveHtml(String fileName, String html) {
+        pendingHtml = html;
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("text/html");
+        intent.putExtra(Intent.EXTRA_TITLE, fileName + ".html");
+        startActivityForResult(intent, REQUEST_SAVE_HTML);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_SAVE_HTML) {
+            return;
+        }
+        String html = pendingHtml;
+        pendingHtml = null;
+        if (resultCode != RESULT_OK || data == null || data.getData() == null || html == null) {
+            return;
+        }
+        OutputStream out = null;
+        try {
+            out = getContentResolver().openOutputStream(data.getData());
+            out.write(html.getBytes(Charset.forName("UTF-8")));
+            Toast.makeText(this, "HTML 파일을 저장했습니다.", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            Toast.makeText(this, "저장하지 못했습니다: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        } finally {
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException ignored) {
+                    // 닫기 실패는 무시한다.
+                }
+            }
+        }
+    }
+
     private class Bridge {
+        @JavascriptInterface
+        public void saveHtml(final String fileName, final String html) {
+            final String name = (fileName == null || fileName.isEmpty()) ? "사주풀이" : fileName;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    MainActivity.this.saveHtml(name, html);
+                }
+            });
+        }
+
         @JavascriptInterface
         public void print(final String jobName) {
             final String name = (jobName == null || jobName.isEmpty()) ? "사주풀이" : jobName;

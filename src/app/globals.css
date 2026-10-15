@@ -221,6 +221,7 @@ details.advanced[open] summary { margin-bottom: 10px; }
 /* 결과 하단 동작 */
 .result-actions { display: grid; gap: 6px; margin: 4px 0 16px; text-align: center; }
 .result-actions .muted { margin: 0; }
+.action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .btn-secondary {
   width: 100%;
   font: inherit;
