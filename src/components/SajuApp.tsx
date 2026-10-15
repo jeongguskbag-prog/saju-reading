@@ -5,6 +5,7 @@ import type { BirthInput, SajuChart } from "@/lib/saju/calc";
 import type { Reading } from "@/lib/reading-shared";
 import ChartView from "./ChartView";
 import YearField from "./YearField";
+import MethodBox from "./MethodBox";
 import ReadingView from "./ReadingView";
 import { exportPdf, pdfFileName } from "@/lib/export-pdf";
 
@@ -191,6 +192,7 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
           </p>
           <ChartView chart={chart} />
           <ReadingSection aiEnabled={aiEnabled} state={reading} />
+          <MethodBox chart={chart} hasReading={reading.status === "done"} />
           <div className="result-actions no-print">
             <button
               type="button"
