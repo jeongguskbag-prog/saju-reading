@@ -86,7 +86,7 @@ export const orPending = (v: string) => v || "등록 예정";
  * 비어 있으면 카톡 상담 버튼은 숨기고 이메일만 보여 준다.
  */
 export const SUPPORT = {
-  kakaoChannelUrl: "",
+  kakaoChannelUrl: "https://pf.kakao.com/_axalmX", // 천기록 채널(검색용 아이디 @천기록)
 };
 
 /** 카톡 1:1 채팅으로 바로 열리는 주소. 채널 주소 뒤에 /chat을 붙인다. */
