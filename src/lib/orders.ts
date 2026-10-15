@@ -50,11 +50,15 @@ export function isValidEmail(email: string): boolean {
 export function checkoutConfig(): { enabled: boolean; clientKey: string | null; testMode: boolean; mobilePhone: boolean } {
   const clientKey = process.env.TOSS_CLIENT_KEY || null;
   const secret = process.env.TOSS_SECRET_KEY;
-  const enabled = SALES_OPEN && Boolean(clientKey && secret && getStore() && isAiEnabled());
+  const testKey = Boolean(clientKey?.startsWith("test_"));
+  // 실제 사이트(Vercel Production)에서는 테스트 키로 결제를 열지 않는다. 돈이 나가지 않는 결제로 감정서를
+  // 무료로 받아 갈 수 있기 때문. live_ 키로 바꾸면 저절로 열린다(꼭 실제 사이트에서 시험해야 하면 ALLOW_TEST_PAYMENTS=1).
+  const testBlocked = testKey && process.env.VERCEL_ENV === "production" && process.env.ALLOW_TEST_PAYMENTS !== "1";
+  const enabled = SALES_OPEN && !testBlocked && Boolean(clientKey && secret && getStore() && isAiEnabled());
   return {
     enabled,
     clientKey: enabled ? clientKey : null,
-    testMode: Boolean(clientKey?.startsWith("test_")),
+    testMode: testKey,
     // 휴대폰 결제는 토스페이먼츠와 별도 계약이 필요해, 계약 후 TOSS_MOBILE_PHONE=1로 켠다.
     mobilePhone: enabled && process.env.TOSS_MOBILE_PHONE === "1",
   };

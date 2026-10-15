@@ -47,6 +47,8 @@
 
 결제 수단: 기본은 카드·간편결제. 토스페이먼츠와 휴대폰 결제 계약 후 Vercel 환경변수 `TOSS_MOBILE_PHONE=1`을 넣고 다시 배포하면 구매 상자에 "휴대폰 결제" 선택이 생긴다(테스트 키로는 계약 없이도 시험 가능).
 
+실제 사이트(Vercel Production)에서는 **테스트 키(`test_`)로는 결제가 열리지 않는다**(무료로 감정서를 받아 가는 것을 막기 위해). 미리보기에서는 테스트 결제가 되고, `live_` 키로 바꾸면 실제 사이트 결제가 저절로 열린다. 실제 사이트에서 꼭 테스트 결제를 해야 하면 `ALLOW_TEST_PAYMENTS=1`.
+
 결제가 열리는 조건: `checkoutOpen: true` + `TOSS_CLIENT_KEY`·`TOSS_SECRET_KEY` + 저장소(Upstash) + `ANTHROPIC_API_KEY`. 하나라도 없으면 "결제 준비 중"으로 표시됩니다.
 `/api/reading`은 결제한 리포트 토큰이 있어야 풀이를 줍니다. 예전처럼 무료로 풀이를 주려면 `FREE_READING=1`(기존 Android 앱도 이 설정이 있어야 풀이가 나옵니다).
 

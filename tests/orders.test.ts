@@ -282,3 +282,21 @@ describe("휴대폰 결제 설정", () => {
     expect(checkoutConfig().mobilePhone).toBe(false); // 결제가 닫히면 휴대폰 결제도 닫힘
   });
 });
+
+describe("실제 사이트의 테스트 결제 차단", () => {
+  it("Production에서 test_ 키면 결제를 닫고, live_ 키면 연다", () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant-x");
+    vi.stubEnv("TOSS_SECRET_KEY", "test_sk_x");
+    vi.stubEnv("TOSS_CLIENT_KEY", "test_ck_x");
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("ALLOW_TEST_PAYMENTS", "");
+    expect(checkoutConfig().enabled).toBe(false);
+    vi.stubEnv("VERCEL_ENV", "preview");
+    expect(checkoutConfig().enabled).toBe(true); // 미리보기는 테스트 가능
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("TOSS_CLIENT_KEY", "live_ck_x");
+    vi.stubEnv("TOSS_SECRET_KEY", "live_sk_x");
+    expect(checkoutConfig().enabled).toBe(true);
+    expect(checkoutConfig().testMode).toBe(false);
+  });
+});
