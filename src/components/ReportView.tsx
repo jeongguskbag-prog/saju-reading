@@ -13,6 +13,8 @@ interface Props {
   aiEnabled: boolean;
   parts: PartStates;
   onRetry: (part: PartKey) => void;
+  /** 등급 카드 바로 아래에 넣을 내용(무료 결과의 구매 상자, 리포트의 링크 안내 등) */
+  afterGrade?: ReactNode;
 }
 
 const clientName = (chart: SajuChart) => chart.input.name?.trim() || "의뢰인";
@@ -125,7 +127,7 @@ function ChapterText({ chapter }: { chapter: Chapter }) {
   );
 }
 
-export default function ReportView({ chart, aiEnabled, parts, onRetry }: Props) {
+export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrade }: Props) {
   const years = chart.analysis.reportYears;
   const intro = introOf(parts);
   const visuals: Partial<Record<ChapterKey, ReactNode>> = {
@@ -150,6 +152,7 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry }: Props) 
       <Cover chart={chart} intro={intro} />
 
       <GradeCard chart={chart} />
+      {afterGrade}
 
       {aiEnabled && (
         <section className="card preface">
@@ -169,7 +172,7 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry }: Props) 
 
       <Toc chart={chart} />
 
-      {!aiEnabled && (
+      {!aiEnabled && !afterGrade && (
         <section className="card no-print">
           <h2>항목별 풀이</h2>
           <p className="muted">AI 풀이가 연결되지 않아 계산 결과만 보여 드립니다.</p>

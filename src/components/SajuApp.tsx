@@ -5,7 +5,8 @@ import type { BirthInput, SajuChart } from "@/lib/saju/calc";
 import { PART_KEYS, type PartKey, type PartResult } from "@/lib/report-shared";
 import ReportView, { type PartStates } from "./ReportView";
 import YearField from "./YearField";
-import { buildResultHtml, exportHtml, exportPdf, resultFileName } from "@/lib/export";
+import ResultActions from "./ResultActions";
+import PurchaseBox, { type CheckoutInfo } from "./PurchaseBox";
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
@@ -27,12 +28,14 @@ interface Props {
   computeChart?: (input: BirthInput) => Promise<SajuChart>;
   /** 감정서 파트 하나의 AI 풀이 요청. 기본은 같은 서버의 /api/reading. */
   requestPart?: (input: BirthInput, part: PartKey) => Promise<PartResult>;
+  /** 웹 판매용: 무료 결과 아래에 구매 상자를 띄운다. aiEnabled(무료 풀이)와 함께 쓰지 않는다. */
+  checkout?: CheckoutInfo;
 }
 
 const serverChart = (input: BirthInput) => postJson<{ chart: SajuChart }>("/api/chart", input).then((r) => r.chart);
 const serverPart = (input: BirthInput, part: PartKey) => postJson<PartResult>("/api/reading", { input, part });
 
-export default function SajuApp({ aiEnabled, computeChart = serverChart, requestPart = serverPart }: Props) {
+export default function SajuApp({ aiEnabled, computeChart = serverChart, requestPart = serverPart, checkout }: Props) {
   const [name, setName] = useState("");
   const [gender, setGender] = useState<BirthInput["gender"]>("female");
   const [calendar, setCalendar] = useState<BirthInput["calendar"]>("solar");
@@ -88,9 +91,10 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
     };
     setSubmitting(true);
     try {
-      setChart(await computeChart(input));
-      requestAnimationFrame(() => document.getElementById("result")?.scrollIntoView({ behavior: "smooth" }));
+      const computed = await computeChart(input);
       lastInput.current = input;
+      setChart(computed);
+      requestAnimationFrame(() => document.getElementById("result")?.scrollIntoView({ behavior: "smooth" }));
       if (aiEnabled) PART_KEYS.forEach((part) => loadPart(input, part, runId));
     } catch (err) {
       setChart(null);
@@ -191,36 +195,9 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
             aiEnabled={aiEnabled}
             parts={parts}
             onRetry={(part) => lastInput.current && loadPart(lastInput.current, part, run.current)}
+            afterGrade={checkout && !aiEnabled && lastInput.current ? <PurchaseBox input={lastInput.current} checkout={checkout} /> : undefined}
           />
-          <div className="result-actions no-print">
-            <div className="action-buttons">
-              <button
-                type="button"
-                className="btn-secondary"
-                disabled={anyLoading}
-                onClick={() => exportPdf(resultFileName(chart.input.name, chart.solarDate))}
-              >
-                PDF로 저장
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                disabled={anyLoading}
-                onClick={() => {
-                  const fileName = resultFileName(chart.input.name, chart.solarDate);
-                  const result = document.getElementById("result");
-                  if (result) exportHtml(fileName, `saju-result_${chart.solarDate}`, buildResultHtml(result, fileName));
-                }}
-              >
-                HTML로 저장
-              </button>
-            </div>
-            <p className="muted">
-              {anyLoading
-                ? "풀이가 끝나면 풀이까지 포함해 저장할 수 있습니다."
-                : "PDF는 인쇄 화면에서 \u201cPDF로 저장\u201d을 고르세요. PDF를 못 여는 분께는 HTML 파일을 보내 주세요(인터넷 브라우저로 열림)."}
-            </p>
-          </div>
+          <ResultActions chart={chart} busy={anyLoading} />
         </div>
       )}
     </>

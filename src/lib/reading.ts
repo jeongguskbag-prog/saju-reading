@@ -137,6 +137,11 @@ export function isAiEnabled(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
 }
 
+/** 예전처럼 생년월일만으로 풀이를 주는 무료 모드. 결제 없이 운영할 때만 FREE_READING=1로 켠다. */
+export function isFreeReading(): boolean {
+  return process.env.FREE_READING === "1";
+}
+
 export async function generatePart(chart: SajuChart, part: PartKey): Promise<PartResult> {
   if (!isAiEnabled()) throw new ReadingError("ANTHROPIC_API_KEY가 설정되지 않았습니다.", 503);
 

@@ -55,7 +55,7 @@ const FAQ = [
   },
 ];
 
-export default function Landing({ form }: { form: ReactNode }) {
+export default function Landing({ form, checkoutOpen = false }: { form: ReactNode; checkoutOpen?: boolean }) {
   const year = new Date().getFullYear();
   const years: [number, number] = [year, year + 1];
   return (
@@ -147,8 +147,8 @@ export default function Landing({ form }: { form: ReactNode }) {
               <li>올해·내년 월별 흐름과 개운법</li>
               <li>내 이름이 들어간 책자형 PDF 소장</li>
             </ul>
-            {PRODUCT.checkoutOpen ? (
-              <a className="lp-cta" href="#saju-form">리포트 받기</a>
+            {checkoutOpen ? (
+              <a className="lp-cta" href="#saju-form">생년월일시 넣고 리포트 받기</a>
             ) : (
               <p className="lp-soon">결제는 준비 중입니다. 열리면 이 자리에서 바로 받을 수 있습니다.</p>
             )}
