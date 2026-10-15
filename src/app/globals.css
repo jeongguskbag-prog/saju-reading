@@ -247,7 +247,7 @@ details.advanced[open] summary { margin-bottom: 10px; }
   }
   html, body { background: #ffffff; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .no-print, .tip, .spinner { display: none !important; }
+  .no-print, .tip, .spinner, .disclaimer { display: none !important; }
   .print-only { display: block; }
   .print-meta { margin: 0 0 12px; font-size: 13px; color: var(--text-2); }
   .container { max-width: none; padding: 0; }
@@ -258,7 +258,6 @@ details.advanced[open] summary { margin-bottom: 10px; }
   .section h3 { break-after: avoid; }
   .daeun { flex-wrap: wrap; overflow: visible; }
   .daeun .item { flex: 0 0 calc(25% - 6px); }
-  .disclaimer { margin-top: 12px; }
 }
 
 /* 연도: 직접 입력(네 자리) + 오른쪽 ▼로 목록 선택 */
