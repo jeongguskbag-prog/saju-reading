@@ -3,7 +3,11 @@ package kr.saju.reading;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.content.Context;
 import android.os.Bundle;
+import android.print.PrintAttributes;
+import android.print.PrintManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -31,6 +35,8 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         webView.setWebViewClient(new AssetClient());
+        // 웹 화면의 "PDF로 저장" 버튼이 호출한다. 앱에 묶인 화면만 띄우므로 외부 페이지는 이 객체를 볼 수 없다.
+        webView.addJavascriptInterface(new Bridge(), "AndroidBridge");
         setContentView(webView);
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
@@ -51,6 +57,28 @@ public class MainActivity extends Activity {
             webView.goBack();
         } else {
             super.onBackPressed();
+        }
+    }
+
+    /** 현재 화면을 시스템 인쇄 창으로 보낸다. 인쇄 창에서 "PDF로 저장"을 고르면 PDF 파일이 된다. */
+    private void printPage(String jobName) {
+        PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+        PrintAttributes attributes = new PrintAttributes.Builder()
+                .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                .build();
+        printManager.print(jobName, webView.createPrintDocumentAdapter(jobName), attributes);
+    }
+
+    private class Bridge {
+        @JavascriptInterface
+        public void print(final String jobName) {
+            final String name = (jobName == null || jobName.isEmpty()) ? "사주풀이" : jobName;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    printPage(name);
+                }
+            });
         }
     }
 

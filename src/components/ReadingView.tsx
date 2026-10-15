@@ -2,7 +2,7 @@ import { SECTION_KEYS, SECTION_TITLES, type Reading } from "@/lib/reading-shared
 
 export default function ReadingView({ reading }: { reading: Reading }) {
   return (
-    <section className="card">
+    <section className="card reading">
       <h2>항목별 풀이</h2>
       <p className="summary">{reading.summary}</p>
       {SECTION_KEYS.map((key) => {

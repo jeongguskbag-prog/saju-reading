@@ -5,6 +5,7 @@ import type { BirthInput, SajuChart } from "@/lib/saju/calc";
 import type { Reading } from "@/lib/reading-shared";
 import ChartView from "./ChartView";
 import ReadingView from "./ReadingView";
+import { exportPdf, pdfFileName } from "@/lib/export-pdf";
 
 type ReadingState =
   | { status: "idle" }
@@ -92,7 +93,7 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
 
   return (
     <>
-      <form className="card form-grid" onSubmit={onSubmit}>
+      <form className="card form-grid no-print" onSubmit={onSubmit}>
         <div className="field">
           <label htmlFor="name">이름 (선택)</label>
           <input id="name" type="text" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="홍길동" />
@@ -176,8 +177,28 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
 
       {chart && (
         <div id="result">
+          <p className="print-only print-meta">
+            출력일 {new Date().toLocaleDateString("ko-KR")} · {chart.input.gender === "male" ? "남성" : "여성"} ·{" "}
+            {chart.input.calendar === "lunar" ? `음력 ${chart.lunarDate}` : `양력 ${chart.solarDate}`}
+            {chart.input.hour === null ? " · 시각 모름" : ` ${chart.input.hour}시 ${chart.input.minute ?? 0}분`}
+          </p>
           <ChartView chart={chart} />
           <ReadingSection aiEnabled={aiEnabled} state={reading} />
+          <div className="result-actions no-print">
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={reading.status === "loading"}
+              onClick={() => exportPdf(pdfFileName(chart.input.name, chart.solarDate))}
+            >
+              PDF로 저장
+            </button>
+            <p className="muted">
+              {reading.status === "loading"
+                ? "풀이가 끝나면 풀이까지 포함해 저장할 수 있습니다."
+                : "인쇄 화면에서 대상(프린터)을 \u201cPDF로 저장\u201d으로 선택하세요."}
+            </p>
+          </div>
         </div>
       )}
     </>

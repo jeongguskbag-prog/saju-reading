@@ -5,7 +5,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <main className="container">
       <header className="site">
         <h1>사주 풀이</h1>
-        <p>생년월일시를 입력하면 사주팔자와 오행, 대운을 계산하고 항목별로 풀어 드립니다.</p>
+        <p className="no-print">생년월일시를 입력하면 사주팔자와 오행, 대운을 계산하고 항목별로 풀어 드립니다.</p>
       </header>
       {children}
       <p className="disclaimer">
