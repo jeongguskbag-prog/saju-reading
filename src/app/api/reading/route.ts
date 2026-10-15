@@ -7,6 +7,7 @@ import { getReport } from "@/lib/orders";
 import { ensurePart } from "@/lib/fulfill";
 import { originFrom } from "@/lib/site";
 import { StoreError } from "@/lib/store";
+import { clientIp, takeFreeQuota } from "@/lib/rate-limit";
 
 // 파트 하나 생성에 1~2분 걸릴 수 있다.
 export const maxDuration = 300;
@@ -27,6 +28,10 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     // 계산은 서버에서 다시 해서, 클라이언트가 보낸 명식을 믿지 않는다.
     const chart = calculateSaju(parsed.value);
+    // 무료 풀이는 AI 요금이 드는 만큼 횟수를 제한한다(결제한 감정서는 위 paidPart에서 처리되어 제한 없음).
+    // 입력 오류는 위에서 걸러져 횟수를 쓰지 않는다.
+    const quota = await takeFreeQuota(clientIp(request.headers));
+    if (!quota.ok) return NextResponse.json({ error: quota.message }, { status: 429 });
     return NextResponse.json(await generatePart(chart, part));
   } catch (error) {
     return errorResponse(error);

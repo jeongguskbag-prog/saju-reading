@@ -12,6 +12,8 @@ export interface Store {
   /** 키가 없을 때만 저장. 저장했으면 true. */
   setIfAbsent(key: string, value: unknown, ttlSeconds?: number): Promise<boolean>;
   del(key: string): Promise<void>;
+  /** 정수 카운터를 1 올리고 올린 값을 돌려준다. 처음 만들 때 ttlSeconds 뒤에 사라지게 한다. */
+  incr(key: string, ttlSeconds: number): Promise<number>;
 }
 
 export class StoreError extends Error {}
@@ -49,6 +51,11 @@ function upstashStore(env: { url: string; token: string }): Store {
     async del(key) {
       await command(["DEL", key]);
     },
+    async incr(key, ttl) {
+      const n = Number(await command(["INCR", key]));
+      if (n === 1) await command(["EXPIRE", key, ttl]);
+      return n;
+    },
   };
 }
 
@@ -75,6 +82,12 @@ function memoryStore(map = new Map<string, Entry>()): Store {
     },
     async del(key) {
       map.delete(key);
+    },
+    async incr(key, ttl) {
+      const e = live(key);
+      const n = (typeof e?.value === "number" ? e.value : 0) + 1;
+      map.set(key, { value: n, expires: e?.expires ?? Date.now() + ttl * 1000 });
+      return n;
     },
   };
 }
@@ -117,6 +130,14 @@ function fileStore(dir: string): Store {
     },
     async del(key) {
       await rm(path(key), { force: true });
+    },
+    // 개발용이라 원자적이지 않다(동시 요청이 겹치면 한두 번 덜 셀 수 있다).
+    async incr(key, ttl) {
+      const e = await read(key);
+      const n = (typeof e?.value === "number" ? e.value : 0) + 1;
+      await mkdir(dir, { recursive: true });
+      await writeFile(path(key), JSON.stringify({ value: n, expires: e?.expires ?? Date.now() + ttl * 1000 }));
+      return n;
     },
   };
 }
