@@ -74,7 +74,6 @@ ${css}
 </head>
 <body>
 <main class="container">
-<header class="site"><h1>사주 풀이</h1></header>
 ${clone.outerHTML}
 </main>
 </body>

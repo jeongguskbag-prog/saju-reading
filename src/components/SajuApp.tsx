@@ -1,19 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { BirthInput, SajuChart } from "@/lib/saju/calc";
-import type { Reading } from "@/lib/reading-shared";
-import ChartView from "./ChartView";
+import { PART_KEYS, type PartKey, type PartResult } from "@/lib/report-shared";
+import ReportView, { type PartStates } from "./ReportView";
 import YearField from "./YearField";
-import MethodBox from "./MethodBox";
-import ReadingView from "./ReadingView";
 import { buildResultHtml, exportHtml, exportPdf, resultFileName } from "@/lib/export";
-
-type ReadingState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "done"; reading: Reading }
-  | { status: "error"; message: string };
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
@@ -33,14 +25,14 @@ interface Props {
   aiEnabled: boolean;
   /** 명식 계산. 기본은 서버 API, 앱(APK)에서는 기기 안에서 계산한다. */
   computeChart?: (input: BirthInput) => Promise<SajuChart>;
-  /** AI 풀이 요청. 기본은 같은 서버의 /api/reading. */
-  requestReading?: (input: BirthInput) => Promise<Reading>;
+  /** 감정서 파트 하나의 AI 풀이 요청. 기본은 같은 서버의 /api/reading. */
+  requestPart?: (input: BirthInput, part: PartKey) => Promise<PartResult>;
 }
 
 const serverChart = (input: BirthInput) => postJson<{ chart: SajuChart }>("/api/chart", input).then((r) => r.chart);
-const serverReading = (input: BirthInput) => postJson<{ reading: Reading }>("/api/reading", input).then((r) => r.reading);
+const serverPart = (input: BirthInput, part: PartKey) => postJson<PartResult>("/api/reading", { input, part });
 
-export default function SajuApp({ aiEnabled, computeChart = serverChart, requestReading = serverReading }: Props) {
+export default function SajuApp({ aiEnabled, computeChart = serverChart, requestPart = serverPart }: Props) {
   const [name, setName] = useState("");
   const [gender, setGender] = useState<BirthInput["gender"]>("female");
   const [calendar, setCalendar] = useState<BirthInput["calendar"]>("solar");
@@ -57,12 +49,25 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
   const [chart, setChart] = useState<SajuChart | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [reading, setReading] = useState<ReadingState>({ status: "idle" });
+  const [parts, setParts] = useState<PartStates>({});
+  const lastInput = useRef<BirthInput | null>(null);
+  // 새로 제출하면 이전 요청의 늦은 응답이 화면을 덮어쓰지 않도록 회차를 센다.
+  const run = useRef(0);
+
+  function loadPart(input: BirthInput, part: PartKey, runId: number) {
+    setParts((prev) => ({ ...prev, [part]: { status: "loading" } }));
+    requestPart(input, part)
+      .then((result) => run.current === runId && setParts((prev) => ({ ...prev, [part]: { status: "done", result } })))
+      .catch((err: Error) => run.current === runId && setParts((prev) => ({ ...prev, [part]: { status: "error", message: err.message } })));
+  }
+
+  const anyLoading = Object.values(parts).some((p) => p?.status === "loading");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setReading({ status: "idle" });
+    setParts({});
+    const runId = ++run.current;
     const dateError = checkBirthDate(year, Number(month), Number(day), calendar);
     if (dateError) {
       setChart(null);
@@ -85,12 +90,8 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
     try {
       setChart(await computeChart(input));
       requestAnimationFrame(() => document.getElementById("result")?.scrollIntoView({ behavior: "smooth" }));
-      if (aiEnabled) {
-        setReading({ status: "loading" });
-        requestReading(input)
-          .then((reading) => setReading({ status: "done", reading }))
-          .catch((err: Error) => setReading({ status: "error", message: err.message }));
-      }
+      lastInput.current = input;
+      if (aiEnabled) PART_KEYS.forEach((part) => loadPart(input, part, runId));
     } catch (err) {
       setChart(null);
       setError((err as Error).message);
@@ -185,20 +186,18 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
 
       {chart && (
         <div id="result">
-          <p className="print-only print-meta">
-            출력일 {new Date().toLocaleDateString("ko-KR")} · {chart.input.gender === "male" ? "남성" : "여성"} ·{" "}
-            {chart.input.calendar === "lunar" ? `음력 ${chart.lunarDate}` : `양력 ${chart.solarDate}`}
-            {chart.input.hour === null ? " · 시각 모름" : ` ${chart.input.hour}시 ${chart.input.minute ?? 0}분`}
-          </p>
-          <ChartView chart={chart} />
-          <ReadingSection aiEnabled={aiEnabled} state={reading} />
-          <MethodBox chart={chart} hasReading={reading.status === "done"} />
+          <ReportView
+            chart={chart}
+            aiEnabled={aiEnabled}
+            parts={parts}
+            onRetry={(part) => lastInput.current && loadPart(lastInput.current, part, run.current)}
+          />
           <div className="result-actions no-print">
             <div className="action-buttons">
               <button
                 type="button"
                 className="btn-secondary"
-                disabled={reading.status === "loading"}
+                disabled={anyLoading}
                 onClick={() => exportPdf(resultFileName(chart.input.name, chart.solarDate))}
               >
                 PDF로 저장
@@ -206,7 +205,7 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
               <button
                 type="button"
                 className="btn-secondary"
-                disabled={reading.status === "loading"}
+                disabled={anyLoading}
                 onClick={() => {
                   const fileName = resultFileName(chart.input.name, chart.solarDate);
                   const result = document.getElementById("result");
@@ -217,7 +216,7 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
               </button>
             </div>
             <p className="muted">
-              {reading.status === "loading"
+              {anyLoading
                 ? "풀이가 끝나면 풀이까지 포함해 저장할 수 있습니다."
                 : "PDF는 인쇄 화면에서 \u201cPDF로 저장\u201d을 고르세요. PDF를 못 여는 분께는 HTML 파일을 보내 주세요(인터넷 브라우저로 열림)."}
             </p>
@@ -240,34 +239,5 @@ function checkBirthDate(year: string, month: number, day: number, calendar: Birt
   } else if (y > new Date().getFullYear()) {
     return "생년월일이 오늘 이후입니다. 날짜를 다시 확인해 주세요.";
   }
-  return null;
-}
-
-function ReadingSection({ aiEnabled, state }: { aiEnabled: boolean; state: ReadingState }) {
-  if (!aiEnabled) {
-    return (
-      <section className="card">
-        <h2>항목별 풀이</h2>
-        <p className="muted">AI 풀이가 연결되지 않아 계산 결과만 보여 드립니다.</p>
-      </section>
-    );
-  }
-  if (state.status === "loading") {
-    return (
-      <section className="card" aria-live="polite">
-        <h2>항목별 풀이</h2>
-        <div className="loading"><span className="spinner" aria-hidden /> 명식을 바탕으로 풀이를 작성하고 있습니다. 30초~1분 정도 걸립니다.</div>
-      </section>
-    );
-  }
-  if (state.status === "error") {
-    return (
-      <section className="card">
-        <h2>항목별 풀이</h2>
-        <p className="error" role="alert">{state.message}</p>
-      </section>
-    );
-  }
-  if (state.status === "done") return <ReadingView reading={state.reading} />;
   return null;
 }

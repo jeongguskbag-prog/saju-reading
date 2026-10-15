@@ -238,41 +238,128 @@ details.advanced[open] summary { margin-bottom: 10px; }
 .print-only { display: none; }
 
 /* PDF 저장(인쇄) 레이아웃: 입력 폼과 버튼을 빼고, 다크 모드여도 밝은 색으로 출력한다. */
+/* ---------- 감정서(책자) 구성 ---------- */
+.part { margin-top: 28px; }
+.part-head { margin: 0 0 12px; padding: 0 2px; }
+.part-head span { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--accent); }
+.part-head h2 { font-size: 22px; margin: 2px 0 4px; letter-spacing: -0.02em; }
+.part-head p { margin: 0; color: var(--text-2); font-size: 14px; }
+.preface .summary { font-size: 16px; font-weight: 600; }
+.preface p { font-size: 15px; margin: 0 0 10px; }
+.chapter .section:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+.action-plan { margin-top: 16px; padding: 12px 14px; background: var(--surface-2); border-radius: 10px; border-left: 3px solid var(--accent); }
+.action-plan h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+.action-plan ul { margin: 0; padding-left: 18px; font-size: 14px; }
+.action-plan li + li { margin-top: 4px; }
+
+/* 오행 도넛 */
+.donut-wrap { display: grid; grid-template-columns: 160px 1fr; gap: 16px; align-items: center; }
+.donut { width: 160px; height: 160px; }
+.donut-center { font-size: 34px; font-weight: 700; fill: var(--text); font-family: "Noto Serif KR", serif; }
+.donut-sub { font-size: 12px; fill: var(--text-2); }
+.legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.legend li { display: grid; grid-template-columns: 12px 64px 1fr; align-items: center; gap: 8px; font-size: 14px; }
+.legend .lname { font-weight: 600; }
+.legend .lval { color: var(--text-2); font-variant-numeric: tabular-nums; }
+@media (max-width: 400px) {
+  .donut-wrap { grid-template-columns: 1fr; justify-items: center; }
+  .legend { width: 100%; }
+}
+
+/* 키-값 칸, 표 */
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.kv > div { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
+.kv span { font-size: 12px; color: var(--text-3); }
+.kv b { font-size: 16px; display: flex; align-items: center; gap: 6px; }
+.kv small { font-size: 12px; color: var(--text-2); }
+.kv .swatch { display: inline-block; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th, .table td { border-bottom: 1px solid var(--border); padding: 7px 6px; text-align: left; vertical-align: top; }
+.table th { font-size: 12px; color: var(--text-3); font-weight: 600; }
+.table.months td:nth-child(2) { font-family: "Noto Serif KR", serif; font-weight: 700; }
+.mark.좋음 { font-weight: 700; }
+.mark.주의 { color: var(--text-2); }
+.year-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.year-scores > div { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: grid; }
+.year-scores span { font-size: 12px; color: var(--text-3); }
+.year-scores b { font-size: 22px; font-family: "Noto Serif KR", serif; }
+.year-scores small { font-size: 12px; color: var(--text-2); }
+
+/* 대운 곡선 */
+.curve { width: 100%; height: auto; display: block; }
+.curve .axis { font-size: 12px; fill: var(--text-3); }
+.curve .axis.strong { fill: var(--text); font-weight: 600; }
+.curve .point-label { font-size: 12px; font-weight: 700; fill: var(--accent); }
+
+/* 작성 방식·고지 (PDF·HTML) */
+.card.method { background: var(--surface-2); }
+.card.method h2 { font-size: 15px; margin-bottom: 6px; }
+.card.method ol { margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-2); }
+.card.method li + li { margin-top: 4px; }
+
+/* 표지·목차 (PDF·HTML 전용) */
+.cover { text-align: center; padding: 48px 16px; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 16px; background: var(--surface); }
+.cover-badge { display: inline-block; font-size: 12px; font-weight: 700; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 3px 12px; }
+.cover-years { margin-top: 40px; font-size: 18px; letter-spacing: 0.3em; color: var(--text-2); }
+.cover-title { font-size: 34px; line-height: 1.35; margin: 10px 0 28px; letter-spacing: -0.02em; font-family: "Noto Serif KR", "Nanum Myeongjo", serif; }
+.cover-pillars { display: flex; justify-content: center; gap: 14px; font-size: 26px; font-family: "Noto Serif KR", serif; font-weight: 700; color: var(--accent); }
+.cover-keywords { margin: 24px 0 0; font-size: 16px; font-weight: 600; }
+.cover-meta { margin: 6px 0 0; font-size: 13px; color: var(--text-2); }
+.toc { padding: 8px 4px 16px; }
+.toc h2 { font-size: 22px; }
+.toc ol { list-style: none; padding: 0; margin: 0; counter-reset: none; }
+.toc li { padding: 10px 0; border-bottom: 1px solid var(--border); display: grid; gap: 2px; }
+.toc li span { font-weight: 600; }
+.toc li small { color: var(--text-2); font-size: 12px; }
+.print-footer { text-align: center; font-size: 12px; color: var(--text-3); margin: 8px 0 24px; }
+
 @media print {
-  @page { size: A4; margin: 14mm 12mm; }
+  @page { size: A4; margin: 16mm 14mm 18mm; }
   :root {
     color-scheme: light;
     --bg: #ffffff;
     --surface: #ffffff;
-    --surface-2: #f3f2ee;
+    --surface-2: #f5f3ee;
     --border: #d6d4cc;
     --text: #1f1e1b;
     --text-2: #4d4b45;
     --text-3: #75736b;
     --accent: #7a4b2a;
+    --grid: #e6e4de;
     --el-wood: #1baf7a;
     --el-fire: #e34948;
     --el-earth: #eda100;
     --el-metal: #e87ba4;
     --el-water: #2a78d6;
   }
-  html, body { background: #ffffff; }
+  html, body { background: #ffffff; font-size: 13px; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .no-print, .tip, .spinner, .disclaimer { display: none !important; }
+  .no-print, .tip, .spinner, .disclaimer, header.site { display: none !important; }
   .print-only { display: block; }
-  .print-meta { margin: 0 0 12px; font-size: 13px; color: var(--text-2); }
-  .card.method { background: var(--surface-2); }
-  .card.method h2 { font-size: 15px; margin-bottom: 6px; }
-  .card.method ol { margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-2); }
-  .card.method li + li { margin-top: 4px; }
   .container { max-width: none; padding: 0; }
-  header.site { margin-bottom: 8px; }
-  .card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 10px; padding: 14px 16px; }
-  .card.reading { break-inside: auto; page-break-inside: auto; }
-  .section { break-inside: avoid; page-break-inside: avoid; }
-  .section h3 { break-after: avoid; }
+  .card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 10px; padding: 14px 16px; border-radius: 10px; }
+  .card.chapter { break-inside: auto; page-break-inside: auto; border: 0; padding: 0 2px; }
+  .section h3 { break-after: avoid; font-size: 16px; }
+  .section p { orphans: 3; widows: 3; }
+  .section p { font-size: 13.5px; line-height: 1.75; }
+  .action-plan { break-inside: avoid; }
+
+  /* 표지는 한 쪽 전체, 목차·각 파트·고지는 새 쪽에서 시작 */
+  .cover { height: 250mm; border: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; margin: 0; break-after: page; }
+  .cover-title { font-size: 40px; }
+  .cover-pillars { font-size: 32px; }
+  .preface { border: 0; padding: 0 2px; break-after: page; }
+  .toc { break-after: page; }
+  .part { break-before: page; margin-top: 0; }
+  .part-head { padding-bottom: 10px; margin-bottom: 14px; border-bottom: 2px solid var(--accent); }
+  .part-head h2 { font-size: 26px; }
+  .card.method { break-before: page; }
   .daeun { flex-wrap: wrap; overflow: visible; }
   .daeun .item { flex: 0 0 calc(25% - 6px); }
+  .month-block { break-inside: avoid; }
+
+  /* 워터마크는 @page 하단 여백(ReportView의 style)으로 모든 쪽에 넣는다. */
+  .print-footer { display: none !important; }
 }
 
 /* 연도: 직접 입력(네 자리) + 오른쪽 ▼로 목록 선택 */

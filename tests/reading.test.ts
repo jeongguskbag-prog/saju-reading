@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calculateSaju } from "@/lib/saju/calc";
 import { chartForPrompt } from "@/lib/reading";
-import { readingSchema } from "@/lib/reading-shared";
+import { chapterSchema, introSchema } from "@/lib/report-shared";
 
 describe("AI 입력 데이터", () => {
   it("이름은 AI에 보내지 않고, 명식 값은 그대로 전달한다", () => {
@@ -14,14 +14,16 @@ describe("AI 입력 데이터", () => {
     expect(json).not.toContain("홍길동");
     expect(data.원국.일주?.간지).toBe("戊午(무오)");
     expect(data.원국.년주?.천간.십신).toBe("겁재");
-    expect(data.올해).toContain("丙午");
+    expect(data.세운[0]).toContain("丙午");
+    expect(data.격국).toContain("정재격");
+    expect(data.월별흐름).toHaveLength(24);
   });
 
-  it("풀이 응답 스키마는 다섯 항목을 모두 요구한다", () => {
-    const section = { body: "본문", tips: ["팁"] };
-    const ok = { summary: "요약", personality: section, wealth: section, love: section, health: section, thisYear: section };
-    expect(readingSchema.safeParse(ok).success).toBe(true);
-    const { health: _omit, ...missing } = ok;
-    expect(readingSchema.safeParse(missing).success).toBe(false);
+  it("파트 응답 스키마: 소제목·문단이 있어야 하고 빈 문단은 거부", () => {
+    const ok = { sections: [{ heading: "제목", paragraphs: ["문단"] }], actionPlan: ["실천"] };
+    expect(chapterSchema.safeParse(ok).success).toBe(true);
+    expect(chapterSchema.safeParse({ sections: [], actionPlan: [] }).success).toBe(false);
+    expect(chapterSchema.safeParse({ sections: [{ heading: "제목", paragraphs: [""] }], actionPlan: [] }).success).toBe(false);
+    expect(introSchema.safeParse({ coverKeywords: ["키워드"], summary: "요약", preface: ["발간사"] }).success).toBe(true);
   });
 });

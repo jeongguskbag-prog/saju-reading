@@ -1,4 +1,6 @@
 import { Lunar, LunarMonth, LunarYear, Solar } from "lunar-javascript";
+import { analyze, type Analysis } from "./analysis";
+import { branchTenGod, splitGanZhi, tenGod, yearGanZhi } from "./gods";
 import {
   BRANCHES,
   BRANCH_ANIMAL,
@@ -95,42 +97,16 @@ export interface SajuChart {
   strength: { score: number; label: string };
   daeun: { forward: boolean; startAge: number; periods: DaeunPeriod[]; current: DaeunPeriod | null };
   yearLuck: LuckPillar & { year: number };
+  /** 격국·참고 용신·대운 점수·월별 흐름·개운 요소 */
+  analysis: Analysis;
   warnings: string[];
 }
 
 const SEOUL_LONGITUDE = 126.98;
 
+export { tenGod, branchTenGod, splitGanZhi, yearGanZhi } from "./gods";
+
 export class InputError extends Error {}
-
-export function tenGod(dayStem: Stem, target: Stem): TenGod {
-  const de = STEM_ELEMENT[dayStem];
-  const te = STEM_ELEMENT[target];
-  const same = STEM_POLARITY[dayStem] === STEM_POLARITY[target];
-  if (de === te) return same ? "비견" : "겁재";
-  if (GENERATES[de] === te) return same ? "식신" : "상관";
-  if (CONTROLS[de] === te) return same ? "편재" : "정재";
-  if (CONTROLS[te] === de) return same ? "편관" : "정관";
-  return same ? "편인" : "정인";
-}
-
-/** 지지의 십신은 정기(본기) 지장간 기준. */
-export function branchTenGod(dayStem: Stem, branch: Branch): TenGod {
-  const hidden = HIDDEN_STEMS[branch];
-  return tenGod(dayStem, hidden[hidden.length - 1]);
-}
-
-export function splitGanZhi(gz: string): [Stem, Branch] {
-  const stem = gz[0] as Stem;
-  const branch = gz[1] as Branch;
-  if (!STEMS.includes(stem) || !BRANCHES.includes(branch)) throw new Error(`잘못된 간지: ${gz}`);
-  return [stem, branch];
-}
-
-/** 해당 연도의 세운 간지(입춘 이후 기준). */
-export function yearGanZhi(year: number): [Stem, Branch] {
-  const idx = (((year - 4) % 60) + 60) % 60;
-  return [STEMS[idx % 10], BRANCHES[idx % 12]];
-}
 
 /**
  * 한국 표준시의 UTC 오프셋(분). 1954-03-21~1961-08-09의 UTC+8:30과
@@ -342,7 +318,7 @@ export function calculateSaju(input: BirthInput, now: Date = new Date()): SajuCh
         endYear: d.getEndYear(),
       };
     });
-  const thisYear = now.getFullYear();
+  const thisYear = new Date(now.getTime() + 9 * 3_600_000).getUTCFullYear();
   const current = periods.find((p) => p.startYear <= thisYear && thisYear <= p.endYear) ?? null;
   const [ys, yb] = yearGanZhi(thisYear);
 
@@ -366,6 +342,7 @@ export function calculateSaju(input: BirthInput, now: Date = new Date()): SajuCh
     strength: { score, label: strengthLabel(score) },
     daeun: { forward: yun.isForward(), startAge: periods[0]?.startAge ?? 0, periods, current },
     yearLuck: { ...luckPillar(ys, yb, dayStem), year: thisYear },
+    analysis: analyze({ pillars, weighted, tenGodCounts, strengthScore: score, daeun: periods, now }),
     warnings,
   };
 }

@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import AppShell from "@/components/AppShell";
 import SajuApp, { postJson } from "@/components/SajuApp";
 import { calculateSaju, type BirthInput } from "@/lib/saju/calc";
-import type { Reading } from "@/lib/reading-shared";
+import type { PartKey, PartResult } from "@/lib/report-shared";
 
 declare const SAJU_API_BASE: string;
 
@@ -15,13 +15,12 @@ async function computeChart(input: BirthInput) {
   return calculateSaju(input);
 }
 
-async function requestReading(input: BirthInput) {
-  const { reading } = await postJson<{ reading: Reading }>(`${apiBase}/api/reading`, input);
-  return reading;
+function requestPart(input: BirthInput, part: PartKey) {
+  return postJson<PartResult>(`${apiBase}/api/reading`, { input, part });
 }
 
 createRoot(document.getElementById("root")!).render(
   <AppShell>
-    <SajuApp aiEnabled={apiBase !== ""} computeChart={computeChart} requestReading={requestReading} />
+    <SajuApp aiEnabled={apiBase !== ""} computeChart={computeChart} requestPart={requestPart} />
   </AppShell>,
 );
