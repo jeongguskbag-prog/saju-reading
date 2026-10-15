@@ -181,6 +181,13 @@ function resolveSolarDate(input: BirthInput): { y: number; m: number; d: number 
   return { y: s.getYear(), m: s.getMonth(), d: s.getDay() };
 }
 
+/** 양력 날짜가 한국 시간 기준 오늘보다 뒤인지. */
+export function isAfterTodayInKorea(date: { y: number; m: number; d: number }, now: Date): boolean {
+  const today = new Date(now.getTime() + 9 * 3_600_000);
+  const todayKey = today.getUTCFullYear() * 10000 + (today.getUTCMonth() + 1) * 100 + today.getUTCDate();
+  return date.y * 10000 + date.m * 100 + date.d > todayKey;
+}
+
 function makePillar(label: Pillar["label"], gz: string, dayStem: Stem, isDay = false): Pillar {
   const [stem, branch] = splitGanZhi(gz);
   return {
@@ -235,6 +242,7 @@ export function calculateSaju(input: BirthInput, now: Date = new Date()): SajuCh
   if (!Number.isInteger(minute) || minute < 0 || minute > 59) throw new InputError("분은 0~59로 입력해 주세요.");
 
   const date = resolveSolarDate(input);
+  if (isAfterTodayInKorea(date, now)) throw new InputError("생년월일이 오늘 이후입니다. 날짜를 다시 확인해 주세요.");
   const clockH = timeKnown ? input.hour! : 12;
   const clockM = timeKnown ? minute : 0;
 

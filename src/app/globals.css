@@ -260,3 +260,25 @@ details.advanced[open] summary { margin-bottom: 10px; }
   .daeun .item { flex: 0 0 calc(25% - 6px); }
   .disclaimer { margin-top: 12px; }
 }
+
+/* 연도: 직접 입력(네 자리) + 오른쪽 ▼로 목록 선택 */
+.row > .year-field { position: relative; flex: 1.3 1 0; }
+.year-field input { padding-right: 32px; }
+.year-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text);
+  pointer-events: none;
+}
+.year-picker {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+input[aria-invalid="true"] { border-color: var(--danger); }

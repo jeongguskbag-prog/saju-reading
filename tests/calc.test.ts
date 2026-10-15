@@ -46,7 +46,7 @@ describe("사주 네 기둥", () => {
   it("일주는 율리우스 적일 공식과 일치한다(1900~2100 표본)", () => {
     for (let y = 1901; y <= 2099; y += 7) {
       for (const [m, d] of [[1, 15], [4, 30], [8, 8], [12, 31]]) {
-        const c = calculateSaju(base({ year: y, month: m, day: d, hour: null }));
+        const c = calculateSaju(base({ year: y, month: m, day: d, hour: null }), new Date("2101-01-01T00:00:00Z"));
         expect(gz(c.pillars.day), `${y}-${m}-${d}`).toBe(dayGanZhiByJdn(y, m, d));
       }
     }
@@ -116,6 +116,28 @@ describe("음력 입력", () => {
   it("없는 윤달·날짜는 오류", () => {
     expect(() => calculateSaju(base({ calendar: "lunar", year: 2024, month: 2, day: 1, isLeapMonth: true }))).toThrow(InputError);
     expect(() => calculateSaju(base({ year: 2023, month: 2, day: 29 }))).toThrow(InputError);
+  });
+});
+
+describe("미래 날짜 입력", () => {
+  // 한국 시간 2026-10-15 09:00
+  const now = new Date("2026-10-15T00:00:00Z");
+
+  it("오늘까지는 계산하고, 내일부터는 오류", () => {
+    expect(() => calculateSaju(base({ year: 2026, month: 10, day: 15 }), now)).not.toThrow();
+    expect(() => calculateSaju(base({ year: 2026, month: 10, day: 16 }), now)).toThrow("오늘 이후");
+    expect(() => calculateSaju(base({ year: 2030, month: 1, day: 1 }), now)).toThrow(InputError);
+  });
+
+  it("한국 시간 기준으로 오늘을 판단한다 (UTC로는 아직 전날)", () => {
+    const lateUtc = new Date("2026-10-14T16:00:00Z"); // KST 2026-10-15 01:00
+    expect(() => calculateSaju(base({ year: 2026, month: 10, day: 15 }), lateUtc)).not.toThrow();
+  });
+
+  it("음력은 양력으로 바꾼 날짜로 판단한다", () => {
+    // 음력 2026-09-06 = 양력 2026-10-15(오늘), 음력 2026-09-07 = 내일
+    expect(() => calculateSaju(base({ calendar: "lunar", year: 2026, month: 9, day: 6 }), now)).not.toThrow();
+    expect(() => calculateSaju(base({ calendar: "lunar", year: 2026, month: 9, day: 7 }), now)).toThrow("오늘 이후");
   });
 });
 

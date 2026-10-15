@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { BirthInput, SajuChart } from "@/lib/saju/calc";
 import type { Reading } from "@/lib/reading-shared";
 import ChartView from "./ChartView";
+import YearField from "./YearField";
 import ReadingView from "./ReadingView";
 import { exportPdf, pdfFileName } from "@/lib/export-pdf";
 
@@ -61,6 +62,12 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
     e.preventDefault();
     setError(null);
     setReading({ status: "idle" });
+    const dateError = checkBirthDate(year, Number(month), Number(day), calendar);
+    if (dateError) {
+      setChart(null);
+      setError(dateError);
+      return;
+    }
     const input: BirthInput = {
       name: name.trim() || undefined,
       gender,
@@ -93,7 +100,7 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
 
   return (
     <>
-      <form className="card form-grid no-print" onSubmit={onSubmit}>
+      <form className="card form-grid no-print" onSubmit={onSubmit} noValidate>
         <div className="field">
           <label htmlFor="name">이름 (선택)</label>
           <input id="name" type="text" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="홍길동" />
@@ -114,7 +121,7 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
             <button type="button" aria-pressed={calendar === "lunar"} onClick={() => setCalendar("lunar")}>음력</button>
           </div>
           <div className="row">
-            <input aria-label="년" type="number" inputMode="numeric" min={1900} max={2100} value={year} onChange={(e) => setYear(e.target.value)} required />
+            <YearField value={year} onChange={setYear} />
             <select aria-label="월" value={month} onChange={(e) => setMonth(e.target.value)}>
               {Array.from({ length: 12 }, (_, i) => (
                 <option key={i + 1} value={i + 1}>{i + 1}월</option>
@@ -203,6 +210,21 @@ export default function SajuApp({ aiEnabled, computeChart = serverChart, request
       )}
     </>
   );
+}
+
+/** 제출 전 빠른 확인. 음력의 미래 날짜는 양력 변환이 필요해 계산 단계에서 다시 확인한다. */
+function checkBirthDate(year: string, month: number, day: number, calendar: BirthInput["calendar"]): string | null {
+  if (!/^\d{4}$/.test(year)) return "연도는 네 자리 숫자로 입력해 주세요. (예: 1990)";
+  const y = Number(year);
+  if (y < 1900) return "1900년 이후 날짜만 계산할 수 있습니다.";
+  if (calendar === "solar") {
+    const now = new Date();
+    const todayKey = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    if (y * 10000 + month * 100 + day > todayKey) return "생년월일이 오늘 이후입니다. 날짜를 다시 확인해 주세요.";
+  } else if (y > new Date().getFullYear()) {
+    return "생년월일이 오늘 이후입니다. 날짜를 다시 확인해 주세요.";
+  }
+  return null;
 }
 
 function ReadingSection({ aiEnabled, state }: { aiEnabled: boolean; state: ReadingState }) {
