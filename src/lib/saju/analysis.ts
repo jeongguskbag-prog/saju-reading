@@ -4,7 +4,7 @@ import { Solar } from "lunar-javascript";
 import { CONTROLS, ELEMENTS, GENERATES, HIDDEN_STEMS, STEM_ELEMENT, type Element, type TenGod } from "./constants";
 import { branchTenGod, splitGanZhi, tenGod, yearGanZhi } from "./gods";
 import type { DaeunPeriod, Pillar } from "./calc";
-import { engineText, gyeokgukLabel, LUCKY_BY_ELEMENT_ZH, TEN_GOD_MODERN_ZH, type Locale } from "./locale";
+import { engineText, gyeokgukLabel, isZh, zhTables, type Locale } from "./locale";
 
 /** 십신을 현대적·심리학적 언어로 옮긴 표현. 화면, PDF, AI 지시문이 함께 쓴다. */
 export const TEN_GOD_MODERN: Record<TenGod, string> = {
@@ -157,7 +157,7 @@ export function analyze(params: {
   locale?: Locale;
 }): Analysis {
   const { pillars, weighted, tenGodCounts, strengthScore, daeun, now, skipMonthly, locale = "ko" } = params;
-  const zh = locale === "zh-Hant";
+  const zh = isZh(locale) ? zhTables(locale) : null;
   const dayElement = STEM_ELEMENT[pillars.day.stem];
   const others = [pillars.year, pillars.day, pillars.hour].filter((p): p is Pillar => p !== null);
   const usefulness = determineUsefulness(dayElement, strengthScore, weighted, locale);
@@ -174,10 +174,10 @@ export function analyze(params: {
       score: ganzhiScore(STEM_ELEMENT[d.stem], branchElementOf(d.branch), usefulness),
     })),
     monthly: skipMonthly ? [] : [...monthlyFlow(reportYears[0], pillars.day.stem, usefulness), ...monthlyFlow(reportYears[1], pillars.day.stem, usefulness)],
-    lucky: { ...(zh ? LUCKY_BY_ELEMENT_ZH : LUCKY_BY_ELEMENT)[usefulness.yongsin], element: usefulness.yongsin },
+    lucky: { ...(zh ? zh.lucky : LUCKY_BY_ELEMENT)[usefulness.yongsin], element: usefulness.yongsin },
     tenGodGuide: (Object.keys(TEN_GOD_MODERN) as TenGod[])
       .filter((g) => (tenGodCounts[g] ?? 0) > 0)
-      .map((g) => ({ god: g, count: tenGodCounts[g]!, modern: (zh ? TEN_GOD_MODERN_ZH : TEN_GOD_MODERN)[g] })),
+      .map((g) => ({ god: g, count: tenGodCounts[g]!, modern: (zh ? zh.modern : TEN_GOD_MODERN)[g] })),
     reportYears,
     yearScores: reportYears.map((y) => ({ year: y, ...yearScore(y, usefulness) })),
   };

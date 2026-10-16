@@ -81,7 +81,42 @@ export const CHAPTERS_ZH: Record<ChapterKey, ChapterMeta> = {
   },
 };
 
-export const chaptersFor = (locale: "ko" | "zh-Hant" = "ko") => (locale === "zh-Hant" ? CHAPTERS_ZH : CHAPTERS);
+/** 중국 대륙 앱(간체)의 감정서 구조. 소제목 순서는 한국어판과 같다. */
+export const CHAPTERS_HANS: Record<ChapterKey, ChapterMeta> = {
+  part1: {
+    label: "Part 1",
+    title: "我的天命",
+    lead: "解读与生俱来的性格、格局与五行平衡。",
+    sections: ["从日主看天生性格", "格局与用神：人生的核心轴", "五行平衡与补强策略"],
+  },
+  part2: {
+    label: "Part 2",
+    title: "财富与事业",
+    lead: "解读财富进出与留存的方式，以及适合的工作型态。",
+    sections: ["现金流模式与财富格局", "上班族 vs 创业型适合度", "风险管理与招财开运法"],
+  },
+  part3: {
+    label: "Part 3",
+    title: "感情与姻缘",
+    lead: "解读你爱人的方式与缘分的特质。",
+    sections: ["感情倾向与配偶宫（日支）解读", "助我贵人的特征", "改善关系的具体方法"],
+  },
+  part4: {
+    label: "Part 4",
+    title: "十年大运走势",
+    lead: "以十年为单位，解读人生的大方向与转折点。",
+    sections: ["大运走势一览", "目前大运的课题", "人生巅峰时机与转折点指南"],
+  },
+  part5: {
+    label: "Part 5",
+    title: "{Y1}-{Y2} 流年与开运法",
+    lead: "整理未来两年的运势走向与生活中的开运方法。",
+    sections: ["{Y1} 年整体运势", "{Y2} 年整体运势", "流月运用指南", "健康管理重点", "幸运色・数字・方位运用法"],
+  },
+};
+
+export const chaptersFor = (locale: "ko" | "zh-Hant" | "zh-Hans" = "ko") =>
+  locale === "zh-Hant" ? CHAPTERS_ZH : locale === "zh-Hans" ? CHAPTERS_HANS : CHAPTERS;
 
 export const withYears = (text: string, years: [number, number]) =>
   text.replace(/\{Y1\}/g, String(years[0])).replace(/\{Y2\}/g, String(years[1]));

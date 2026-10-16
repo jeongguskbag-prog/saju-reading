@@ -50,7 +50,7 @@ function coverBirth(chart: SajuChart, t: Messages) {
   const { input } = chart;
   const [y, m, d] = chart.solarDate.split("-");
   const date = input.calendar === "lunar" ? t.coverLunar(chart.lunarDate, y, m, d) : t.coverSolar(y, m, d);
-  const hour = chart.pillars.hour ? `${chart.pillars.hour.branch}時` : t.coverHourUnknown;
+  const hour = chart.pillars.hour ? `${chart.pillars.hour.branch}${t.hourChar}` : t.coverHourUnknown;
   return `${date} ${hour}`;
 }
 
@@ -63,7 +63,7 @@ function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null;
     <section className="cover print-only">
       <div className="cover-frame" aria-hidden />
       <div className="cover-top">
-        <p className="cover-eyebrow">天 機 錄 · 百年綜合四柱</p>
+        <p className="cover-eyebrow">{t.coverEyebrow}</p>
         <svg className="cover-emblem" viewBox="0 0 100 100" aria-hidden>
           <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" strokeWidth="1.5" />
           <g fill="currentColor">
@@ -110,7 +110,7 @@ function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null;
 
       <div className="cover-foot">
         <p>
-          天機錄 運命分析室
+          {t.coverOffice}
           <br />
           {t.coverConfidential} · Strictly Confidential &amp; Personal
         </p>

@@ -6,7 +6,7 @@ import BrandSeal from "./BrandSeal";
 export default function AppShell({ children, locale = "ko" }: { children: ReactNode; locale?: Locale }) {
   const t = messages(locale);
   return (
-    <main className={`container${locale === "zh-Hant" ? " zh" : ""}`} lang={t.htmlLang}>
+    <main className={`container${locale === "zh-Hant" ? " zh" : locale === "zh-Hans" ? " zh-hans" : ""}`} lang={t.htmlLang}>
       <header className="site">
         <span className="badge no-print">{t.shellBadge}</span>
         <h1 className="app-brand"><BrandSeal size={40} title="" />{t.brand}</h1>

@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { TEN_GOD_MODERN } from "./saju/analysis";
 import { ELEMENT_KO } from "./saju/constants";
-import { ELEMENT_ZH, TEN_GOD_MODERN_ZH, TEN_GOD_ZH, type Locale } from "./saju/locale";
+import { ELEMENT_ZH, TEN_GOD_HANS, TEN_GOD_MODERN_HANS, TEN_GOD_MODERN_ZH, TEN_GOD_ZH, type Locale } from "./saju/locale";
 import type { LuckPillar, Pillar, SajuChart } from "./saju/calc";
 import {
   chaptersFor,
@@ -38,6 +38,18 @@ const SYSTEM_PROMPT_ZH = `你是一位精通正統子平八字命理，並能以
 - 健康僅依五行平衡提出生活習慣建議，不預言或診斷特定疾病。不提供具體投資標的或進出場時機等金融建議。
 - 不杜撰委託人的具體經歷或事件。
 - 為避免與其他章節重複，只在指定的小標題範圍內撰寫。`;
+
+const SYSTEM_PROMPT_HANS = `你是一位精通正统子平八字命理，并能以现代心理学、商业与生活语言深入浅出解说的资深命理师。你正在为付费命书（A4 册子）撰写其中一个章节。读者是中国大陆的委托人。
+
+原则：
+- 全文使用简体中文（中国大陆通行用语），不得出现繁体字、韩文或日文。
+- 只以输入的【命盘 JSON】为依据。不得杜撰 JSON 中没有的干支、十神、大运、格局或用神；提及的数值必须与 JSON 一致。格局与参考用神直接沿用 JSON 的内容。
+- 不要堆砌古典术语，改以现代语言说明。十神优先使用【十神现代语】表中的说法，必要时以括号附上原术语。例如：「项目型的创收能力（偏财）」。
+- 语气优雅、可信、温和，使用「您」。避免断言，以「倾向于……」等方式描述趋势。
+- 不使用引发恐惧的说法（因凶煞而破败、短命、重大事故、断言离婚等）。提到弱点时，必须同时提出具体可行的开运行动方案（Action Plan）。
+- 健康仅依五行平衡提出生活习惯建议，不预言或诊断特定疾病。不提供具体投资标的或进出场时机等金融建议。
+- 不杜撰委托人的具体经历或事件。
+- 为避免与其他章节重复，只在指定的小标题范围内撰写。`;
 
 function pillarSummary(p: Pillar | null) {
   if (!p) return null;
@@ -126,12 +138,55 @@ export function chartForPromptZh(chart: SajuChart) {
   };
 }
 
+/** 간체 감정서용 명식 데이터. 키와 값을 모두 간체로 바꿔 한국어가 풀이에 섞이지 않게 한다. */
+export function chartForPromptHans(chart: SajuChart) {
+  const { pillars, analysis: a } = chart;
+  const u = a.usefulness;
+  const g = (x: keyof typeof TEN_GOD_HANS) => TEN_GOD_HANS[x];
+  const pillar = (p: Pillar | null) =>
+    p && {
+      干支: `${p.stem}${p.branch}`,
+      天干: { 字: p.stem, 五行: ELEMENT_ZH[p.stemElement], 十神: p.stemTenGod ? g(p.stemTenGod) : "日主（本人）" },
+      地支: { 字: p.branch, 五行: ELEMENT_ZH[p.branchElement], 十神: g(p.branchTenGod) },
+      藏干: p.hiddenStems.map((h) => `${h.stem}(${g(h.tenGod)})`).join("、"),
+    };
+  const luckZh = (l: LuckPillar) => `${l.stem}${l.branch} 天干${g(l.stemTenGod)}／地支${g(l.branchTenGod)}`;
+  const mark = { 좋음: "佳", 보통: "平", 주의: "留意" } as const;
+  return {
+    性别: chart.input.gender === "male" ? "男性（乾命）" : "女性（坤命）",
+    出生年: Number(chart.solarDate.slice(0, 4)),
+    出生时间: pillars.hour ? "已知" : "不详（未排时柱）",
+    命局: { 年柱: pillar(pillars.year), 月柱: pillar(pillars.month), 日柱: pillar(pillars.day), 时柱: pillar(pillars.hour) },
+    日主: `${chart.dayMaster.stem} ${chart.dayMaster.polarity === "yang" ? "阳" : "阴"}${ELEMENT_ZH[chart.dayMaster.element]}`,
+    五行字数: Object.fromEntries(Object.entries(chart.elements.counts).map(([k, v]) => [ELEMENT_ZH[k as keyof typeof ELEMENT_ZH], v])),
+    十神分布: Object.fromEntries(Object.entries(chart.tenGodCounts).map(([k, v]) => [g(k as keyof typeof TEN_GOD_HANS), v])),
+    身强身弱: `${chart.strength.label}（${chart.strength.score}/100，参考值）`,
+    格局: `${a.gyeokguk.label}（${a.gyeokguk.basis}）`,
+    参考用神: `${ELEMENT_ZH[u.yongsin]}／喜神 ${ELEMENT_ZH[u.huisin]}／忌神 ${ELEMENT_ZH[u.gisin]}（${u.method}）`,
+    大运: {
+      方向: chart.daeun.forward ? "顺行" : "逆行",
+      列表: chart.daeun.periods.map(
+        (p, i) => `${p.startAge}岁起（${p.startYear}～${p.endYear}）${luckZh(p)}・用神契合度 ${a.daeunScores[i]?.score ?? "-"}/100`,
+      ),
+      目前大运: chart.daeun.current ? luckZh(chart.daeun.current) : "尚未起运",
+    },
+    流年: a.yearScores.map((y) => `${y.year}年 ${y.ganzhi}・用神契合度 ${y.score}/100`),
+    流月: a.monthly.map((m) => `${m.year}年 交节 ${m.startDate.slice(5)}起 ${m.stem}${m.branch}（${g(m.stemTenGod)}／${g(m.branchTenGod)}）${mark[m.mark]}`),
+    命格等级: `第${chart.grade.tier.level}级 ${chart.grade.tier.name}（前 ${chart.grade.topPercent}%，${chart.grade.score}/100）・大运巅峰 ${chart.grade.peak ? `${chart.grade.peak.startAge}～${chart.grade.peak.endAge}岁` : "-"}・贵人 ${chart.grade.nobles.filter((n) => n.has).map((n) => (n.name === "천을귀인" ? "天乙贵人" : "文昌贵人")).join("、") || "无"}`,
+    开运要素: { 五行: ELEMENT_ZH[a.lucky.element], 颜色: a.lucky.colors, 数字: a.lucky.numbers, 方位: a.lucky.direction, 习惯: a.lucky.habits },
+  };
+}
+
 const TEN_GOD_TABLE = Object.entries(TEN_GOD_MODERN)
   .map(([g, m]) => `- ${g}: ${m}`)
   .join("\n");
 
 const TEN_GOD_TABLE_ZH = (Object.keys(TEN_GOD_MODERN_ZH) as (keyof typeof TEN_GOD_ZH)[])
   .map((g) => `- ${TEN_GOD_ZH[g]}：${TEN_GOD_MODERN_ZH[g]}`)
+  .join("\n");
+
+const TEN_GOD_TABLE_HANS = (Object.keys(TEN_GOD_MODERN_HANS) as (keyof typeof TEN_GOD_HANS)[])
+  .map((g) => `- ${TEN_GOD_HANS[g]}：${TEN_GOD_MODERN_HANS[g]}`)
   .join("\n");
 
 const chapterJsonSchema = {
@@ -179,6 +234,21 @@ function partInstructionZh(part: PartKey, years: [number, number]): string {
 sections 必須依照下列小標題的順序與文字原樣作為 heading，每個小標題寫 3～5 段（每段約 150～280 字）。整個章節約 3,000～4,500 字。
 ${headings}
 actionPlan：符合本章內容的開運行動建議 3～5 條。`;
+}
+
+function partInstructionHans(part: PartKey, years: [number, number]): string {
+  if (part === "intro") {
+    return `撰写命书的开头。
+- coverKeywords：封面上代表此人的 3 个核心关键字（例：「温暖的领导者」「深刻的直觉」），每个 2～6 字。
+- summary：一两句话总结整个命盘。
+- preface：写给委托人的序言 3～4 段（共约 500～800 字）。说明如何阅读与运用这份命书，并描绘命盘的整体印象，但不要提前写出各章节的细节。`;
+  }
+  const meta = chaptersFor("zh-Hans")[part];
+  const headings = meta.sections.map((s, i) => `${i + 1}. ${withYears(s, years)}`).join("\n");
+  return `撰写${meta.label}「${withYears(meta.title, years)}」章节。（${meta.lead}）
+sections 必须依照下列小标题的顺序与文字原样作为 heading，每个小标题写 3～5 段（每段约 150～280 字）。整个章节约 3,000～4,500 字。
+${headings}
+actionPlan：符合本章内容的开运行动建议 3～5 条。`;
 }
 
 function partInstruction(part: PartKey, years: [number, number]): string {
@@ -249,6 +319,17 @@ const ERRORS = {
     parse: "無法解析 AI 的回應。",
     shape: "AI 回應的格式不正確。",
   },
+  "zh-Hans": {
+    noKey: "尚未配置 ANTHROPIC_API_KEY。",
+    auth: "API 密钥不正确。",
+    rate: "目前请求过多，请稍后再试。",
+    api: (s: string) => `AI 调用错误（${s}）。`,
+    network: "网络",
+    refusal: "AI 无法生成此章节的解读。",
+    maxTokens: "解读内容过长而中断，请再试一次。",
+    parse: "无法解析 AI 的回应。",
+    shape: "AI 回应的格式不正确。",
+  },
 } satisfies Record<Locale, unknown>;
 
 export async function generatePart(chart: SajuChart, part: PartKey): Promise<PartResult> {
@@ -267,7 +348,15 @@ ${TEN_GOD_TABLE_ZH}
 
 【命盤 JSON】
 ${JSON.stringify(chartForPromptZh(chart), null, 2)}`
-      : `${partInstruction(part, years)}
+      : locale === "zh-Hans"
+        ? `${partInstructionHans(part, years)}
+
+【十神现代语】
+${TEN_GOD_TABLE_HANS}
+
+【命盘 JSON】
+${JSON.stringify(chartForPromptHans(chart), null, 2)}`
+        : `${partInstruction(part, years)}
 
 [십신 현대어]
 ${TEN_GOD_TABLE}
@@ -288,7 +377,7 @@ ${JSON.stringify(chartForPrompt(chart), null, 2)}`;
         effort: "medium",
         format: { type: "json_schema", schema: part === "intro" ? introJsonSchema : chapterJsonSchema },
       },
-      system: locale === "zh-Hant" ? SYSTEM_PROMPT_ZH : SYSTEM_PROMPT,
+      system: locale === "zh-Hant" ? SYSTEM_PROMPT_ZH : locale === "zh-Hans" ? SYSTEM_PROMPT_HANS : SYSTEM_PROMPT,
       messages: [{ role: "user", content: userContent }],
     });
   } catch (error) {

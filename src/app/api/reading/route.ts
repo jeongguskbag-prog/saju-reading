@@ -28,11 +28,19 @@ const ROUTE_ERRORS = {
     store: "無法連線至儲存空間，請稍後再試。",
     unknown: "產生解讀時發生錯誤。",
   },
+  "zh-Hans": {
+    noAi: "尚未配置 AI 解读。",
+    badPart: "请求的章节不正确。",
+    paywall: "此解读需通过应用使用。",
+    store: "无法连接存储服务，请稍后再试。",
+    unknown: "生成解读时出错。",
+  },
 } satisfies Record<Locale, unknown>;
 
 export async function POST(request: Request): Promise<NextResponse> {
   const body = await request.json().catch(() => null);
-  const locale: Locale = body?.locale === "zh-Hant" || body?.input?.locale === "zh-Hant" ? "zh-Hant" : "ko";
+  const asked = body?.locale ?? body?.input?.locale;
+  const locale: Locale = asked === "zh-Hant" || asked === "zh-Hans" ? asked : "ko";
   const E = ROUTE_ERRORS[locale];
   if (!isAiEnabled()) {
     return NextResponse.json({ error: E.noAi }, { status: 503 });

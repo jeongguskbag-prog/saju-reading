@@ -46,7 +46,15 @@ export const GRADE_TIERS_ZH: GradeTier[] = [
   { level: 5, name: "自闢蹊徑之命", desc: "氣勢偏向鮮明，懂得駕馭這股能量時，反而成為獨特個性的組合。", share: 15 },
 ];
 
-export const gradeTiers = (locale: Locale = "ko") => (locale === "zh-Hant" ? GRADE_TIERS_ZH : GRADE_TIERS);
+export const GRADE_TIERS_HANS: GradeTier[] = [
+  { level: 1, name: "天生握福之命", desc: "命局平衡、用神有力、大运相助，三者兼备的少见组合。", share: 3 },
+  { level: 2, name: "气势鲜明之命", desc: "优势明确，大运也能推动这份优势的组合。", share: 12 },
+  { level: 3, name: "均衡稳健之命", desc: "偏颇较少，擅长稳扎稳打、持续累积的组合。", share: 35 },
+  { level: 4, name: "逢时而起之命", desc: "当大运补足命局的空缺时，便能大展身手的组合。", share: 35 },
+  { level: 5, name: "自辟蹊径之命", desc: "气势偏向鲜明，懂得驾驭这股能量时，反而成为独特个性的组合。", share: 15 },
+];
+
+export const gradeTiers = (locale: Locale = "ko") => (locale === "zh-Hant" ? GRADE_TIERS_ZH : locale === "zh-Hans" ? GRADE_TIERS_HANS : GRADE_TIERS);
 
 export interface GradeParts {
   /** 오행 균형 0~30 */

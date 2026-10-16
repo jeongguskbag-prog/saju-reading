@@ -24,7 +24,7 @@ import java.nio.charset.Charset;
 
 /**
  * 천기록 웹사이트의 앱 전용 화면(SiteConfig.SITE_URL + SiteConfig.APP_PATH)을 띄운다.
- * 한국어 앱은 /app, 대만·홍콩 번체 앱(SiteConfig.ZH)은 /app/zh. 결제 없이 바로 감정서를 받는 화면이다.
+ * 한국어 앱은 /app, 대만·홍콩 번체 앱은 /app/zh, 중국 대륙 간체 앱은 /app/zh-hans (SiteConfig.LANG). 결제 없이 바로 감정서를 받는 화면이다.
  * 사이트를 고치면 앱을 다시 설치하지 않아도 같은 내용이 보인다.
  *
  * - 무료 풀이: 앱에 넣은 접근 키(SiteConfig.APP_KEY)를 AndroidBridge.appKey()로 우리 사이트에만 건넨다.
@@ -40,9 +40,12 @@ public class MainActivity extends Activity {
     /** 저장 위치를 고르는 동안 들고 있는 HTML 내용. */
     private String pendingHtml;
 
-    /** 앱 언어에 맞는 문구. */
-    private static String t(String ko, String zh) {
-        return SiteConfig.ZH ? zh : ko;
+    /** 앱 언어에 맞는 문구(한국어, 번체, 간체). */
+    private static String t(String ko, String hant, String hans) {
+        if ("zh-Hant".equals(SiteConfig.LANG)) {
+            return hant;
+        }
+        return "zh-Hans".equals(SiteConfig.LANG) ? hans : ko;
     }
 
     @Override
@@ -124,9 +127,9 @@ public class MainActivity extends Activity {
         try {
             out = getContentResolver().openOutputStream(data.getData());
             out.write(html.getBytes(Charset.forName("UTF-8")));
-            Toast.makeText(this, t("HTML 파일을 저장했습니다.", "已儲存 HTML 檔案。"), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, t("HTML 파일을 저장했습니다.", "已儲存 HTML 檔案。", "已保存 HTML 文件。"), Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
-            Toast.makeText(this, t("저장하지 못했습니다: ", "儲存失敗：") + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, t("저장하지 못했습니다: ", "儲存失敗：", "保存失败：") + e.getMessage(), Toast.LENGTH_LONG).show();
         } finally {
             if (out != null) {
                 try {
@@ -152,7 +155,7 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     if (isOurSite()) {
-                        printPage(jobName == null || jobName.isEmpty() ? t("천기록", "天機錄") : jobName);
+                        printPage(jobName == null || jobName.isEmpty() ? t("천기록", "天機錄", "天机录") : jobName);
                     }
                 }
             });
@@ -164,7 +167,7 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     if (isOurSite()) {
-                        MainActivity.this.saveHtml(fileName == null || fileName.isEmpty() ? t("천기록", "天機錄") : fileName, html);
+                        MainActivity.this.saveHtml(fileName == null || fileName.isEmpty() ? t("천기록", "天機錄", "天机录") : fileName, html);
                     }
                 }
             });
@@ -224,7 +227,7 @@ public class MainActivity extends Activity {
                 }
             }
         } catch (URISyntaxException e) {
-            Toast.makeText(this, t("앱을 열 수 없는 주소입니다.", "無法開啟這個連結。"), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, t("앱을 열 수 없는 주소입니다.", "無法開啟這個連結。", "无法打开这个链接。"), Toast.LENGTH_SHORT).show();
         }
         return true;
     }
@@ -233,7 +236,7 @@ public class MainActivity extends Activity {
         try {
             startActivity(intent);
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, t("이 링크를 열 수 있는 앱이 없습니다.", "沒有可開啟此連結的 App。"), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, t("이 링크를 열 수 있는 앱이 없습니다.", "沒有可開啟此連結的 App。", "没有可以打开此链接的应用。"), Toast.LENGTH_SHORT).show();
         }
         return true;
     }
@@ -241,15 +244,15 @@ public class MainActivity extends Activity {
     /** 인터넷이 끊겼을 때 보여 줄 화면. "다시 시도"를 누르면 같은 주소를 다시 연다. */
     private void showOffline(WebView view, String failedUrl) {
         String retry = failedUrl.replace("\"", "%22");
-        String html = "<!doctype html><html lang=\"" + t("ko", "zh-Hant") + "\"><head><meta charset=\"utf-8\">"
+        String html = "<!doctype html><html lang=\"" + SiteConfig.LANG + "\"><head><meta charset=\"utf-8\">"
                 + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
                 + "<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;"
                 + "background:#ece9e1;color:#24324f;font-family:sans-serif;text-align:center}"
                 + "a{display:inline-block;margin-top:16px;padding:12px 28px;border-radius:12px;background:#24324f;color:#fff;"
                 + "text-decoration:none;font-weight:700}@media(prefers-color-scheme:dark){body{background:#22211f;color:#ece9e1}}</style>"
-                + "</head><body><div><h2>" + t("인터넷에 연결되어 있지 않습니다", "目前沒有網路連線") + "</h2>"
-                + "<p>" + t("연결을 확인한 뒤 다시 시도해 주세요.", "請確認網路連線後再試一次。") + "</p><a href=\"" + retry + "\">"
-                + t("다시 시도", "重試") + "</a></div></body></html>";
+                + "</head><body><div><h2>" + t("인터넷에 연결되어 있지 않습니다", "目前沒有網路連線", "当前没有网络连接") + "</h2>"
+                + "<p>" + t("연결을 확인한 뒤 다시 시도해 주세요.", "請確認網路連線後再試一次。", "请检查网络连接后重试。") + "</p><a href=\"" + retry + "\">"
+                + t("다시 시도", "重試", "重试") + "</a></div></body></html>";
         view.loadDataWithBaseURL(null, html, "text/html", "UTF-8", failedUrl);
     }
 }

@@ -691,3 +691,10 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
 }
 .zh .daeun .gz, .zh .donut-center, .zh .table.months td:nth-child(2), .zh .year-scores b { font-family: "Noto Serif TC", serif; }
+
+/* 중국 대륙 앱(간체). Google Fonts가 막혀 있어 기기 글꼴만 쓴다. */
+.zh-hans {
+  --display: "Songti SC", "STSong", "Noto Serif SC", "Noto Serif CJK SC", "SimSun", serif;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+}
+.zh-hans .daeun .gz, .zh-hans .donut-center, .zh-hans .table.months td:nth-child(2), .zh-hans .year-scores b { font-family: var(--display); }

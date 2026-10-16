@@ -7,8 +7,9 @@
 # 앱은 천기록 웹사이트의 앱 전용 화면(/app, 결제 없음)을 띄우는 WebView 앱이다.
 #
 # 환경변수:
-#   SAJU_LOCALE     ko(기본, 한국어 앱 → /app) 또는 zh-Hant(대만·홍콩 번체 앱 天機錄 → /app/zh).
-#                   번체 앱은 패키지 이름이 kr.saju.reading.zh라 한국어 앱과 함께 설치된다.
+#   SAJU_LOCALE     ko(기본, 한국어 앱 → /app), zh-Hant(대만·홍콩 번체 앱 天機錄 → /app/zh),
+#                   zh-Hans(중국 대륙 간체 앱 天机录 → /app/zh-hans).
+#                   언어마다 패키지 이름이 달라(kr.saju.reading, .zh, .cn) 한 기기에 함께 설치된다.
 #   SAJU_SITE_URL   앱이 띄울 사이트 주소 (기본: https://saju-reading-azure.vercel.app)
 #   SAJU_APP_KEY    무료 풀이용 앱 접근 키(16자 이상). Vercel 환경변수 APP_ACCESS_KEY와 같아야 한다.
 #                   비우면 앱에서도 명식·등급 계산까지만 보인다.
@@ -25,9 +26,10 @@ SAJU_SITE_URL="${SAJU_SITE_URL:-https://saju-reading-azure.vercel.app}"
 SAJU_APP_KEY="${SAJU_APP_KEY:-}"
 SAJU_LOCALE="${SAJU_LOCALE:-ko}"
 case "$SAJU_LOCALE" in
-  ko) APP_PATH="/app"; ZH=false; APP_NAME="천기록"; PACKAGE="kr.saju.reading"; APK_NAME="saju-reading.apk" ;;
-  zh-Hant) APP_PATH="/app/zh"; ZH=true; APP_NAME="天機錄"; PACKAGE="kr.saju.reading.zh"; APK_NAME="saju-reading-zh-hant.apk" ;;
-  *) echo "SAJU_LOCALE은 ko 또는 zh-Hant여야 합니다." >&2; exit 1 ;;
+  ko) APP_PATH="/app"; APP_NAME="천기록"; PACKAGE="kr.saju.reading"; APK_NAME="saju-reading.apk" ;;
+  zh-Hant) APP_PATH="/app/zh"; APP_NAME="天機錄"; PACKAGE="kr.saju.reading.zh"; APK_NAME="saju-reading-zh-hant.apk" ;;
+  zh-Hans) APP_PATH="/app/zh-hans"; APP_NAME="天机录"; PACKAGE="kr.saju.reading.cn"; APK_NAME="saju-reading-zh-hans.apk" ;;
+  *) echo "SAJU_LOCALE은 ko, zh-Hant, zh-Hans 중 하나여야 합니다." >&2; exit 1 ;;
 esac
 VERSION_CODE="${VERSION_CODE:-1}"
 VERSION_NAME="${VERSION_NAME:-0.1.0}"
@@ -61,7 +63,7 @@ final class SiteConfig {
     static final String SITE_URL = "${SAJU_SITE_URL%/}";
     static final String APP_KEY = "${SAJU_APP_KEY}";
     static final String APP_PATH = "${APP_PATH}";
-    static final boolean ZH = ${ZH};
+    static final String LANG = "${SAJU_LOCALE}";
 
     private SiteConfig() {}
 }

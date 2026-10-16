@@ -54,6 +54,11 @@ const MESSAGES = {
     day: (n: number) => `免費解讀每天最多可使用 ${n} 次，請明天再來。`,
     hour: (n: number) => `免費解讀每小時最多可使用 ${n} 次，請稍後再試。`,
   },
+  "zh-Hans": {
+    global: "今日的免费解读名额已全部用完，请明天再来。",
+    day: (n: number) => `免费解读每天最多可使用 ${n} 次，请明天再来。`,
+    hour: (n: number) => `免费解读每小时最多可使用 ${n} 次，请稍后再试。`,
+  },
 } satisfies Record<Locale, unknown>;
 
 export async function takeFreeQuota(ip: string, now = new Date(), locale: Locale = "ko"): Promise<QuotaResult> {

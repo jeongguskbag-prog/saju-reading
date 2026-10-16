@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { BRAND } from "@/lib/product";
 import "./globals.css";
+import FontLinks from "@/components/FontLinks";
 
 // 공유 미리보기 이미지(opengraph-image.png)의 절대 주소를 만들 기준 주소.
 const siteUrl =
@@ -24,10 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap" rel="stylesheet" />
+        <FontLinks />
       </head>
       <body>
         {/* 인쇄(PDF) 때는 이 상자 밖의 요소(휴대폰 앱·확장 프로그램이 끼워 넣은 버튼 등)를 모두 숨긴다. */}

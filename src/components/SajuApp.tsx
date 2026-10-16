@@ -10,6 +10,7 @@ import PurchaseBox, { type CheckoutInfo } from "./PurchaseBox";
 import { useLocale, useT } from "./LocaleProvider";
 import { messages, type Messages } from "@/lib/messages";
 import type { Region } from "@/lib/saju/locale";
+import { CN_CITIES } from "@/lib/cn-cities";
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
@@ -45,6 +46,8 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"] }: Props
   const t = useT();
   const locale = useLocale();
   const [region, setRegion] = useState<Region>(regions[0]);
+  // 중국 대륙은 전국이 한 표준시라 출생 도시 경도로 진태양시를 맞춘다.
+  const [cityIndex, setCityIndex] = useState(0);
   const [name, setName] = useState("");
   const [gender, setGender] = useState<BirthInput["gender"]>("female");
   const [calendar, setCalendar] = useState<BirthInput["calendar"]>("solar");
@@ -99,7 +102,7 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"] }: Props
       // 한국어 웹은 예전과 같은 요청 모양을 유지한다.
       ...(locale === "ko" ? {} : { locale }),
       ...(region === "KR" ? {} : { region }),
-      options: { solarTimeCorrection, dayBoundary },
+      options: { solarTimeCorrection, dayBoundary, ...(region === "CN" ? { longitude: CN_CITIES[cityIndex].longitude } : {}) },
     };
     setSubmitting(true);
     try {
@@ -123,6 +126,17 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"] }: Props
           <label htmlFor="name">{t.nameLabel}</label>
           <input id="name" type="text" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder={t.namePlaceholder} />
         </div>
+
+        {region === "CN" && (
+          <div className="field">
+            <label htmlFor="birth-city">{t.birthCity}</label>
+            <select id="birth-city" value={cityIndex} onChange={(e) => setCityIndex(Number(e.target.value))}>
+              {CN_CITIES.map((c, i) => (
+                <option key={c.name} value={i}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {regions.length > 1 && (
           <div className="field">

@@ -75,7 +75,7 @@ ${css}
 </style>
 </head>
 <body>
-<main class="container${lang === "zh-Hant" ? " zh" : ""}">
+<main class="container${lang === "zh-Hant" ? " zh" : lang === "zh-Hans" ? " zh-hans" : ""}">
 ${clone.outerHTML}
 </main>
 </body>

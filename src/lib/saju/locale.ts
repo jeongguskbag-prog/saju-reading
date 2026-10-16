@@ -1,17 +1,21 @@
-// 언어(ko, zh-Hant)와 출생 지역(KR, TW, HK). 엔진 내부 값(십신·격국 이름 등)은 한국어 키를 그대로 쓰고,
+// 언어(ko, zh-Hant 번체, zh-Hans 간체)와 출생 지역(KR, TW, HK, CN). 엔진 내부 값(십신·격국 이름 등)은 한국어 키를 그대로 쓰고,
 // 화면과 감정서에 나가는 문장만 언어별로 만든다.
 import type { Element, TenGod } from "./constants";
 
-export type Locale = "ko" | "zh-Hant";
-export type Region = "KR" | "TW" | "HK";
+export type Locale = "ko" | "zh-Hant" | "zh-Hans";
+export type ZhLocale = Exclude<Locale, "ko">;
+export type Region = "KR" | "TW" | "HK" | "CN";
 
-export const LOCALES: Locale[] = ["ko", "zh-Hant"];
-export const REGIONS: Region[] = ["KR", "TW", "HK"];
+export const LOCALES: Locale[] = ["ko", "zh-Hant", "zh-Hans"];
+export const REGIONS: Region[] = ["KR", "TW", "HK", "CN"];
+
+export const isZh = (locale: Locale | undefined): locale is ZhLocale => locale === "zh-Hant" || locale === "zh-Hans";
 
 export const REGION_INFO: Record<Region, { timeZone: string; standardOffset: number; longitude: number }> = {
   KR: { timeZone: "Asia/Seoul", standardOffset: 540, longitude: 126.98 },
   TW: { timeZone: "Asia/Taipei", standardOffset: 480, longitude: 121.56 },
   HK: { timeZone: "Asia/Hong_Kong", standardOffset: 480, longitude: 114.17 },
+  CN: { timeZone: "Asia/Shanghai", standardOffset: 480, longitude: 116.4 },
 };
 
 /** 십신의 번체 표기. 편관은 대만·홍콩에서 흔히 쓰는 七殺로 적는다. */
@@ -22,15 +26,15 @@ export const TEN_GOD_ZH: Record<TenGod, string> = {
 
 export const ELEMENT_ZH: Record<Element, string> = { wood: "木", fire: "火", earth: "土", metal: "金", water: "水" };
 
-export const tenGodName = (g: TenGod, locale: Locale) => (locale === "zh-Hant" ? TEN_GOD_ZH[g] : g);
+export const tenGodName = (g: TenGod, locale: Locale) => (isZh(locale) ? zhTables(locale).tenGod[g] : g);
 
 /** 격국 이름(내부 키는 한국어 "정관격", "건록격" 등)을 언어에 맞게. */
 export function gyeokgukLabel(name: string, locale: Locale): string {
-  if (locale === "ko") return name;
-  if (name === "건록격") return "建祿格";
+  if (!isZh(locale)) return name;
+  if (name === "건록격") return locale === "zh-Hans" ? "建禄格" : "建祿格";
   if (name === "양인격") return "羊刃格";
   const god = name.replace(/격$/, "") as TenGod;
-  return `${TEN_GOD_ZH[god] ?? god}格`;
+  return `${zhTables(locale).tenGod[god] ?? god}格`;
 }
 
 /** 십신의 현대적 해석(번체). 한국어는 analysis.ts의 TEN_GOD_MODERN. */
@@ -61,6 +65,48 @@ export const ZODIAC_ZH: Record<string, string> = {
 };
 
 const STRENGTH_ZH: Record<string, string> = { 극신약: "極身弱", 신약: "身弱", 중화: "中和", 신강: "身強", 극신강: "極身強" };
+
+/** 십신의 간체 표기. */
+export const TEN_GOD_HANS: Record<TenGod, string> = {
+  비견: "比肩", 겁재: "劫财", 식신: "食神", 상관: "伤官", 편재: "偏财",
+  정재: "正财", 편관: "七杀", 정관: "正官", 편인: "偏印", 정인: "正印",
+};
+
+/** 십신의 현대적 해석(간체). 한국어는 analysis.ts의 TEN_GOD_MODERN. */
+export const TEN_GOD_MODERN_HANS: Record<TenGod, string> = {
+  비견: "独立心与自主性",
+  겁재: "竞争心与强大的执行力",
+  식신: "专业能力与稳定的产出力",
+  상관: "创意表达力与个人品牌天赋",
+  편재: "项目型的创收能力与投资敏感度",
+  정재: "稳健的资产管理与踏实的累积",
+  편관: "危机应变力与突破型领导力",
+  정관: "原则感、责任感与组织适应力",
+  편인: "专业企划力与与众不同的直觉",
+  정인: "学习力、包容力与赢得信任的力量",
+};
+
+export const LUCKY_BY_ELEMENT_HANS: Record<Element, { colors: string; numbers: string; direction: string; habits: string }> = {
+  wood: { colors: "绿色・青绿色", numbers: "3, 8", direction: "东方", habits: "晨间散步、照顾植物、开始新的学习" },
+  fire: { colors: "红色・橘色・紫色", numbers: "2, 7", direction: "南方", habits: "多晒太阳、与人交流、发表与表达" },
+  earth: { colors: "黄色・土黄・米色", numbers: "5, 10", direction: "中央（住家・办公室中心）", habits: "规律用餐、整理行程、养成储蓄习惯" },
+  metal: { colors: "白色・银色・金色", numbers: "4, 9", direction: "西方", habits: "整理收纳、呼吸运动、建立原则" },
+  water: { colors: "黑色・深蓝", numbers: "1, 6", direction: "北方", habits: "充足睡眠、阅读与冥想、多喝水" },
+};
+
+export const ZODIAC_HANS: Record<string, string> = {
+  쥐: "鼠", 소: "牛", 호랑이: "虎", 토끼: "兔", 용: "龙", 뱀: "蛇",
+  말: "马", 양: "羊", 원숭이: "猴", 닭: "鸡", 개: "狗", 돼지: "猪",
+};
+
+const STRENGTH_HANS: Record<string, string> = { 극신약: "极身弱", 신약: "身弱", 중화: "中和", 신강: "身强", 극신강: "极身强" };
+
+/** 중국어 표기 표(번체·간체). */
+export function zhTables(locale: ZhLocale) {
+  return locale === "zh-Hans"
+    ? { tenGod: TEN_GOD_HANS, modern: TEN_GOD_MODERN_HANS, lucky: LUCKY_BY_ELEMENT_HANS, zodiac: ZODIAC_HANS, strength: STRENGTH_HANS }
+    : { tenGod: TEN_GOD_ZH, modern: TEN_GOD_MODERN_ZH, lucky: LUCKY_BY_ELEMENT_ZH, zodiac: ZODIAC_ZH, strength: STRENGTH_ZH };
+}
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -148,7 +194,11 @@ const ZH: EngineText = {
   noHour: "未提供出生時間，以不含時柱的六字進行分析。",
   jieBoundary: "出生日接近節氣交接，依出生時間不同，月柱（或年柱）可能會改變。",
   lunarLibrary: (region) =>
-    region === "KR" ? "農曆換算採用中國農曆曆法，極少數情況下可能與韓國農曆相差一天。" : "農曆換算採用中國農曆曆法（與台灣、香港通行的農曆相同）。",
+    region === "KR"
+      ? "農曆換算採用中國農曆曆法，極少數情況下可能與韓國農曆相差一天。"
+      : region === "CN"
+        ? "農曆換算採用中國通行的農曆曆法。"
+        : "農曆換算採用中國農曆曆法（與台灣、香港通行的農曆相同）。",
   lunarDate: (y, m, d, leap) => `${y}年${leap ? "閏" : ""}${m}月${d}日`,
   zodiac: (a) => ZODIAC_ZH[a] ?? a,
   strength: (l) => STRENGTH_ZH[l] ?? l,
@@ -165,7 +215,45 @@ const ZH: EngineText = {
   inputError: "請確認輸入內容。",
 };
 
-export const engineText = (locale: Locale = "ko"): EngineText => (locale === "zh-Hant" ? ZH : KO);
+const ZH_HANS: EngineText = {
+  yearRange: "年份请输入 1900～2100 之间。",
+  badSolarDate: "这个公历日期不存在。",
+  noLeapMonth: (y, m) => `${y} 年农历没有闰${m}月。`,
+  badLunarDate: "这个农历日期不存在。",
+  badHour: "时间请输入 0～23 时。",
+  badMinute: "分钟请输入 0～59。",
+  futureDate: "出生日期晚于今天，请重新确认日期。",
+  offsetNote: (region, offset) => {
+    const std = REGION_INFO[region].standardOffset;
+    if (offset === std) return null;
+    if (region === "KR") return `已按出生时的韩国标准时间计算（${utcLabel(offset)}）。`;
+    return offset === std + 60
+      ? `已扣除出生时实行的夏令时 1 小时（${utcLabel(offset)}）。`
+      : `已按出生时的当地时间计算（${utcLabel(offset)}）。`;
+  },
+  timeNoteCorrected: (f, lon) => `已进行真太阳时校正：${f.y}-${pad(f.m)}-${pad(f.d)} ${pad(f.h)}:${pad(f.mi)}（以东经 ${lon}° 计算）`,
+  timeNoteClock: (offset, h, mi) => `以标准时间（${utcLabel(offset)}）计算：${pad(h)}:${pad(mi)}`,
+  noHour: "未提供出生时间，以不含时柱的六字进行分析。",
+  jieBoundary: "出生日接近节气交接，依出生时间不同，月柱（或年柱）可能会改变。",
+  lunarLibrary: (region) =>
+    region === "KR" ? "农历换算采用中国农历历法，极少数情况下可能与韩国农历相差一天。" : "农历换算采用中国通行的农历历法。",
+  lunarDate: (y, m, d, leap) => `${y}年${leap ? "闰" : ""}${m}月${d}日`,
+  zodiac: (a) => ZODIAC_HANS[a] ?? a,
+  strength: (l) => STRENGTH_HANS[l] ?? l,
+  gyeokgukBasis: (mb, base, revealed) => (revealed ? `月支 ${mb} 的藏干 ${base} 透出天干` : `以月支 ${mb} 的本气 ${base} 为准`),
+  usefulnessMethod: (kind) =>
+    `扶抑・平衡法：${
+      kind === "weak"
+        ? "身弱，取生扶日主的五行（印星・比劫）中较不足者"
+        : kind === "strong"
+          ? "身强，取泄耗日主的五行（食伤・财星・官杀）中较不足者"
+          : "接近中和，取命局中最不足的五行"
+    }`,
+  rarityLabel: (gz, gk, y) => `${gz}日柱・${gyeokgukLabel(gk, "zh-Hans")}・用神${ELEMENT_ZH[y]}`,
+  inputError: "请确认输入内容。",
+};
+
+export const engineText = (locale: Locale = "ko"): EngineText => (locale === "zh-Hant" ? ZH : locale === "zh-Hans" ? ZH_HANS : KO);
 
 /**
  * 지역 시간대의 그 시각 UTC 오프셋(분). 시간대 데이터(tzdata)의 과거 서머타임·표준시 변경을 따른다.

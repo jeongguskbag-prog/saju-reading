@@ -12,8 +12,8 @@ export const birthInputSchema = z.object({
   isLeapMonth: z.boolean().optional(),
   hour: z.number().int().min(0).max(23).nullable(),
   minute: z.number().int().min(0).max(59).nullable().optional(),
-  region: z.enum(["KR", "TW", "HK"]).optional(),
-  locale: z.enum(["ko", "zh-Hant"]).optional(),
+  region: z.enum(["KR", "TW", "HK", "CN"]).optional(),
+  locale: z.enum(["ko", "zh-Hant", "zh-Hans"]).optional(),
   options: z
     .object({
       solarTimeCorrection: z.boolean().optional(),
@@ -26,7 +26,8 @@ export const birthInputSchema = z.object({
 export function parseBirthInput(body: unknown): { ok: true; value: BirthInput } | { ok: false; error: string } {
   const r = birthInputSchema.safeParse(body);
   if (!r.success) {
-    const locale = (body as { locale?: unknown } | null)?.locale === "zh-Hant" ? "zh-Hant" : "ko";
+    const asked = (body as { locale?: unknown } | null)?.locale;
+    const locale = asked === "zh-Hant" || asked === "zh-Hans" ? asked : "ko";
     return { ok: false, error: engineText(locale).inputError };
   }
   return { ok: true, value: r.data };
