@@ -698,3 +698,12 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
 }
 .zh-hans .daeun .gz, .zh-hans .donut-center, .zh-hans .table.months td:nth-child(2), .zh-hans .year-scores b { font-family: var(--display); }
+
+/* 앱 전용 화면의 감정서 고르기(결제 없음). 앱 화면은 폭이 좁아 카드를 한 줄에 하나씩 놓는다. */
+.app-products { margin-bottom: 20px; }
+.app-products h2 { font-family: var(--display); font-weight: 400; font-size: 21px; margin: 0 0 12px; }
+.app-products .lp-products { grid-template-columns: 1fr; gap: 18px; }
+.app-products .lp-price.app-free { font-size: 26px; color: var(--accent); }
+.app-products button.lp-cta, .app-products button.lp-cta-ghost { font: inherit; cursor: pointer; }
+.app-products button.lp-cta-ghost { background: transparent; }
+.app-products button.lp-cta { border: 0; }

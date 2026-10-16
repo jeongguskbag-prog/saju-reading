@@ -2,7 +2,9 @@
 
 import { useRef, useState } from "react";
 import type { BirthInput, SajuChart } from "@/lib/saju/calc";
-import { PART_KEYS, type PartKey, type PartResult } from "@/lib/report-shared";
+import { CHAPTER_KEYS, PART_KEYS, type ChapterKey, type PartKey, type PartResult } from "@/lib/report-shared";
+import { DEFAULT_PRODUCT, PRODUCTS, type ProductId } from "@/lib/product";
+import AppProducts from "./AppProducts";
 import ReportView, { type PartStates } from "./ReportView";
 import YearField from "./YearField";
 import ResultActions from "./ResultActions";
@@ -36,16 +38,21 @@ interface Props {
   checkout?: CheckoutInfo;
   /** 고를 수 있는 출생 지역. 둘 이상이면 지역 선택 칸을 보인다. 기본 한국만. */
   regions?: Region[];
+  /** 앱 전용 화면(한국어): 웹처럼 감정서를 고르게 하고, 고른 감정서의 파트만 무료로 작성한다. */
+  productChoice?: boolean;
 }
 
 const serverChart = (input: BirthInput, t: Messages) => postJson<{ chart: SajuChart }>("/api/chart", input, t).then((r) => r.chart);
 const serverPart = (input: BirthInput, part: PartKey, t: Messages) =>
   postJson<PartResult>("/api/reading", { input, part, locale: input.locale }, t);
 
-export default function SajuApp({ aiEnabled, checkout, regions = ["KR"] }: Props) {
+export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], productChoice = false }: Props) {
   const t = useT();
   const locale = useLocale();
   const [region, setRegion] = useState<Region>(regions[0]);
+  const [productId, setProductId] = useState<ProductId>(DEFAULT_PRODUCT);
+  // 제출할 때 고른 감정서. 결과를 보는 중에 다른 카드를 눌러도 이미 받은 감정서 구성은 바뀌지 않는다.
+  const [shownProduct, setShownProduct] = useState<ProductId | null>(null);
   // 중국 대륙은 전국이 한 표준시라 출생 도시 경도로 진태양시를 맞춘다.
   const [cityIndex, setCityIndex] = useState(0);
   const [name, setName] = useState("");
@@ -110,7 +117,9 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"] }: Props
       lastInput.current = input;
       setChart(computed);
       requestAnimationFrame(() => document.getElementById("result")?.scrollIntoView({ behavior: "smooth" }));
-      if (aiEnabled) PART_KEYS.forEach((part) => loadPart(input, part, runId));
+      if (productChoice) setShownProduct(productId);
+      const partKeys = productChoice ? PRODUCTS[productId].parts : PART_KEYS;
+      if (aiEnabled) partKeys.forEach((part) => loadPart(input, part, runId));
     } catch (err) {
       setChart(null);
       setError((err as Error).message);
@@ -121,7 +130,10 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"] }: Props
 
   return (
     <>
-      <form className="card form-grid no-print" onSubmit={onSubmit} noValidate>
+      {productChoice && (
+        <AppProducts value={productId} onChange={setProductId} years={[new Date().getFullYear(), new Date().getFullYear() + 1]} />
+      )}
+      <form id="saju-form" className="card form-grid no-print" onSubmit={onSubmit} noValidate>
         <div className="field">
           <label htmlFor="name">{t.nameLabel}</label>
           <input id="name" type="text" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder={t.namePlaceholder} />
@@ -233,6 +245,12 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"] }: Props
             parts={parts}
             onRetry={(part) => lastInput.current && loadPart(lastInput.current, part, run.current)}
             afterGrade={checkout && !aiEnabled && lastInput.current ? <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} /> : undefined}
+            {...(productChoice && shownProduct
+              ? {
+                  include: CHAPTER_KEYS.filter((k): k is ChapterKey => PRODUCTS[shownProduct].parts.includes(k)),
+                  title: PRODUCTS[shownProduct].name,
+                }
+              : {})}
           />
           <ResultActions chart={chart} busy={anyLoading} />
         </div>
