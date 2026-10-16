@@ -11,7 +11,7 @@ from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTCollection
 
-CHARS = "天機錄壹貳參肆伍等"
+CHARS = "天機錄壹貳參肆伍等福氣勢中和大器開拓"
 path = sys.argv[1] if len(sys.argv) > 1 else "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc"
 
 font = None

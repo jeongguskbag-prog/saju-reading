@@ -164,10 +164,10 @@ function DaeunCurve({ chart }: { chart: SajuChart }) {
   const pts = chart.analysis.daeunScores;
   if (pts.length === 0) return null;
   const W = 640;
-  const H = 230;
+  const H = 258;
   const left = 56;
   const right = 20;
-  const top = 18;
+  const top = 46;
   const plotH = 140;
   const step = pts.length > 1 ? (W - left - right) / (pts.length - 1) : 0;
   const x = (i: number) => left + i * step;
@@ -178,23 +178,55 @@ function DaeunCurve({ chart }: { chart: SajuChart }) {
   const best = Math.max(...pts.map((p) => p.score));
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="curve" role="img" aria-label={t.curveAria}>
-      {[0, 50, 100].map((g) => (
+      {[0, 25, 50, 75, 100].map((g) => (
         <g key={g}>
-          <line x1={left} x2={W - right} y1={y(g)} y2={y(g)} stroke="var(--grid)" strokeWidth={1} />
-          <text x={left - 8} y={y(g) + 4} textAnchor="end" className="axis">{t.curveAxis(g)}</text>
+          <line
+            x1={left}
+            x2={W - right}
+            y1={y(g)}
+            y2={y(g)}
+            stroke="var(--grid)"
+            strokeWidth={g === 50 ? 1.5 : 1}
+            strokeDasharray={g === 0 || g === 100 ? undefined : "4 4"}
+          />
+          {g % 50 === 0 && (
+            <text x={left - 8} y={y(g) + 4} textAnchor="end" className="axis">{t.curveAxis(g)}</text>
+          )}
         </g>
       ))}
-      <path d={area} fill="var(--accent)" opacity={0.08} />
-      <path d={line} fill="none" stroke="var(--accent)" strokeWidth={2} strokeLinejoin="round" />
+      <path d={area} fill="var(--accent)" opacity={0.1} />
+      <path d={line} fill="none" stroke="var(--accent)" strokeWidth={3.5} strokeLinejoin="round" strokeLinecap="round" />
       {pts.map((p, i) => {
         const isCurrent = p.startYear === currentYear;
+        const isBest = p.score === best;
+        const cx = x(i);
+        const cy = y(p.score);
         return (
           <g key={p.startYear}>
-            <circle cx={x(i)} cy={y(p.score)} r={isCurrent ? 7 : 5} fill={isCurrent ? "var(--accent)" : "var(--surface)"} stroke="var(--accent)" strokeWidth={2}>
+            {isCurrent && (
+              // 현재 대운: 세로 점선과 위치 핀
+              <g className="curve-pin">
+                <line x1={cx} x2={cx} y1={cy} y2={top + plotH} stroke="var(--accent)" strokeWidth={1.5} strokeDasharray="3 3" />
+                <path
+                  d={`M ${cx} ${cy - 10} C ${cx - 9} ${cy - 22}, ${cx - 9} ${cy - 34}, ${cx} ${cy - 34} C ${cx + 9} ${cy - 34}, ${cx + 9} ${cy - 22}, ${cx} ${cy - 10} Z`}
+                  fill="var(--accent)"
+                />
+                <circle cx={cx} cy={cy - 26} r={3.2} fill="var(--surface)" />
+              </g>
+            )}
+            <circle cx={cx} cy={cy} r={isCurrent ? 7 : 5.5} fill={isCurrent ? "var(--accent)" : "var(--surface)"} stroke="var(--accent)" strokeWidth={2.5}>
               <title>{t.curvePointTitle(p.startAge, p.ganzhi, p.score)}</title>
             </circle>
-            {(isCurrent || p.score === best) && (
-              <text x={x(i)} y={y(p.score) - 12} textAnchor="middle" className="point-label">{isCurrent ? t.curveCurrent : t.curvePeak}</text>
+            {(isCurrent || isBest) && (
+              // 양 끝 점의 이름표는 축 글씨·그림 밖으로 나가지 않게 안쪽으로 붙인다.
+              <text
+                x={cx}
+                y={isCurrent ? cy - 40 : cy - 12}
+                textAnchor={i === 0 ? "start" : i === pts.length - 1 ? "end" : "middle"}
+                className="point-label"
+              >
+                {isCurrent ? (isBest ? `${t.curveCurrent} · ${t.curvePeak}` : t.curveCurrent) : t.curvePeak}
+              </text>
             )}
             <text x={x(i)} y={top + plotH + 22} textAnchor="middle" className="axis strong">{t.age(p.startAge)}</text>
             <text x={x(i)} y={top + plotH + 40} textAnchor="middle" className="axis">{p.ganzhi}</text>
@@ -235,7 +267,8 @@ export function YearFlowCard({ chart }: { chart: SajuChart }) {
   const t = useT();
   const a = chart.analysis;
   return (
-    <section className="card">
+    // 두 해의 월별 표가 한 쪽보다 길어, PDF에서는 표 단위로 쪽을 나눈다(통째로 넘기면 앞쪽이 비어 버린다).
+    <section className="card yearflow">
       <h2>{t.yearFlowTitle(a.reportYears[0], a.reportYears[1])}</h2>
       <div className="year-scores">
         {a.yearScores.map((y) => (

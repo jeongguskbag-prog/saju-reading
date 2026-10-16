@@ -14,7 +14,8 @@ export default function FontLinks() {
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap" rel="stylesheet" />
+      {/* Noto Serif KR: 감정서 풀이 문장 속 한자(.hz)를 기기와 상관없이 같은 글꼴로 찍는다. */}
+      <link href="https://fonts.googleapis.com/css2?family=Song+Myung&family=Noto+Serif+KR:wght@400;700&display=swap" rel="stylesheet" />
     </>
   );
 }

@@ -3,7 +3,6 @@ import { BRAND, PRODUCT_ORDER, PRODUCTS, withProductYears, won } from "@/lib/pro
 import { CHAPTER_KEYS, withYears } from "@/lib/report-shared";
 import { chaptersFor } from "@/lib/report-shared";
 import { gradeTiers } from "@/lib/saju/grade";
-import { messages } from "@/lib/messages";
 import { siteCopy, SITES, type SiteLocale } from "@/lib/site-copy";
 import { GRADE_TIERS } from "@/lib/saju/grade";
 import stats from "@/lib/saju/grade-stats.json";
@@ -47,7 +46,6 @@ export default function Landing({ form, checkoutOpen = false, site = "ko" }: { f
   const L = t.landing;
   const cfg = SITES[site];
   const sales = cfg.sales;
-  const m = messages(cfg.locale);
   const tiers = gradeTiers(cfg.locale);
   const chapters = chaptersFor(cfg.locale);
   const fmt = (n: number) => n.toLocaleString(t.numberLocale);
@@ -88,10 +86,14 @@ export default function Landing({ form, checkoutOpen = false, site = "ko" }: { f
           <ol className="lp-tiers">
             {GRADE_TIERS.map((tier) => (
               <li key={tier.level}>
-                <Seal level={tier.level} label={m.gradeLevel(tier.level)} />
+                <Seal level={tier.level} label={(tiers.find((x) => x.level === tier.level) ?? tier).type} />
                 <div>
-                  <b>{(tiers.find((x) => x.level === tier.level) ?? tier).name}</b>
-                  <p>{(tiers.find((x) => x.level === tier.level) ?? tier).desc}</p>
+                  <b>{(tiers.find((x) => x.level === tier.level) ?? tier).type}</b>
+                  <p>
+                    {(tiers.find((x) => x.level === tier.level) ?? tier).name}
+                    {cfg.locale === "ko" ? ". " : "。"}
+                    {(tiers.find((x) => x.level === tier.level) ?? tier).desc}
+                  </p>
                 </div>
                 <span className="lp-share">{tier.share}%</span>
               </li>

@@ -24,8 +24,8 @@ const KO = {
   // 앱 머리글(AppShell)
   shellBadge: "정밀 만세력 × 최신 AI 감정",
   shellIntro:
-    "이 감정서는 절기를 분 단위까지 계산하는 정밀 만세력 엔진으로 사주 명식을 산출하고, 방대한 지식을 학습한 최신 유료 AI 모델(Anthropic Claude)이 오행·십신·대운의 명리 이론에 따라 풀이를 작성합니다.",
-  shellDisclaimer: "명식은 만세력 계산 엔진이, 풀이 문장은 AI(Claude)가 작성합니다. 재미와 자기 성찰을 위한 참고 자료로 활용해 주세요.",
+    "이 감정서는 절기를 분 단위까지 계산하는 정밀 만세력 엔진으로 사주 명식을 산출하고, 그 명식 데이터를 근거로 AI 문장 생성 기술이 오행·십신·대운의 명리 이론에 따라 풀이를 작성합니다.",
+  shellDisclaimer: "명식은 만세력 계산 엔진이 산출하고, 풀이 문장은 AI 기술로 작성합니다. 재미와 자기 성찰을 위한 참고 자료로 활용해 주세요.",
 
   // 입력 양식(SajuApp)
   nameLabel: "의뢰인 성함 (선택)",
@@ -105,7 +105,7 @@ const KO = {
   curveAria: "10년 대운 흐름 그래프",
   curveAxis: (g: number): string => (g === 100 ? "순풍" : g === 50 ? "보통" : "조심"),
   curvePointTitle: (age: number, gz: string, score: number) => `${age}세 ${gz} · 부합도 ${score}`,
-  curveCurrent: "현재",
+  curveCurrent: "현재 위치",
   curvePeak: "전성기",
   age: (n: number) => `${n}세`,
   daeunTitle: "10년 대운 흐름",
@@ -125,11 +125,13 @@ const KO = {
   luckyHabits: (h: string) => `도움이 되는 습관: ${h}`,
 
   // 등급(GradeCard)
-  gradeTitle: "내 사주 등급",
+  gradeTitle: "내 사주 유형",
   gradeLevel: (n: number) => `${n}등급`,
   gradeTop: "상위",
   gradeScore: (s: number) => `${s}점 / 100`,
-  gradeLadderAria: "다섯 단계 등급",
+  gradeLadderAria: "다섯 가지 사주 유형",
+  /** 상위권이 아닐 때 순위 대신 보여 주는 문장 */
+  gradeTypeShare: (n: number) => `전체 사주의 ${n}%가 이 유형`,
   gradeMine: "◀ 나",
   sameCombo: "나와 같은 사주 조합",
   oneIn: (n: string) => `${n}명 중 1명`,
@@ -138,10 +140,10 @@ const KO = {
   peakSub: (gz: string, s: number) => `${gz} 대운 · 용신 부합도 ${s}`,
   has: (b: boolean): string => (b ? "있음" : "없음"),
   noblePopulation: (p: number) => `전체 사주의 ${p}%가 가진 귀인`,
-  gradeBasis: "등급 근거",
+  gradeBasis: "유형 점수 근거",
   gradeParts: { balance: "오행 균형", daeun: "대운의 도움", harmony: "신강·신약 중화", yongsin: "용신의 힘", noble: "귀인" },
   gradeNote: (range: string, total: string) =>
-    `${range}년에 태어날 수 있는 사주 ${total}개(날짜 × 12시진 × 성별)를 모두 같은 기준으로 계산해 비교한 상대 등급입니다. 오행 균형, 대운의 도움, 중화, 용신, 귀인을 점수화했으며 학파에 따라 판단이 다를 수 있어 참고용으로 제시합니다.`,
+    `${range}년에 태어날 수 있는 사주 ${total}개(날짜 × 12시진 × 성별)를 모두 같은 기준으로 계산해 비교해 정한 유형입니다. 오행 균형, 대운의 도움, 중화, 용신, 귀인을 점수화했으며 학파에 따라 판단이 다를 수 있어 참고용으로 제시합니다.`,
   gradePartial: " 태어난 시각을 몰라 시주를 뺀 6글자로 계산했습니다.",
 
   // 감정서(ReportView)
@@ -165,6 +167,8 @@ const KO = {
   coverTagline: ["하늘이 정해둔 당신의 그릇과 때(時)를 읽다", "인생의 전환점을 밝히는 지혜로운 나침반"] as [string, string],
   coverName: (name: string) => `${name} 님`,
   coverPillarsAria: "사주 팔자(시·일·월·년)",
+  /** 표지 명식 위 라벨(왼쪽부터 시·일·월·년, 원국표와 같은 순서) */
+  coverPillarLabels: ["시주", "일주(나)", "월주", "년주"] as string[],
   coverBirth: "생년월일",
   coverIssued: (date: string) => `발행일자 ${date} · 천기록 운명연구원 봉정`,
   coverConfidential: "의뢰인 본인 열람용 비밀 문서",
@@ -185,7 +189,7 @@ const KO = {
   methodChartLabel: "명식 산출:",
   methodChart: (basis: string) => `${basis} 정밀 만세력 엔진이 사주팔자·오행·십신·대운·격국과 참고 용신, 월별 흐름을 계산했습니다.`,
   methodReadingLabel: "풀이 작성:",
-  methodReading: "방대한 지식을 학습한 최신 유료 AI 모델(Anthropic Claude)이 위 명식을 근거로 작성했습니다.",
+  methodReading: "천기록 명리 분석 엔진이 산출한 위 명식 데이터(오행·십신·대운·용신·월별 흐름)를 근거로, 명리 이론에 맞춰 설계한 AI 문장 생성 기술을 활용해 의뢰인 한 분만을 위해 작성했습니다.",
   methodDisclaimerLabel: "면책 고지:",
   methodDisclaimer:
     "이 감정서는 명리학 이론에 기반한 참고 자료이며 미래를 보장하지 않습니다. 의료·법률·재무 등 전문 판단을 대신하지 않고, 감정서를 참고한 선택과 그 결과에 대한 책임은 의뢰인에게 있습니다.",
@@ -219,8 +223,8 @@ const ZH: Messages = {
 
   shellBadge: "精密萬年曆 × 最新 AI 論命",
   shellIntro:
-    "本命書以精確到分鐘的節氣萬年曆引擎排出四柱命盤，再由學習了海量知識的最新付費 AI 模型（Anthropic Claude）依照五行、十神、大運的命理理論撰寫解讀。",
-  shellDisclaimer: "命盤由萬年曆計算引擎排出，解讀文字由 AI（Claude）撰寫。僅供娛樂與自我探索參考。",
+    "本命書以精確到分鐘的節氣萬年曆引擎排出四柱命盤，再以命盤數據為依據，由 AI 文字生成技術依照五行、十神、大運的命理理論撰寫解讀。",
+  shellDisclaimer: "命盤由萬年曆計算引擎排出，解讀文字以 AI 技術撰寫。僅供娛樂與自我探索參考。",
 
   nameLabel: "姓名（選填）",
   namePlaceholder: "王小明",
@@ -297,7 +301,7 @@ const ZH: Messages = {
   curveAria: "十年大運走勢圖",
   curveAxis: (g) => (g === 100 ? "順風" : g === 50 ? "平穩" : "留意"),
   curvePointTitle: (age, gz, score) => `${age} 歲 ${gz} · 契合度 ${score}`,
-  curveCurrent: "目前",
+  curveCurrent: "目前位置",
   curvePeak: "巔峰期",
   age: (n) => `${n}歲`,
   daeunTitle: "十年大運走勢",
@@ -316,11 +320,12 @@ const ZH: Messages = {
   luckyDirection: "方位",
   luckyHabits: (h) => `有幫助的習慣：${h}`,
 
-  gradeTitle: "我的命格等級",
+  gradeTitle: "我的命格類型",
   gradeLevel: (n) => `第${n}級`,
   gradeTop: "前",
   gradeScore: (s) => `${s} 分 / 100`,
-  gradeLadderAria: "五個等級",
+  gradeLadderAria: "五種命格類型",
+  gradeTypeShare: (n) => `全部命盤中 ${n}% 屬於此類型`,
   gradeMine: "◀ 我",
   sameCombo: "與我相同的命格組合",
   oneIn: (n) => `每 ${n} 人中 1 人`,
@@ -329,10 +334,10 @@ const ZH: Messages = {
   peakSub: (gz, s) => `${gz} 大運 · 用神契合度 ${s}`,
   has: (b) => (b ? "有" : "無"),
   noblePopulation: (p) => `全部命盤中 ${p}% 擁有此貴人`,
-  gradeBasis: "等級依據",
+  gradeBasis: "類型評分依據",
   gradeParts: { balance: "五行平衡", daeun: "大運助力", harmony: "身強身弱中和", yongsin: "用神力量", noble: "貴人" },
   gradeNote: (range, total) =>
-    `將 ${range} 年間可能出生的全部 ${total} 個命盤（日期 × 12 時辰 × 性別）以相同標準計算比較所得的相對等級。評分項目為五行平衡、大運助力、中和、用神與貴人；各派看法不一，僅供參考。`,
+    `將 ${range} 年間可能出生的全部 ${total} 個命盤（日期 × 12 時辰 × 性別）以相同標準計算比較後判定的類型。評分項目為五行平衡、大運助力、中和、用神與貴人；各派看法不一，僅供參考。`,
   gradePartial: " 因出生時間不詳，以不含時柱的六字計算。",
 
   client: "委託人",
@@ -354,6 +359,7 @@ const ZH: Messages = {
   coverTagline: ["解讀上天為你安排的格局與時機", "照亮人生轉捩點的智慧羅盤"],
   coverName: (name) => name,
   coverPillarsAria: "四柱八字（時・日・月・年）",
+  coverPillarLabels: ["時柱", "日柱（我）", "月柱", "年柱"],
   coverBirth: "出生",
   coverIssued: (date) => `發行日期 ${date} · 天機錄命理研究院 敬呈`,
   coverConfidential: "僅供委託人本人閱覽之機密文件",
@@ -373,7 +379,7 @@ const ZH: Messages = {
   methodChartLabel: "命盤排定：",
   methodChart: (basis) => `由${basis}精密萬年曆引擎，計算四柱八字、五行、十神、大運、格局與參考用神及流月走勢。`,
   methodReadingLabel: "解讀撰寫：",
-  methodReading: "由學習了海量知識的最新付費 AI 模型（Anthropic Claude）依據上述命盤撰寫。",
+  methodReading: "依據天機錄命理分析引擎排出的上述命盤數據（五行・十神・大運・用神・流月），以依命理理論設計的 AI 文字生成技術，專為委託人一人撰寫。",
   methodDisclaimerLabel: "免責聲明：",
   methodDisclaimer:
     "本命書為依據命理學理論撰寫的參考資料，並不保證未來結果，亦不能取代醫療、法律、財務等專業判斷。參考本命書所做的選擇及其後果，由委託人自行負責。",
@@ -404,8 +410,8 @@ const ZH_HANS: Messages = {
 
   shellBadge: "精密万年历 × 最新 AI 论命",
   shellIntro:
-    "本命书以精确到分钟的节气万年历引擎排出四柱命盘，再由学习了海量知识的最新付费 AI 模型（Anthropic Claude）依照五行、十神、大运的命理理论撰写解读。",
-  shellDisclaimer: "命盘由万年历计算引擎排出，解读文字由 AI（Claude）撰写。仅供娱乐与自我探索参考。",
+    "本命书以精确到分钟的节气万年历引擎排出四柱命盘，再以命盘数据为依据，由 AI 文字生成技术依照五行、十神、大运的命理理论撰写解读。",
+  shellDisclaimer: "命盘由万年历计算引擎排出，解读文字以 AI 技术撰写。仅供娱乐与自我探索参考。",
 
   nameLabel: "姓名（选填）",
   namePlaceholder: "王小明",
@@ -482,7 +488,7 @@ const ZH_HANS: Messages = {
   curveAria: "十年大运走势图",
   curveAxis: (g) => (g === 100 ? "顺风" : g === 50 ? "平稳" : "留意"),
   curvePointTitle: (age, gz, score) => `${age} 岁 ${gz} · 契合度 ${score}`,
-  curveCurrent: "目前",
+  curveCurrent: "目前位置",
   curvePeak: "巅峰期",
   age: (n) => `${n}岁`,
   daeunTitle: "十年大运走势",
@@ -501,11 +507,12 @@ const ZH_HANS: Messages = {
   luckyDirection: "方位",
   luckyHabits: (h) => `有帮助的习惯：${h}`,
 
-  gradeTitle: "我的命格等级",
+  gradeTitle: "我的命格类型",
   gradeLevel: (n) => `第${n}级`,
   gradeTop: "前",
   gradeScore: (s) => `${s} 分 / 100`,
-  gradeLadderAria: "五个等级",
+  gradeLadderAria: "五种命格类型",
+  gradeTypeShare: (n) => `全部命盘中 ${n}% 属于此类型`,
   gradeMine: "◀ 我",
   sameCombo: "与我相同的命格组合",
   oneIn: (n) => `每 ${n} 人中 1 人`,
@@ -514,10 +521,10 @@ const ZH_HANS: Messages = {
   peakSub: (gz, s) => `${gz} 大运 · 用神契合度 ${s}`,
   has: (b) => (b ? "有" : "无"),
   noblePopulation: (p) => `全部命盘中 ${p}% 拥有此贵人`,
-  gradeBasis: "等级依据",
+  gradeBasis: "类型评分依据",
   gradeParts: { balance: "五行平衡", daeun: "大运助力", harmony: "身强身弱中和", yongsin: "用神力量", noble: "贵人" },
   gradeNote: (range, total) =>
-    `将 ${range} 年间可能出生的全部 ${total} 个命盘（日期 × 12 时辰 × 性别）以相同标准计算比较所得的相对等级。评分项目为五行平衡、大运助力、中和、用神与贵人；各派看法不一，仅供参考。`,
+    `将 ${range} 年间可能出生的全部 ${total} 个命盘（日期 × 12 时辰 × 性别）以相同标准计算比较后判定的类型。评分项目为五行平衡、大运助力、中和、用神与贵人；各派看法不一，仅供参考。`,
   gradePartial: " 因出生时间不详，以不含时柱的六字计算。",
 
   client: "委托人",
@@ -539,6 +546,7 @@ const ZH_HANS: Messages = {
   coverTagline: ["解读上天为你安排的格局与时机", "照亮人生转折点的智慧罗盘"],
   coverName: (name) => name,
   coverPillarsAria: "四柱八字（时・日・月・年）",
+  coverPillarLabels: ["时柱", "日柱（我）", "月柱", "年柱"],
   coverBirth: "出生",
   coverIssued: (date) => `发行日期 ${date} · 天机录命理研究院 敬呈`,
   coverConfidential: "仅供委托人本人阅览之机密文件",
@@ -558,7 +566,7 @@ const ZH_HANS: Messages = {
   methodChartLabel: "命盘排定：",
   methodChart: (basis) => `由${basis}精密万年历引擎，计算四柱八字、五行、十神、大运、格局与参考用神及流月走势。`,
   methodReadingLabel: "解读撰写：",
-  methodReading: "由学习了海量知识的最新付费 AI 模型（Anthropic Claude）依据上述命盘撰写。",
+  methodReading: "依据天机录命理分析引擎排出的上述命盘数据（五行・十神・大运・用神・流月），以依命理理论设计的 AI 文字生成技术，专为委托人一人撰写。",
   methodDisclaimerLabel: "免责声明：",
   methodDisclaimer:
     "本命书为依据命理学理论撰写的参考资料，并不保证未来结果，亦不能取代医疗、法律、财务等专业判断。参考本命书所做的选择及其后果，由委托人自行负责。",

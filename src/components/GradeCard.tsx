@@ -18,29 +18,40 @@ export default function GradeCard({ chart }: { chart: SajuChart }) {
   const t = useT();
   const locale = useLocale();
   const fmt = (n: number) => n.toLocaleString(t.numberLocale);
+  const tier = gradeTiers(locale).find((x) => x.level === g.tier.level) ?? g.tier;
+  // 상위권(상위 50% 안)일 때만 순위를 보여 주고, 그 밖에는 유형의 비율로 소개한다.
+  const ranked = g.topPercent <= 50;
   return (
     <section className="card grade" aria-labelledby="grade-title">
       <h2 id="grade-title">{t.gradeTitle}</h2>
 
       <div className="grade-hero">
-        <Seal level={g.tier.level} size="lg" animate label={t.gradeLevel(g.tier.level)} />
+        <Seal level={g.tier.level} size="lg" animate label={tier.type} />
         <div className="grade-text">
-          <b>{g.tier.name}</b>
-          <p>{g.tier.desc}</p>
+          <b>{tier.type}</b>
+          <p className="grade-name">{tier.name}</p>
+          <p>{tier.desc}</p>
           <p className="grade-top">
-            {t.gradeTop} <strong>{g.topPercent}%</strong> · {t.gradeScore(g.score)}
+            {ranked ? (
+              <>
+                {t.gradeTop} <strong>{g.topPercent}%</strong>
+              </>
+            ) : (
+              t.gradeTypeShare(tier.share)
+            )}{" "}
+            · {t.gradeScore(g.score)}
           </p>
         </div>
       </div>
 
       <ol className="grade-ladder" aria-label={t.gradeLadderAria}>
-        {gradeTiers(locale).map((tier) => {
-          const mine = tier.level === g.tier.level;
+        {gradeTiers(locale).map((tt) => {
+          const mine = tt.level === g.tier.level;
           return (
-            <li key={tier.level} className={mine ? "mine" : undefined} aria-current={mine ? "true" : undefined}>
-              <span className="lv">{t.gradeLevel(tier.level)}</span>
-              <span className="nm">{tier.name}</span>
-              <span className="sh">{mine ? t.gradeMine : `${tier.share}%`}</span>
+            <li key={tt.level} className={mine ? "mine" : undefined} aria-current={mine ? "true" : undefined}>
+              <span className="lv">{tt.type.replace(/\(.*\)$/, "")}</span>
+              <span className="nm">{tt.name}</span>
+              <span className="sh">{mine ? t.gradeMine : `${tt.share}%`}</span>
             </li>
           );
         })}

@@ -95,11 +95,14 @@ function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null;
         <p className="cover-name">
           {t.coverName(clientName(chart, t))} <span>{chart.input.gender === "male" ? "乾命" : "坤命"}</span>
         </p>
-        <p className="cover-pillars" aria-label={t.coverPillarsAria}>
+        <div className="cover-pillars" role="group" aria-label={t.coverPillarsAria}>
           {order.map((p, i) => (
-            <span key={i}>{p ? `${p.stem}${p.branch}` : "□□"}</span>
+            <div key={i} className={i === 1 ? "day" : undefined}>
+              <small>{t.coverPillarLabels[i]}</small>
+              <span>{p ? `${p.stem}${p.branch}` : "□□"}</span>
+            </div>
           ))}
-        </p>
+        </div>
         {intro && <p className="cover-keywords">{intro.coverKeywords.slice(0, 3).join(" · ")}</p>}
         <p className="cover-meta">
           {t.coverBirth} {coverBirth(chart, t)}
@@ -161,15 +164,28 @@ function Pending({ state, onRetry, label }: { state: PartState | undefined; onRe
   return null;
 }
 
+/**
+ * 한국어 풀이 문장 속 한자를 <span class="hz">로 감싼다. 휴대폰 기본 글꼴로 PDF를 만들면 한자가 다른 글꼴로 바뀌며
+ * 일부 PDF 뷰어에서 빠져 보이는 일이 있어, 한자만 웹 글꼴(Noto Serif KR)로 고정한다. 중국어 화면은 그대로 둔다.
+ */
+function useHanja() {
+  const locale = useLocale();
+  return (text: string): ReactNode =>
+    locale !== "ko"
+      ? text
+      : text.split(/([\u3400-\u9FFF\uF900-\uFAFF]+)/).map((part, i) => (i % 2 ? <span key={i} className="hz">{part}</span> : part));
+}
+
 function ChapterText({ chapter }: { chapter: Chapter }) {
   const t = useT();
+  const hz = useHanja();
   return (
     <section className="card chapter">
       {chapter.sections.map((s, i) => (
         <article key={i} className="section">
-          <h3>{s.heading}</h3>
+          <h3>{hz(s.heading)}</h3>
           {s.paragraphs.map((p, j) => (
-            <p key={j}>{p}</p>
+            <p key={j}>{hz(p)}</p>
           ))}
         </article>
       ))}
@@ -177,8 +193,8 @@ function ChapterText({ chapter }: { chapter: Chapter }) {
         <div className="action-plan">
           <h4>{t.actionPlan}</h4>
           <ul>
-            {chapter.actionPlan.map((t, i) => (
-              <li key={i}>{t}</li>
+            {chapter.actionPlan.map((item, i) => (
+              <li key={i}>{hz(item)}</li>
             ))}
           </ul>
         </div>
@@ -192,6 +208,7 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
   const CHAPTERS = chaptersFor(useLocale());
   const years = chart.analysis.reportYears;
   const intro = introOf(parts);
+  const hz = useHanja();
   const visuals: Partial<Record<ChapterKey, ReactNode>> = {
     part1: (
       <>
@@ -221,9 +238,9 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
           <h2>{t.preface}</h2>
           {intro ? (
             <>
-              <p className="summary">{intro.summary}</p>
+              <p className="summary">{hz(intro.summary)}</p>
               {intro.preface.map((p, i) => (
-                <p key={i}>{p}</p>
+                <p key={i}>{hz(p)}</p>
               ))}
             </>
           ) : (

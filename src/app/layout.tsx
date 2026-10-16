@@ -13,7 +13,7 @@ const siteUrl =
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: `${BRAND.name} — ${BRAND.tagline}`,
-  description: "절기를 분 단위로 맞춘 만세력으로 사주를 세우고, 다섯 등급 가운데 내 사주의 자리와 100년의 대운 흐름을 알려 드립니다.",
+  description: "절기를 분 단위로 맞춘 만세력으로 사주를 세우고, 다섯 유형 가운데 내 사주의 자리와 100년의 대운 흐름을 알려 드립니다.",
   openGraph: { siteName: BRAND.name, locale: "ko_KR", type: "website" },
 };
 

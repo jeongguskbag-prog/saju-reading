@@ -94,7 +94,8 @@ export function chartForPrompt(chart: SajuChart) {
     월별흐름: a.monthly.map(
       (m) => `${m.year}년 절입 ${m.startDate.slice(5)}~ ${m.stem}${m.branch} (${m.stemTenGod}/${m.branchTenGod}) ${m.mark}`,
     ),
-    사주등급: `${chart.grade.tier.level}등급 ${chart.grade.tier.name} (상위 ${chart.grade.topPercent}%, ${chart.grade.score}/100) · 대운 전성기 ${chart.grade.peak ? `${chart.grade.peak.startAge}~${chart.grade.peak.endAge}세` : "-"} · 귀인 ${chart.grade.nobles.filter((n) => n.has).map((n) => n.name).join(", ") || "없음"}`,
+    // 숫자 등급·하위 순위는 넘기지 않는다(감정서에 "4등급", "상위 81%" 같은 말이 나오지 않게). 상위권만 순위를 쓴다.
+    사주유형: `${chart.grade.tier.type} — ${chart.grade.tier.name} (${chart.grade.topPercent <= 15 ? `상위 ${chart.grade.topPercent}%, ` : ""}점수 ${chart.grade.score}/100) · 대운 전성기 ${chart.grade.peak ? `${chart.grade.peak.startAge}~${chart.grade.peak.endAge}세` : "-"} · 귀인 ${chart.grade.nobles.filter((n) => n.has).map((n) => n.name).join(", ") || "없음"}`,
     개운요소: { 오행: ELEMENT_KO[a.lucky.element], 색상: a.lucky.colors, 숫자: a.lucky.numbers, 방위: a.lucky.direction, 습관: a.lucky.habits },
   };
 }
@@ -133,7 +134,7 @@ export function chartForPromptZh(chart: SajuChart) {
     },
     流年: a.yearScores.map((y) => `${y.year}年 ${y.ganzhi}・用神契合度 ${y.score}/100`),
     流月: a.monthly.map((m) => `${m.year}年 交節 ${m.startDate.slice(5)}起 ${m.stem}${m.branch}（${g(m.stemTenGod)}／${g(m.branchTenGod)}）${mark[m.mark]}`),
-    命格等級: `第${chart.grade.tier.level}級 ${chart.grade.tier.name}（前 ${chart.grade.topPercent}%，${chart.grade.score}/100）・大運巔峰 ${chart.grade.peak ? `${chart.grade.peak.startAge}～${chart.grade.peak.endAge}歲` : "-"}・貴人 ${chart.grade.nobles.filter((n) => n.has).map((n) => (n.name === "천을귀인" ? "天乙貴人" : "文昌貴人")).join("、") || "無"}`,
+    命格類型: `${chart.grade.tier.type}・${chart.grade.tier.name}（${chart.grade.topPercent <= 15 ? `前 ${chart.grade.topPercent}%，` : ""}${chart.grade.score}/100）・大運巔峰 ${chart.grade.peak ? `${chart.grade.peak.startAge}～${chart.grade.peak.endAge}歲` : "-"}・貴人 ${chart.grade.nobles.filter((n) => n.has).map((n) => (n.name === "천을귀인" ? "天乙貴人" : "文昌貴人")).join("、") || "無"}`,
     開運要素: { 五行: ELEMENT_ZH[a.lucky.element], 顏色: a.lucky.colors, 數字: a.lucky.numbers, 方位: a.lucky.direction, 習慣: a.lucky.habits },
   };
 }
@@ -172,7 +173,7 @@ export function chartForPromptHans(chart: SajuChart) {
     },
     流年: a.yearScores.map((y) => `${y.year}年 ${y.ganzhi}・用神契合度 ${y.score}/100`),
     流月: a.monthly.map((m) => `${m.year}年 交节 ${m.startDate.slice(5)}起 ${m.stem}${m.branch}（${g(m.stemTenGod)}／${g(m.branchTenGod)}）${mark[m.mark]}`),
-    命格等级: `第${chart.grade.tier.level}级 ${chart.grade.tier.name}（前 ${chart.grade.topPercent}%，${chart.grade.score}/100）・大运巅峰 ${chart.grade.peak ? `${chart.grade.peak.startAge}～${chart.grade.peak.endAge}岁` : "-"}・贵人 ${chart.grade.nobles.filter((n) => n.has).map((n) => (n.name === "천을귀인" ? "天乙贵人" : "文昌贵人")).join("、") || "无"}`,
+    命格类型: `${chart.grade.tier.type}・${chart.grade.tier.name}（${chart.grade.topPercent <= 15 ? `前 ${chart.grade.topPercent}%，` : ""}${chart.grade.score}/100）・大运巅峰 ${chart.grade.peak ? `${chart.grade.peak.startAge}～${chart.grade.peak.endAge}岁` : "-"}・贵人 ${chart.grade.nobles.filter((n) => n.has).map((n) => (n.name === "천을귀인" ? "天乙贵人" : "文昌贵人")).join("、") || "无"}`,
     开运要素: { 五行: ELEMENT_ZH[a.lucky.element], 颜色: a.lucky.colors, 数字: a.lucky.numbers, 方位: a.lucky.direction, 习惯: a.lucky.habits },
   };
 }

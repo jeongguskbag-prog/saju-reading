@@ -334,7 +334,11 @@ details.advanced[open] summary { margin-bottom: 10px; }
 .cover-card { max-width: 440px; width: 100%; margin: 0 auto; padding: 22px 28px; border: 1px solid rgba(217, 207, 180, 0.35); background: rgba(0, 0, 0, 0.16); border-radius: 4px; }
 .cover-name { margin: 0 0 10px; font-family: var(--display); font-size: 22px; letter-spacing: 0.12em; color: #f1e6d2; }
 .cover-name span { font-size: 15px; color: #d9cfb4; margin-left: 6px; }
-.cover-pillars { display: flex; justify-content: center; gap: 16px; margin: 0 0 10px; font-family: var(--display); font-size: 22px; color: #e8a49c; }
+.cover-pillars { display: flex; justify-content: center; gap: 18px; margin: 0 0 12px; }
+.cover-pillars > div { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 3.2em; }
+.cover-pillars small { font-size: 10.5px; letter-spacing: 0.08em; color: #a7a293; }
+.cover-pillars span { font-family: var(--display); font-size: 22px; color: #e8a49c; }
+.cover-pillars .day span { color: #f6c7bf; border-bottom: 1px solid rgba(232, 164, 156, 0.6); }
 .cover-keywords { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #ece9e1; }
 .cover-meta { margin: 0; font-size: 12.5px; line-height: 1.8; color: #a7a293; }
 .cover-foot { display: flex; justify-content: space-between; align-items: flex-end; text-align: left; padding: 0 8px; }
@@ -393,6 +397,9 @@ details.advanced[open] summary { margin-bottom: 10px; }
   .daeun { flex-wrap: wrap; overflow: visible; }
   .daeun .item { flex: 0 0 calc(25% - 6px); }
   .month-block { break-inside: avoid; }
+  /* 세운·월별 흐름 카드는 한 쪽보다 길다. 통째로 다음 쪽에 넘기면 Part 5 첫 쪽이 비므로 표 단위로 나눈다. */
+  .card.yearflow { break-inside: auto; page-break-inside: auto; }
+  .year-scores { break-inside: avoid; }
 
   /* 우리 화면(웹 #app-root, 앱 #root) 밖에 끼워 넣어진 요소는 PDF에 넣지 않는다. */
   body > :not(#app-root):not(#root), html > :not(head):not(body) { display: none !important; }
@@ -406,9 +413,10 @@ details.advanced[open] summary { margin-bottom: 10px; }
 .grade-text b { font-family: var(--display); font-weight: 400; font-size: 22px; }
 .grade-text p { margin: 2px 0 0; font-size: 14px; color: var(--text-2); }
 .grade-text .grade-top { margin-top: 6px; color: var(--text); }
+.grade-text .grade-name { margin-top: 4px; font-weight: 600; color: var(--text); }
 .grade-top strong { color: var(--accent); font-size: 17px; }
 .grade-ladder { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 4px; }
-.grade-ladder li { display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; align-items: center; padding: 7px 12px; border-radius: 8px; background: var(--surface-2); font-size: 14px; color: var(--text-2); }
+.grade-ladder li { display: grid; grid-template-columns: 6.6em 1fr auto; gap: 8px; align-items: center; padding: 7px 12px; border-radius: 8px; background: var(--surface-2); font-size: 14px; color: var(--text-2); }
 .grade-ladder .lv { font-weight: 700; }
 .grade-ladder .sh { font-size: 12px; font-variant-numeric: tabular-nums; }
 .grade-ladder li.mine { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
@@ -715,3 +723,6 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .site-footer-langs a[aria-current="true"] { color: var(--text); font-weight: 700; }
 /* 한국어용 keep-all은 띄어쓰기가 없는 중국어를 문장 부호에서만 끊어, 줄이 들쭉날쭉해진다. */
 .zh, .zh * { word-break: normal; line-break: strict; }
+
+/* 감정서 풀이 문장 속 한자. 휴대폰 기본 글꼴 대신 웹 글꼴로 고정해 PDF에서 빠지지 않게 한다. */
+.hz { font-family: "Noto Serif KR", "Noto Serif CJK KR", "Batang", "AppleMyungjo", serif; }

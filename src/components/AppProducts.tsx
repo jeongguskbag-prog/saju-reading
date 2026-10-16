@@ -21,7 +21,7 @@ export default function AppProducts({ value, onChange, years }: { value: Product
               {p.available ? (
                 <>
                   <p className="lp-plan-parts">
-                    {p.parts.length - 1 === 5 ? "1~5부 전체" : "1부 천명 · 5부 세운과 개운법"} · 등급표·대운 곡선·월별 흐름표 · 책자형 PDF
+                    {p.parts.length - 1 === 5 ? "1~5부 전체" : "1부 천명 · 5부 세운과 개운법"} · 유형표·대운 곡선·월별 흐름표 · 책자형 PDF
                   </p>
                   <button
                     type="button"

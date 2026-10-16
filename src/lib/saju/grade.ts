@@ -23,6 +23,10 @@ const MUNCHANG: Record<Stem, Branch> = {
 
 export interface GradeTier {
   level: 1 | 2 | 3 | 4 | 5;
+  /** 유형 이름(숫자 등급 대신 화면·도장·감정서에 쓴다). 예: "대기만성형(大器晩成型)" */
+  type: string;
+  /** 유형 도장에 새길 두 글자 */
+  seal: string;
   name: string;
   desc: string;
   /** 이 단계에 드는 사주의 비율(%) */
@@ -31,27 +35,27 @@ export interface GradeTier {
 
 /** 상위부터 누적 비율로 자른다. 합계 100. */
 export const GRADE_TIERS: GradeTier[] = [
-  { level: 1, name: "타고난 복을 쥔 사주", desc: "원국의 균형, 용신의 힘, 대운의 도움이 고루 갖춰진 드문 구성입니다.", share: 3 },
-  { level: 2, name: "기세가 뚜렷한 사주", desc: "강점이 분명하고 대운이 그 강점을 밀어 주는 구성입니다.", share: 12 },
-  { level: 3, name: "균형 잡힌 사주", desc: "치우침이 적어 꾸준히 쌓아 가는 힘이 좋은 구성입니다.", share: 35 },
-  { level: 4, name: "때를 만나 크는 사주", desc: "원국의 빈자리를 대운이 채워 줄 때 크게 움직이는 구성입니다.", share: 35 },
-  { level: 5, name: "스스로 길을 내는 사주", desc: "치우친 기운이 뚜렷해, 그 기운을 다루는 법을 알면 오히려 개성이 되는 구성입니다.", share: 15 },
+  { level: 1, type: "천복형(天福型)", seal: "天福", name: "타고난 복을 쥔 사주", desc: "원국의 균형, 용신의 힘, 대운의 도움이 고루 갖춰진 드문 구성입니다.", share: 3 },
+  { level: 2, type: "기세형(氣勢型)", seal: "氣勢", name: "기세가 뚜렷한 사주", desc: "강점이 분명하고 대운이 그 강점을 밀어 주는 구성입니다.", share: 12 },
+  { level: 3, type: "중화형(中和型)", seal: "中和", name: "균형 잡힌 사주", desc: "치우침이 적어 꾸준히 쌓아 가는 힘이 좋은 구성입니다.", share: 35 },
+  { level: 4, type: "대기만성형(大器晩成型)", seal: "大器", name: "때를 만나 크는 사주", desc: "원국의 빈자리를 대운이 채워 줄 때 폭발적으로 성장하는 구성입니다.", share: 35 },
+  { level: 5, type: "개척형(開拓型)", seal: "開拓", name: "스스로 길을 내는 사주", desc: "치우친 기운이 뚜렷해, 그 기운을 다루는 법을 알면 오히려 개성이 되는 구성입니다.", share: 15 },
 ];
 
 export const GRADE_TIERS_ZH: GradeTier[] = [
-  { level: 1, name: "天生握福之命", desc: "命局平衡、用神有力、大運相助，三者兼備的少見組合。", share: 3 },
-  { level: 2, name: "氣勢鮮明之命", desc: "優勢明確，大運也能推動這份優勢的組合。", share: 12 },
-  { level: 3, name: "均衡穩健之命", desc: "偏頗較少，擅長穩紮穩打、持續累積的組合。", share: 35 },
-  { level: 4, name: "逢時而起之命", desc: "當大運補足命局的空缺時，便能大展身手的組合。", share: 35 },
-  { level: 5, name: "自闢蹊徑之命", desc: "氣勢偏向鮮明，懂得駕馭這股能量時，反而成為獨特個性的組合。", share: 15 },
+  { level: 1, type: "天福型", seal: "天福", name: "天生握福之命", desc: "命局平衡、用神有力、大運相助，三者兼備的少見組合。", share: 3 },
+  { level: 2, type: "氣勢型", seal: "氣勢", name: "氣勢鮮明之命", desc: "優勢明確，大運也能推動這份優勢的組合。", share: 12 },
+  { level: 3, type: "中和型", seal: "中和", name: "均衡穩健之命", desc: "偏頗較少，擅長穩紮穩打、持續累積的組合。", share: 35 },
+  { level: 4, type: "大器晚成型", seal: "大器", name: "逢時而起之命", desc: "當大運補足命局的空缺時，便能大展身手的組合。", share: 35 },
+  { level: 5, type: "開拓型", seal: "開拓", name: "自闢蹊徑之命", desc: "氣勢偏向鮮明，懂得駕馭這股能量時，反而成為獨特個性的組合。", share: 15 },
 ];
 
 export const GRADE_TIERS_HANS: GradeTier[] = [
-  { level: 1, name: "天生握福之命", desc: "命局平衡、用神有力、大运相助，三者兼备的少见组合。", share: 3 },
-  { level: 2, name: "气势鲜明之命", desc: "优势明确，大运也能推动这份优势的组合。", share: 12 },
-  { level: 3, name: "均衡稳健之命", desc: "偏颇较少，擅长稳扎稳打、持续累积的组合。", share: 35 },
-  { level: 4, name: "逢时而起之命", desc: "当大运补足命局的空缺时，便能大展身手的组合。", share: 35 },
-  { level: 5, name: "自辟蹊径之命", desc: "气势偏向鲜明，懂得驾驭这股能量时，反而成为独特个性的组合。", share: 15 },
+  { level: 1, type: "天福型", seal: "天福", name: "天生握福之命", desc: "命局平衡、用神有力、大运相助，三者兼备的少见组合。", share: 3 },
+  { level: 2, type: "气势型", seal: "氣勢", name: "气势鲜明之命", desc: "优势明确，大运也能推动这份优势的组合。", share: 12 },
+  { level: 3, type: "中和型", seal: "中和", name: "均衡稳健之命", desc: "偏颇较少，擅长稳扎稳打、持续累积的组合。", share: 35 },
+  { level: 4, type: "大器晚成型", seal: "大器", name: "逢时而起之命", desc: "当大运补足命局的空缺时，便能大展身手的组合。", share: 35 },
+  { level: 5, type: "开拓型", seal: "開拓", name: "自辟蹊径之命", desc: "气势偏向鲜明，懂得驾驭这股能量时，反而成为独特个性的组合。", share: 15 },
 ];
 
 export const gradeTiers = (locale: Locale = "ko") => (locale === "zh-Hant" ? GRADE_TIERS_ZH : locale === "zh-Hans" ? GRADE_TIERS_HANS : GRADE_TIERS);
