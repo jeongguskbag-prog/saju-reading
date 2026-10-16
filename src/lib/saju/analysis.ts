@@ -36,6 +36,8 @@ export interface Usefulness {
   /** 용신을 극하는 오행 */
   gisin: Element;
   method: string;
+  /** method의 근거(언어별 문장용): 신약·신강·중화 */
+  basis: "weak" | "strong" | "balanced";
 }
 
 export interface MonthFlow {
@@ -52,7 +54,7 @@ export interface MonthFlow {
 }
 
 export interface Analysis {
-  gyeokguk: { name: string; basis: string };
+  gyeokguk: Gyeokguk;
   usefulness: Usefulness;
   /** 대운별 용신 부합도(0~100, 50이 중립) */
   daeunScores: { startAge: number; startYear: number; ganzhi: string; score: number }[];
@@ -66,8 +68,19 @@ export interface Analysis {
   yearScores: { year: number; ganzhi: string; score: number }[];
 }
 
+export interface Gyeokguk {
+  name: string;
+  basis: string;
+  /** 격을 정한 십신 */
+  god: TenGod;
+  monthBranch: string;
+  /** 격을 정한 천간(드러났으면 그 글자, 아니면 월지 정기) */
+  stem: string;
+  revealed: boolean;
+}
+
 /** 월지 정기(본기)가 천간에 드러나면 그 십신, 아니면 월지 정기의 십신으로 격을 정한다. 비견·겁재는 건록·양인격으로 부른다. */
-export function determineGyeokguk(day: Pillar, month: Pillar, others: Pillar[]): { name: string; basis: string } {
+export function determineGyeokguk(day: Pillar, month: Pillar, others: Pillar[]): Gyeokguk {
   const hidden = HIDDEN_STEMS[month.branch];
   const main = hidden[hidden.length - 1];
   const visibleStems = [month.stem, ...others.map((p) => p.stem)];
@@ -76,7 +89,7 @@ export function determineGyeokguk(day: Pillar, month: Pillar, others: Pillar[]):
   const god = tenGod(day.stem, base);
   const name = god === "비견" ? "건록격" : god === "겁재" ? "양인격" : `${god}격`;
   const basis = revealed ? `월지 ${month.branch}의 지장간 ${base}이(가) 천간에 드러남` : `월지 ${month.branch}의 정기 ${main} 기준`;
-  return { name, basis };
+  return { name, basis, god, monthBranch: month.branch, stem: base, revealed: Boolean(revealed) };
 }
 
 const generatorOf = (e: Element) => ELEMENTS.find((x) => GENERATES[x] === e)!;
@@ -90,19 +103,23 @@ export function determineUsefulness(dayElement: Element, strengthScore: number, 
   const officer = controllerOf(dayElement); // 관성
   let candidates: Element[];
   let method: string;
+  let basis: Usefulness["basis"];
   if (strengthScore < 40) {
     candidates = [resource, dayElement];
     method = "신약하여 일간을 돕는 오행(인성·비겁) 중 부족한 쪽";
+    basis = "weak";
   } else if (strengthScore > 60) {
     candidates = [output, wealth, officer];
     method = "신강하여 힘을 빼 주는 오행(식상·재성·관성) 중 부족한 쪽";
+    basis = "strong";
   } else {
     candidates = [...ELEMENTS];
     method = "중화에 가까워 원국에서 가장 부족한 오행";
+    basis = "balanced";
   }
   // 동점이면 후보 순서를 따른다.
   const yongsin = candidates.reduce((best, e) => (weighted[e] < weighted[best] ? e : best), candidates[0]);
-  return { yongsin, huisin: generatorOf(yongsin), gisin: controllerOf(yongsin), method: `억부·균형 기준: ${method}` };
+  return { yongsin, huisin: generatorOf(yongsin), gisin: controllerOf(yongsin), method: `억부·균형 기준: ${method}`, basis };
 }
 
 const elementScore = (e: Element, u: Usefulness) => (e === u.yongsin ? 2 : e === u.huisin ? 1 : e === u.gisin ? -2 : 0);

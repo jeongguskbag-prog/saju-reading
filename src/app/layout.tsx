@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { BRAND } from "@/lib/product";
+import { LOCALES, type Locale } from "@/lib/i18n/locales";
 import "./globals.css";
 
 // 공유 미리보기 이미지(opengraph-image.png)의 절대 주소를 만들 기준 주소.
@@ -20,14 +22,22 @@ export const viewport: Viewport = {
   themeColor: "#24324f",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // 대만·홍콩 주소는 proxy.ts가 언어를 알려 준다. 그 밖에는 한국어.
+  const requested = (await headers()).get("x-site-locale") as Locale | null;
+  const site = LOCALES[requested && requested in LOCALES ? requested : "ko"];
+  const zh = site.locale !== "ko";
   return (
-    <html lang="ko">
+    <html lang={site.htmlLang}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap" rel="stylesheet" />
+        {zh && (
+          // eslint-disable-next-line @next/next/no-page-custom-font
+          <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet" />
+        )}
       </head>
       <body>
         {/* 인쇄(PDF) 때는 이 상자 밖의 요소(휴대폰 앱·확장 프로그램이 끼워 넣은 버튼 등)를 모두 숨긴다. */}

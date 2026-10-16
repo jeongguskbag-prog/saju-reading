@@ -1,4 +1,5 @@
 import { BUSINESS, kakaoChatUrl } from "@/lib/product";
+import { getMessages, type Locale } from "@/lib/i18n";
 
 /** 카카오톡 말풍선 모양(로고가 아닌 일반 말풍선) */
 function Bubble() {
@@ -9,40 +10,40 @@ function Bubble() {
   );
 }
 
+/** 카톡 상담 주소. 카카오톡을 거의 쓰지 않는 나라(대만·홍콩) 화면에서는 숨긴다. */
+const chatUrl = (locale?: Locale) => (getMessages(locale).support.showKakao ? kakaoChatUrl() : null);
+
 /** 화면 오른쪽 아래에 떠 있는 카톡 상담 버튼. 채널 주소가 없으면 그리지 않는다. 인쇄(PDF)에는 넣지 않는다. */
-export function FloatingKakao() {
-  const url = kakaoChatUrl();
+export function FloatingKakao({ locale }: { locale?: Locale } = {}) {
+  const url = chatUrl(locale);
   if (!url) return null;
+  const s = getMessages(locale).support;
   return (
-    <a className="kakao-float no-print" href={url} target="_blank" rel="noopener" aria-label="카카오톡으로 1:1 상담하기">
+    <a className="kakao-float no-print" href={url} target="_blank" rel="noopener" aria-label={s.kakaoFloatAria}>
       <Bubble />
-      <span>카톡 상담</span>
+      <span>{s.kakaoFloat}</span>
     </a>
   );
 }
 
 /** 상담 안내: 카톡 1:1 상담(설정된 경우)과 이메일 문의. */
-export function SupportBox({ compact = false }: { compact?: boolean }) {
-  const url = kakaoChatUrl();
+export function SupportBox({ compact = false, locale }: { compact?: boolean; locale?: Locale }) {
+  const s = getMessages(locale).support;
+  const url = chatUrl(locale);
   const email = BUSINESS.email;
   return (
     <div className={`support-box no-print${compact ? " compact" : ""}`}>
-      {!compact && (
-        <p className="support-lead">
-          결제 방법, 생년월일 입력, 감정서 받는 법 등 무엇이든 편하게 물어 주세요.{" "}
-          {url ? "카카오톡으로 1:1 상담해 드리며, 그 밖의 문의는 이메일로 받습니다." : "이메일로 문의해 주시면 도와 드립니다."}
-        </p>
-      )}
+      {!compact && <p className="support-lead">{s.lead(Boolean(url))}</p>}
       <div className="support-actions">
         {url && (
           <a className="kakao-btn" href={url} target="_blank" rel="noopener">
             <Bubble />
-            카카오톡 1:1 상담
+            {s.kakao}
           </a>
         )}
         {email && (
-          <a className="mail-btn" href={`mailto:${email}?subject=${encodeURIComponent("[천기록] 문의")}`}>
-            이메일 문의 {email}
+          <a className="mail-btn" href={`mailto:${email}?subject=${encodeURIComponent(s.mailSubject)}`}>
+            {s.mail(email)}
           </a>
         )}
       </div>

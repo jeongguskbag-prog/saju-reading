@@ -8,7 +8,9 @@ export async function POST(request: Request) {
   try {
     return NextResponse.json({ chart: calculateSaju(parsed.value) });
   } catch (error) {
-    if (error instanceof InputError) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof InputError) {
+      return NextResponse.json({ error: error.message, code: error.code, params: error.params }, { status: 400 });
+    }
     throw error;
   }
 }

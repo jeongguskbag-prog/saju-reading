@@ -2,6 +2,11 @@ import Landing from "@/components/Landing";
 import SajuApp from "@/components/SajuApp";
 import { checkoutConfig } from "@/lib/orders";
 import { isAiEnabled, isFreeReading } from "@/lib/reading";
+import { languageAlternates } from "@/lib/i18n";
+import type { Metadata } from "next";
+
+// 대만(/zh-tw)·홍콩(/zh-hk) 화면이 있다는 것을 검색엔진에 알린다.
+export const metadata: Metadata = { alternates: { canonical: "/", languages: languageAlternates() } };
 
 // 환경변수(결제·AI 키) 유무를 요청 시점에 읽는다.
 export const dynamic = "force-dynamic";

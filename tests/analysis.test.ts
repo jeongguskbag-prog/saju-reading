@@ -32,7 +32,7 @@ describe("격국·용신", () => {
 
 describe("점수·월별 흐름·개운", () => {
   it("용신이 천간·지지에 모두 오면 최고점, 기신이면 최저점", () => {
-    const u = { yongsin: "metal", huisin: "earth", gisin: "fire", method: "" } as const;
+    const u = { yongsin: "metal", huisin: "earth", gisin: "fire", method: "", basis: "balanced" } as const;
     expect(ganzhiScore("metal", "metal", u)).toBe(100);
     expect(ganzhiScore("fire", "fire", u)).toBe(0);
     expect(ganzhiScore("wood", "water", u)).toBe(50);

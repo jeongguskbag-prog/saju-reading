@@ -633,6 +633,15 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .site-footer-biz dt { color: var(--text-3); }
 .site-footer-biz dd { margin: 0; color: var(--text-2); }
 .site-footer-note { margin: 0; line-height: 1.7; word-break: keep-all; max-width: 60em; }
+/* 중국어 화면: Song Myung에는 한자가 없어, 번체 명조(Noto Serif TC)로 제목을 쓴다. */
+html:lang(zh) { --display: "Noto Serif TC", "Songti TC", "PMingLiU", serif; }
+/* 한국어용 keep-all은 띄어쓰기가 없는 중국어를 문장 부호에서만 끊어, 줄이 들쭉날쭉해진다. */
+html:lang(zh) body, html:lang(zh) body * { word-break: normal; line-break: strict; }
+html:lang(zh) body { font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "PingFang HK", "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
+.site-footer-langs { display: flex; flex-wrap: wrap; gap: 6px 16px; padding-top: 10px; border-top: 1px solid var(--border); }
+.site-footer-langs a { color: var(--text-2); text-decoration: none; }
+.site-footer-langs a:hover { text-decoration: underline; }
+.site-footer-langs a[aria-current="true"] { color: var(--text); font-weight: 700; }
 
 /* 약관·방침 */
 .policy h1 { font-family: var(--display); font-weight: 400; font-size: 28px; margin: 0 0 4px; }

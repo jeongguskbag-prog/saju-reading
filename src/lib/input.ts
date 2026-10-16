@@ -16,6 +16,7 @@ export const birthInputSchema = z.object({
       solarTimeCorrection: z.boolean().optional(),
       longitude: z.number().min(-180).max(180).optional(),
       dayBoundary: z.enum(["at23", "at0"]).optional(),
+      region: z.enum(["KR", "TW", "HK"]).optional(),
     })
     .optional(),
 });

@@ -3,6 +3,7 @@ import {
   calculateSaju,
   InputError,
   koreaUtcOffsetMinutes,
+  regionUtcOffsetMinutes,
   tenGod,
   yearGanZhi,
   type BirthInput,
@@ -94,6 +95,37 @@ describe("사주 네 기둥", () => {
     const c = calculateSaju(base({ year: 1988, month: 7, day: 1, hour: 13, minute: 20, options: { solarTimeCorrection: false } }));
     expect(c.pillars.hour?.branch).toBe("午");
     expect(c.warnings.some((w) => w.includes("서머타임"))).toBe(true);
+  });
+});
+
+describe("출생 지역(대만·홍콩)", () => {
+  it("지역별 과거 시간대를 반영한다", () => {
+    expect(regionUtcOffsetMinutes("TW", 1990, 6, 15, 12, 30)).toBe(480);
+    expect(regionUtcOffsetMinutes("TW", 1979, 8, 1, 13, 10)).toBe(540); // 대만 1979년 서머타임
+    expect(regionUtcOffsetMinutes("HK", 1970, 7, 1, 12, 0)).toBe(540); // 홍콩 1970년 서머타임
+    expect(regionUtcOffsetMinutes("HK", 1990, 7, 1, 12, 0)).toBe(480);
+  });
+
+  it("같은 순간이면 한국과 대만의 년·월·일주가 같다", () => {
+    const kr = calculateSaju(base({ year: 1990, month: 6, day: 15, hour: 13, minute: 30 }));
+    const tw = calculateSaju(base({ year: 1990, month: 6, day: 15, hour: 12, minute: 30, options: { region: "TW" } }));
+    expect(gz(tw.pillars.year)).toBe(gz(kr.pillars.year));
+    expect(gz(tw.pillars.month)).toBe(gz(kr.pillars.month));
+    expect(gz(tw.pillars.day)).toBe(gz(kr.pillars.day));
+    expect(tw.time?.longitude).toBe(121.56);
+    expect(tw.notices.some((n) => n.code === "zoneShift")).toBe(false);
+  });
+
+  it("대만 1979년 서머타임은 1시간을 빼고 시주를 정한다", () => {
+    const c = calculateSaju(base({ year: 1979, month: 8, day: 1, hour: 13, minute: 10, options: { region: "TW", solarTimeCorrection: false } }));
+    expect(c.pillars.hour?.branch).toBe("午");
+    expect(c.notices).toContainEqual({ code: "zoneShift", offsetMinutes: 540 });
+  });
+
+  it("홍콩은 경도 114.17°로 진태양시를 보정한다(약 -23분)", () => {
+    const c = calculateSaju(base({ year: 1990, month: 6, day: 15, hour: 13, minute: 10, options: { region: "HK" } }));
+    expect(c.time?.local).toBe("1990-06-15 12:46");
+    expect(c.pillars.hour?.branch).toBe("午");
   });
 });
 

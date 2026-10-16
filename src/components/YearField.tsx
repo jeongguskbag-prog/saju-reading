@@ -1,9 +1,12 @@
 "use client";
 
+import { getMessages, type Locale } from "@/lib/i18n";
+
 const FIRST_YEAR = 1900;
 
 /** 네 자리 숫자만 입력되는 연도 칸 + 스크롤해서 고르는 연도 목록(▼). */
-export default function YearField({ value, onChange }: { value: string; onChange: (year: string) => void }) {
+export default function YearField({ value, onChange, locale }: { value: string; onChange: (year: string) => void; locale?: Locale }) {
+  const f = getMessages(locale).form;
   const thisYear = new Date().getFullYear();
   const years = Array.from({ length: thisYear - FIRST_YEAR + 1 }, (_, i) => String(thisYear - i));
   const inList = years.includes(value);
@@ -11,7 +14,7 @@ export default function YearField({ value, onChange }: { value: string; onChange
   return (
     <div className="year-field">
       <input
-        aria-label="년"
+        aria-label={f.yearAria}
         type="text"
         inputMode="numeric"
         pattern="[0-9]{4}"
@@ -26,14 +29,14 @@ export default function YearField({ value, onChange }: { value: string; onChange
         <path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <select
-        aria-label="연도 목록에서 선택"
+        aria-label={f.yearPick}
         className="year-picker"
         value={inList ? value : ""}
         onChange={(e) => e.target.value && onChange(e.target.value)}
       >
-        <option value="" disabled>연도 선택</option>
+        <option value="" disabled>{f.yearPickPlaceholder}</option>
         {years.map((y) => (
-          <option key={y} value={y}>{y}년</option>
+          <option key={y} value={y}>{f.yearOption(y)}</option>
         ))}
       </select>
     </div>
