@@ -1,9 +1,12 @@
 // 서버(생성)와 브라우저(표시)가 함께 쓰는 감정서 구조. Anthropic SDK를 import하지 않는다.
 import { z } from "zod";
+import type { NamingComputed, NamingRequest } from "./naming/engine";
 
 export const PART_KEYS = ["intro", "part1", "part2", "part3", "part4", "part5"] as const;
 export type PartKey = (typeof PART_KEYS)[number];
 export type ChapterKey = Exclude<PartKey, "intro">;
+/** 결제한 상품의 파트. 사주 감정서 파트에 작명록(naming)을 더한다. 무료 풀이는 PartKey만 쓴다. */
+export type ReportPartKey = PartKey | "naming";
 export const CHAPTER_KEYS: ChapterKey[] = ["part1", "part2", "part3", "part4", "part5"];
 
 export interface ChapterMeta {
@@ -134,4 +137,23 @@ export const introSchema = z.object({
 });
 export type Intro = z.infer<typeof introSchema>;
 
-export type PartResult = { part: "intro"; intro: Intro } | { part: ChapterKey; chapter: Chapter };
+/** 작명록 문장(AI). 이름 수와 순서는 계산 결과(candidates)와 같다. */
+export const namingTextSchema = z.object({
+  intro: z.array(z.string().min(1)).min(1),
+  names: z.array(z.object({ title: z.string().min(1), story: z.array(z.string().min(1)).min(1) })).min(1),
+  hangul: z.array(z.string().min(1)),
+  current: z.array(z.string()),
+  guide: z.array(z.string().min(1)).min(1),
+});
+export type NamingText = z.infer<typeof namingTextSchema>;
+
+export interface NamingResultData {
+  request: NamingRequest;
+  computed: NamingComputed;
+  text: NamingText;
+}
+
+export type PartResult =
+  | { part: "intro"; intro: Intro }
+  | { part: ChapterKey; chapter: Chapter }
+  | { part: "naming"; naming: NamingResultData };

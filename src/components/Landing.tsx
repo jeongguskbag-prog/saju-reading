@@ -130,21 +130,23 @@ export default function Landing({ form, checkoutOpen = false, site = "ko" }: { f
             const p = PRODUCTS[id];
             const text = t.products[id];
             const featured = id === "full";
+            // 작명록은 한국 이름(한글·인명용 한자) 기준이라 한국어 화면에서만 판다.
+            const available = p.available && (site === "ko" || id !== "naming");
             return (
-              <div key={id} className={`lp-plan${featured ? " paid" : ""}${p.available ? "" : " soon"}`}>
+              <div key={id} className={`lp-plan${featured ? " paid" : ""}${available ? "" : " soon"}`}>
                 {featured && <span className="lp-pick">{L.pick}</span>}
                 <h3>{text.name}</h3>
                 {/* 해외 화면은 현지 화폐 가격이 정해질 때까지 가격을 적지 않는다 */}
                 {sales && <p className="lp-price">{won(p.price)}</p>}
                 <p className="lp-plan-sum">{withProductYears(text.summary, years)}</p>
-                {p.available ? (
+                {available ? (
                   <p className="lp-plan-parts">
-                    {p.parts.length - 1 === 5 ? L.partsAll : L.partsCore} · {L.partsExtra}
+                    {p.id === "naming" ? L.partsNaming : `${p.parts.length - 1 === 5 ? L.partsAll : L.partsCore} · ${L.partsExtra}`}
                   </p>
                 ) : (
                   <p className="lp-soon">{L.productSoon}</p>
                 )}
-                {p.available &&
+                {available &&
                   (checkoutOpen && sales ? (
                     <a className={featured ? "lp-cta" : "lp-cta-ghost"} href="#saju-form">
                       {L.applyCta}

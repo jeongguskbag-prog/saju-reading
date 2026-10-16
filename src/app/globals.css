@@ -738,3 +738,40 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .app-lang button small { font-size: 11px; }
 .app-lang button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
 .app-lang button[aria-pressed="true"] b { color: var(--accent-ink); }
+
+/* 길운 개운 작명록: 신청서 */
+.naming-fields { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin: 0; display: grid; gap: 12px; }
+.naming-fields legend { padding: 0 6px; }
+.naming-fields .row input, .naming-fields .row select { min-width: 0; flex: 1; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; padding: 7px 14px; font-size: 14px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* 길운 개운 작명록: 감정서 */
+.naming-basis { margin-bottom: 10px; }
+.naming-req { margin: 0 0 10px; }
+.naming-card { position: relative; }
+.naming-no { margin: 0 0 6px; font-size: 13px; letter-spacing: 0.2em; color: var(--accent); font-weight: 700; }
+.naming-head { text-align: center; padding: 10px 0 16px; border-bottom: 1px solid var(--grid); margin-bottom: 14px; }
+.naming-hanja { margin: 0; font-family: "Noto Serif KR", "Noto Serif CJK KR", serif; font-size: 44px; letter-spacing: 0.18em; color: var(--text-3); }
+.naming-hanja span { color: var(--text); font-weight: 700; }
+.naming-hangul { margin: 4px 0 0; font-family: var(--display); font-size: 24px; letter-spacing: 0.3em; }
+.naming-title { margin: 8px 0 0; color: var(--accent); font-weight: 600; }
+.naming-chars td, .naming-grids td { vertical-align: middle; }
+.naming-chars .hz-big { font-family: "Noto Serif KR", "Noto Serif CJK KR", serif; font-size: 22px; }
+.naming-chars .muted-row td { color: var(--text-3); }
+.naming-chars .swatch, .naming-basis .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--el); margin-right: 6px; }
+.naming-grids .lucky { color: var(--el-wood); font-weight: 700; }
+.naming-grids .unlucky { color: var(--danger); font-weight: 700; }
+.naming-facts { margin: 12px 0; padding-left: 18px; font-size: 14px; color: var(--text-2); }
+.naming-facts b { color: var(--text); margin-right: 6px; }
+.naming-story { line-height: 1.85; word-break: keep-all; }
+.naming-hangul-item + .naming-hangul-item { border-top: 1px solid var(--grid); margin-top: 12px; padding-top: 12px; }
+.naming-hangul-item h3 { font-family: var(--display); font-weight: 400; font-size: 22px; margin: 0 0 4px; }
+.naming-hangul-item h3 small { font-family: inherit; font-size: 14px; color: var(--text-2); margin-left: 8px; }
+@media print {
+  .naming-card { break-inside: avoid; page-break-inside: avoid; }
+  .naming-part .naming-card + .naming-card { break-before: page; }
+  .naming .card.method { break-before: auto; }
+}

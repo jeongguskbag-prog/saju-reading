@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseNamingRequest } from "@/lib/naming/request";
 import { parseBirthInput } from "@/lib/input";
 import { checkoutConfig, createOrder, OrderError } from "@/lib/orders";
 import { InputError } from "@/lib/saju/calc";
@@ -12,8 +13,14 @@ export async function POST(request: Request) {
   const parsed = parseBirthInput(body?.input);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   if (body?.agree !== true) return NextResponse.json({ error: "주문 내용과 청약철회 안내에 동의해 주세요." }, { status: 400 });
+  let naming;
+  if (body?.productId === "naming") {
+    const n = parseNamingRequest(body?.naming);
+    if (!n.ok) return NextResponse.json({ error: n.error }, { status: 400 });
+    naming = n.value;
+  }
   try {
-    const order = await createOrder(parsed.value, String(body?.email ?? "").trim(), body?.productId);
+    const order = await createOrder(parsed.value, String(body?.email ?? "").trim(), body?.productId, new Date(), naming);
     return NextResponse.json({
       orderId: order.id,
       orderName: order.orderName,

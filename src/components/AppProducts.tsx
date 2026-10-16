@@ -11,14 +11,16 @@ export default function AppProducts({ value, onChange, years }: { value: Product
       <div className="lp-products">
         {PRODUCT_ORDER.map((id) => {
           const p = PRODUCTS[id];
-          const selected = p.available && value === id;
+          // 작명록은 성씨·돌림자 등 따로 받는 신청서가 있어 웹(천기록 홈페이지)에서만 신청한다.
+          const available = p.available && id !== "naming";
+          const selected = available && value === id;
           return (
-            <div key={id} className={`lp-plan${selected ? " paid" : ""}${p.available ? "" : " soon"}`}>
+            <div key={id} className={`lp-plan${selected ? " paid" : ""}${available ? "" : " soon"}`}>
               {id === "full" && <span className="lp-pick">추천</span>}
               <h3>{p.name}</h3>
-              {p.available && <p className="lp-price app-free">앱 무료</p>}
+              {available && <p className="lp-price app-free">앱 무료</p>}
               <p className="lp-plan-sum">{withProductYears(p.summary, years)}</p>
-              {p.available ? (
+              {available ? (
                 <>
                   <p className="lp-plan-parts">
                     {p.parts.length - 1 === 5 ? "1~5부 전체" : "1부 천명 · 5부 세운과 개운법"} · 유형표·대운 곡선·월별 흐름표 · 책자형 PDF
@@ -36,7 +38,7 @@ export default function AppProducts({ value, onChange, years }: { value: Product
                   </button>
                 </>
               ) : (
-                <p className="lp-soon">준비 중입니다</p>
+                <p className="lp-soon">{p.available ? "홈페이지에서 신청할 수 있습니다" : "준비 중입니다"}</p>
               )}
             </div>
           );

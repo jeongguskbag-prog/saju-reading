@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { BirthInput } from "@/lib/saju/calc";
 import { SupportBox } from "./SupportLinks";
+import NamingFields, { emptyNamingForm, toNamingRequest, type NamingForm } from "./NamingFields";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withProductYears, won, type ProductId } from "@/lib/product";
 
 export interface CheckoutInfo {
@@ -49,12 +50,26 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [naming, setNaming] = useState<NamingForm>(emptyNamingForm);
   const product = PRODUCTS[productId];
+  const isNaming = productId === "naming";
 
   async function onBuy(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!name.trim()) return setError("감정서에 들어갈 성함을 적어 주세요.");
+    let namingReq: unknown;
+    if (isNaming) {
+      const r = toNamingRequest(naming);
+      if (!r.ok) return setError(r.error);
+      namingReq = r.value;
+    }
+    // 작명록은 아기 이름이 아직 없으니 "김○○", 개명은 지금 이름으로 표지에 적는다.
+    const reportName = isNaming
+      ? naming.mode === "rename"
+        ? `${naming.surname.trim()}${naming.currentHangul.trim()}`
+        : `${naming.surname.trim()}○○`
+      : name.trim();
+    if (!reportName) return setError("감정서에 들어갈 성함을 적어 주세요.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return setError("감정서를 받을 이메일 주소를 확인해 주세요.");
     if (!agree) return setError("주문 내용과 청약철회 안내에 동의해 주세요.");
     setBusy(true);
@@ -62,7 +77,13 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: { ...input, name: name.trim() }, email: email.trim(), agree, productId }),
+        body: JSON.stringify({
+          input: { ...input, name: reportName },
+          email: email.trim(),
+          agree,
+          productId,
+          ...(isNaming ? { naming: namingReq } : {}),
+        }),
       });
       const order = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(order.error ?? "주문을 만들지 못했습니다.");
@@ -107,10 +128,14 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               </label>
             ))}
           </fieldset>
-          <div className="field">
-            <label htmlFor="buy-name">의뢰인 성함</label>
-            <input id="buy-name" type="text" autoComplete="name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="홍길동" />
-          </div>
+          {isNaming ? (
+            <NamingFields value={naming} onChange={setNaming} />
+          ) : (
+            <div className="field">
+              <label htmlFor="buy-name">의뢰인 성함</label>
+              <input id="buy-name" type="text" autoComplete="name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="홍길동" />
+            </div>
+          )}
           <div className="field">
             <label htmlFor="buy-email">감정서를 받을 이메일</label>
             <input

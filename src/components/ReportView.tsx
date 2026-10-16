@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { SajuChart } from "@/lib/saju/calc";
-import { chaptersFor, CHAPTER_KEYS, withYears, type Chapter, type ChapterKey, type Intro, type PartKey, type PartResult } from "@/lib/report-shared";
+import { chaptersFor, CHAPTER_KEYS, withYears, type Chapter, type ChapterKey, type Intro, type PartKey, type ReportPartKey, type PartResult } from "@/lib/report-shared";
 import { AnalysisCard, DaeunCard, ElementCard, LuckyCard, PillarsCard, YearFlowCard } from "./ChartView";
 import GradeCard from "./GradeCard";
 import BrandSeal, { Glyph } from "./BrandSeal";
@@ -10,7 +10,7 @@ import { useLocale, useT } from "./LocaleProvider";
 import type { Messages } from "@/lib/messages";
 
 export type PartState = { status: "loading" } | { status: "done"; result: PartResult } | { status: "error"; message: string };
-export type PartStates = Partial<Record<PartKey, PartState>>;
+export type PartStates = Partial<Record<ReportPartKey, PartState>>;
 
 interface Props {
   chart: SajuChart;
@@ -26,9 +26,9 @@ interface Props {
 }
 
 const clientName = (chart: SajuChart, t: Messages) => chart.input.name?.trim() || t.client;
-const watermark = (chart: SajuChart, t: Messages) => t.watermark(clientName(chart, t));
+export const watermark = (chart: SajuChart, t: Messages) => t.watermark(clientName(chart, t));
 /** CSS content 문자열로 안전하게 감싼다(따옴표·역슬래시·꺾쇠 이스케이프). */
-const cssString = (text: string) => `"${text.replace(/[\\"<>]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `)}"`;
+export const cssString = (text: string) => `"${text.replace(/[\\"<>]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `)}"`;
 
 function introOf(parts: PartStates): Intro | null {
   const s = parts.intro;
@@ -55,7 +55,7 @@ function coverBirth(chart: SajuChart, t: Messages) {
 }
 
 /** PDF 표지(한 쪽 전체). 쪽빛 고서 표지에 이중 테두리, 天機錄 제목, 의뢰인 명식 카드, 낙관 직인. */
-function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null; title?: string }) {
+export function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null; title?: string }) {
   const t = useT();
   const [y1, y2] = chart.analysis.reportYears;
   const order = [chart.pillars.hour, chart.pillars.day, chart.pillars.month, chart.pillars.year];
@@ -144,7 +144,7 @@ function Toc({ chart, keys }: { chart: SajuChart; keys: readonly ChapterKey[] })
   );
 }
 
-function Pending({ state, onRetry, label }: { state: PartState | undefined; onRetry: () => void; label: string }) {
+export function Pending({ state, onRetry, label }: { state: PartState | undefined; onRetry: () => void; label: string }) {
   const t = useT();
   if (!state || state.status === "loading") {
     return (

@@ -120,7 +120,8 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
       setChart(computed);
       requestAnimationFrame(() => document.getElementById("result")?.scrollIntoView({ behavior: "smooth" }));
       if (productChoice) setShownProduct(productId);
-      const partKeys = productChoice ? PRODUCTS[productId].parts : PART_KEYS;
+      // 작명록은 따로 신청서가 필요해 앱 화면(무료 풀이)에서는 쓰지 않는다.
+      const partKeys = productChoice ? PRODUCTS[productId].parts.filter((p): p is PartKey => p !== "naming") : PART_KEYS;
       if (aiEnabled) partKeys.forEach((part) => loadPart(input, part, runId));
     } catch (err) {
       setChart(null);

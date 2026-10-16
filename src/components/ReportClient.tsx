@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { SajuChart } from "@/lib/saju/calc";
-import type { ChapterKey, PartKey, PartResult } from "@/lib/report-shared";
+import type { ChapterKey, ReportPartKey as PartKey, PartResult } from "@/lib/report-shared";
 import ReportView, { type PartStates } from "./ReportView";
+import NamingReport from "./NamingReport";
 import ResultActions from "./ResultActions";
 import { josa } from "@/lib/josa";
 
@@ -153,15 +154,19 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
 
   return (
     <div id="result">
-      <ReportView
-        chart={chart}
-        aiEnabled
-        parts={parts}
-        onRetry={load}
-        afterGrade={notice}
-        include={partKeys.filter((p): p is ChapterKey => p !== "intro")}
-        title={productName}
-      />
+      {partKeys.includes("naming") ? (
+        <NamingReport chart={chart} parts={parts} onRetry={() => load("naming")} notice={notice} title={productName} />
+      ) : (
+        <ReportView
+          chart={chart}
+          aiEnabled
+          parts={parts}
+          onRetry={load}
+          afterGrade={notice}
+          include={partKeys.filter((p): p is ChapterKey => p !== "intro" && p !== "naming")}
+          title={productName}
+        />
+      )}
       <ResultActions chart={chart} busy={busy} />
     </div>
   );

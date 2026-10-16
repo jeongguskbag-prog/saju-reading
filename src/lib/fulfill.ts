@@ -3,8 +3,8 @@
 // 손님 화면도 같은 파트를 요청할 수 있는데, 파트마다 잠금이 있어 AI는 한 번만 부른다.
 import { sendReportEmail } from "./mail";
 import { getReport, getSavedPart, getSavedParts, lockPart, markMailed, savePart, unlockPart, unmarkMailed, type Report } from "./orders";
-import { generatePart } from "./reading";
-import type { PartKey, PartResult } from "./report-shared";
+import { generatePart, ReadingError } from "./reading";
+import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
 
 export type EnsureResult = { status: "done"; result: PartResult } | { status: "pending" };
 
@@ -18,13 +18,20 @@ export async function ensurePart(report: Report, part: PartKey, origin?: string)
     // 잠금을 잡는 사이 다른 곳에서 막 저장했을 수 있다.
     const again = await getSavedPart(token, part);
     if (again) return { status: "done", result: again };
-    const result = await generatePart(report.chart, part);
+    const result = part === "naming" ? await writeNaming(report) : await generatePart(report.chart, part);
     await savePart(token, part, result, report.expiresAt);
     await sendCompletionIfReady(report, origin);
     return { status: "done", result };
   } finally {
     await unlockPart(token, part);
   }
+}
+
+/** 작명록: 신청서(성씨·돌림자 등)로 이름을 뽑고 문장을 쓴다. 한자 자료가 커서 필요할 때만 불러온다. */
+async function writeNaming(report: Report): Promise<PartResult> {
+  if (!report.order.naming) throw new ReadingError("작명 신청 내용이 없습니다. 고객센터로 문의해 주세요.", 400);
+  const { generateNaming } = await import("./naming/generate");
+  return { part: "naming", naming: await generateNaming(report.chart, report.order.naming) };
 }
 
 /** 상품의 모든 파트가 저장됐으면 완성 메일을 보낸다(주문당 한 번). */

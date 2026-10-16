@@ -2,8 +2,9 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { calculateSaju, type BirthInput, type SajuChart } from "./saju/calc";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, SALES_OPEN, sellableProducts, type Product, type ProductId } from "./product";
-import type { PartKey, PartResult } from "./report-shared";
+import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
 import { getStore, requireStore } from "./store";
+import type { NamingRequest } from "./naming/engine";
 import { isAiEnabled } from "./reading";
 
 export interface Order {
@@ -23,6 +24,8 @@ export interface Order {
   method?: string;
   /** 결제 후 발급하는 리포트 열람 토큰 */
   token?: string;
+  /** 작명록 신청서(작명록 주문만) */
+  naming?: NamingRequest;
 }
 
 export class OrderError extends Error {
@@ -66,12 +69,29 @@ export function checkoutConfig(): { enabled: boolean; clientKey: string | null; 
 
 export const productOf = (order: Pick<Order, "productId">): Product => PRODUCTS[order.productId ?? DEFAULT_PRODUCT] ?? PRODUCTS[DEFAULT_PRODUCT];
 
-export async function createOrder(input: BirthInput, email: string, productId: ProductId = DEFAULT_PRODUCT, now = new Date()): Promise<Order> {
+export async function createOrder(
+  input: BirthInput,
+  email: string,
+  productId: ProductId = DEFAULT_PRODUCT,
+  now = new Date(),
+  naming?: NamingRequest,
+): Promise<Order> {
   const product = sellableProducts().find((p) => p.id === productId);
   if (!product) throw new OrderError("지금은 신청할 수 없는 상품입니다.");
   if (!input.name?.trim()) throw new OrderError("감정서에 들어갈 성함을 적어 주세요.");
   if (!isValidEmail(email)) throw new OrderError("이메일 주소를 확인해 주세요.");
-  calculateSaju(input, now); // 입력 오류(InputError)는 호출한 쪽에서 메시지로 돌려준다.
+  const chart = calculateSaju(input, now); // 입력 오류(InputError)는 호출한 쪽에서 메시지로 돌려준다.
+  if (product.parts.includes("naming")) {
+    if (!naming) throw new OrderError("작명 신청 내용을 적어 주세요.");
+    // 결제 전에 이름 후보를 실제로 뽑아 보아, 조건이 맞지 않는 신청은 결제 전에 알려 준다.
+    const { computeNaming, NamingError } = await import("./naming/engine");
+    try {
+      computeNaming(chart, naming);
+    } catch (error) {
+      if (error instanceof NamingError) throw new OrderError(error.message);
+      throw error;
+    }
+  }
   const ymd = now.toISOString().slice(0, 10).replace(/-/g, "");
   const order: Order = {
     id: `CGR-${ymd}-${randomBytes(8).toString("hex")}`,
@@ -81,6 +101,7 @@ export async function createOrder(input: BirthInput, email: string, productId: P
     productId: product.id,
     amount: product.price,
     orderName: product.name,
+    ...(product.parts.includes("naming") && naming ? { naming } : {}),
     status: "pending",
     createdAt: now.toISOString(),
   };

@@ -179,9 +179,20 @@ describe("상품·열람 기간·완성 메일", () => {
     return paid;
   }
 
-  it("준비 중 상품(작명록)이나 성함 없는 주문은 만들지 않는다", async () => {
-    await expect(createOrder(input, "a@b.co", "naming", now)).rejects.toThrow("신청할 수 없는");
+  it("작명록은 신청서가 있어야 하고, 성함 없는 주문은 만들지 않는다", async () => {
+    await expect(createOrder(input, "a@b.co", "naming", now)).rejects.toThrow("작명 신청");
     await expect(createOrder({ ...input, name: " " }, "a@b.co", "full", now)).rejects.toThrow("성함");
+  });
+
+  it("작명록 주문은 70,000원이고 신청서를 함께 저장한다", async () => {
+    const naming = { mode: "baby" as const, surname: "김", surnameHanja: "金", feelings: ["지혜" as const] };
+    const order = await createOrder({ ...input, name: "김○○" }, "a@b.co", "naming", now, naming);
+    expect(order.amount).toBe(70000);
+    expect(order.naming).toEqual(naming);
+    // 인명용이 아닌 돌림자는 결제 전에 거절
+    await expect(
+      createOrder({ ...input, name: "김○○" }, "a@b.co", "naming", now, { ...naming, generation: { hanja: "龘", reading: "답", position: "first" } }),
+    ).rejects.toThrow("돌림자");
   });
 
   it("핵심 명식록은 29,000원, 발간사·1부·5부만", async () => {

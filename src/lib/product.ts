@@ -19,7 +19,7 @@ export interface Product {
   /** 결제 금액(원). 서버가 이 금액으로 주문을 만들고 승인 때 다시 대조한다. */
   price: number;
   /** 감정서에 담기는 파트. intro는 발간사. */
-  parts: ("intro" | "part1" | "part2" | "part3" | "part4" | "part5")[];
+  parts: ("intro" | "part1" | "part2" | "part3" | "part4" | "part5" | "naming")[];
   /** 한 줄 소개. {Y1} {Y2}는 감정 연도. */
   summary: string;
   /** 판매 중인지(false면 "준비 중"으로만 보여 준다) */
@@ -47,9 +47,9 @@ export const PRODUCTS: Record<ProductId, Product> = {
     id: "naming",
     name: "길운 개운 작명록",
     price: 70000,
-    parts: [],
+    parts: ["naming"],
     summary: "사주의 부족한 오행을 보완하는 수리·자원오행 맞춤 작명·개명 추천",
-    available: false,
+    available: true,
   },
 };
 

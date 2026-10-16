@@ -19,9 +19,13 @@ export function reportEmail(order: Order, url: string, expiresAt: string) {
   const name = order.input.name?.trim() || "의뢰인";
   const subject = `[${BRAND.name}] 의뢰하신 ${name} 님의 맞춤 감정서가 완성되었습니다`;
   const until = ymd(expiresAt);
+  const lead =
+    order.productId === "naming"
+      ? "의뢰인님의 사주 명식에서 보완할 오행을 찾고, 수리·자원오행·발음오행을 하나하나 맞춰 지은"
+      : "의뢰인님의 사주 명식에 깃든 오행의 분포와 대운의 흐름을 정밀하게 계산하고 감정한";
   const text = `[${BRAND.name}] 의뢰하신 ${name} 님의 맞춤 감정서가 완성되었습니다.
 
-의뢰인님의 사주 명식에 깃든 오행의 분포와 대운의 흐름을 정밀하게 계산하고 감정한 [${josa(order.orderName, "]이", "]가")} 완성되었습니다.
+${lead} [${josa(order.orderName, "]이", "]가")} 완성되었습니다.
 아래 링크에서 감정서를 열고 PDF로 저장하실 수 있습니다.
 
 ${url}
@@ -38,7 +42,7 @@ ${url}
   const html = `<div style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.8;color:#2a2926;max-width:560px;margin:0 auto;padding:8px">
 <p style="font-size:13px;letter-spacing:.3em;color:#b0262c;margin:0 0 4px">天 機 錄</p>
 <h1 style="font-size:20px;margin:0 0 20px;font-weight:700">의뢰하신 ${e(name)} 님의 맞춤 감정서가 완성되었습니다.</h1>
-<p>의뢰인님의 사주 명식에 깃든 오행의 분포와 대운의 흐름을 정밀하게 계산하고 감정한 <b>[${e(order.orderName)}]</b>${josa(order.orderName, "이", "가").slice(order.orderName.length)} 완성되었습니다. 아래 버튼을 눌러 감정서를 열고 PDF로 저장하실 수 있습니다.</p>
+<p>${e(lead)} <b>[${e(order.orderName)}]</b>${josa(order.orderName, "이", "가").slice(order.orderName.length)} 완성되었습니다. 아래 버튼을 눌러 감정서를 열고 PDF로 저장하실 수 있습니다.</p>
 <p style="margin:24px 0"><a href="${e(url)}" style="display:inline-block;background:#b0262c;color:#ffffff;padding:14px 26px;border-radius:4px;text-decoration:none;font-weight:700">감정서 열기</a></p>
 <p style="border-left:3px solid #b0262c;padding-left:14px;color:#57544d">운(運)은 정해진 종착역이 아니라,<br>내가 가진 배의 모양과 바다의 조류(潮流)를 아는 지혜입니다.</p>
 <p>본 감정서가 의뢰인님의 앞날에 가장 든든한 등대이자 인생의 나침반이 되기를 진심으로 기원합니다.</p>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { calculateSaju, InputError } from "@/lib/saju/calc";
 import { parseBirthInput } from "@/lib/input";
 import { generatePart, isAiEnabled, isAppRequest, isFreeReading, ReadingError } from "@/lib/reading";
-import { PART_KEYS, type PartKey } from "@/lib/report-shared";
+import { PART_KEYS, type PartKey, type ReportPartKey } from "@/lib/report-shared";
 import { getReport } from "@/lib/orders";
 import { ensurePart } from "@/lib/fulfill";
 import { originFrom } from "@/lib/site";
@@ -45,10 +45,13 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!isAiEnabled()) {
     return NextResponse.json({ error: E.noAi }, { status: 503 });
   }
-  const part = body?.part as PartKey;
+  const askedPart = body?.part as ReportPartKey;
+  // 작명록(naming)은 결제한 감정서에서만 쓴다(신청서가 주문에 저장되어 있어야 한다).
+  if (typeof body?.token === "string" && (PART_KEYS as readonly string[]).concat("naming").includes(askedPart)) {
+    return paidPart(request, body.token, askedPart);
+  }
+  const part = askedPart as PartKey;
   if (!PART_KEYS.includes(part)) return NextResponse.json({ error: E.badPart }, { status: 400 });
-
-  if (typeof body?.token === "string") return paidPart(request, body.token, part);
   if (!isFreeReading() && !isAppRequest(request.headers.get("x-app-key"))) return NextResponse.json({ error: E.paywall }, { status: 402 });
 
   const parsed = parseBirthInput(body?.input);
@@ -67,7 +70,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 }
 
 /** 결제한 리포트의 파트. 한 번 쓴 풀이는 저장해 두고 다시 열 때 그대로 돌려준다. */
-async function paidPart(request: Request, token: string, part: PartKey): Promise<NextResponse> {
+async function paidPart(request: Request, token: string, part: ReportPartKey): Promise<NextResponse> {
   try {
     const report = await getReport(token);
     if (!report) return NextResponse.json({ error: "리포트를 찾을 수 없습니다. 링크를 다시 확인해 주세요." }, { status: 404 });
