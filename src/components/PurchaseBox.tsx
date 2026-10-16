@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { BirthInput } from "@/lib/saju/calc";
 import { SupportBox } from "./SupportLinks";
+import SamplePreview from "./SamplePreview";
 import NamingFields, { emptyNamingForm, toNamingRequest, type NamingForm } from "./NamingFields";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withProductYears, won, type ProductId } from "@/lib/product";
 
@@ -13,6 +14,8 @@ export interface CheckoutInfo {
   mobilePhone: boolean;
   /** 감정서 링크를 문자로 받을 수 있는지(솔라피 설정) */
   sms?: boolean;
+  /** 카카오톡 알림톡으로 받을 수 있는지(솔라피 + 카카오 채널·템플릿) */
+  kakao?: boolean;
 }
 
 type PayMethod = "CARD" | "MOBILE_PHONE";
@@ -48,9 +51,10 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [productId, setProductId] = useState<ProductId>(DEFAULT_PRODUCT);
   const [name, setName] = useState(input.name ?? "");
   const [email, setEmail] = useState("");
-  const [delivery, setDelivery] = useState<"email" | "sms">("email");
+  const [delivery, setDelivery] = useState<"email" | "sms" | "kakao">("email");
   const [phone, setPhone] = useState("");
-  const bySms = Boolean(checkout.sms) && delivery === "sms";
+  const byKakao = Boolean(checkout.kakao) && delivery === "kakao";
+  const bySms = (Boolean(checkout.sms) && delivery === "sms") || byKakao;
   const [agree, setAgree] = useState(false);
   const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [busy, setBusy] = useState(false);
@@ -87,7 +91,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         body: JSON.stringify({
           input: { ...input, name: reportName },
           email: bySms ? "" : email.trim(),
-          ...(bySms ? { phone: phone.trim() } : {}),
+          ...(bySms ? { phone: phone.trim(), channel: byKakao ? "kakao" : "sms" } : {}),
           agree,
           productId,
           ...(isNaming ? { naming: namingReq } : {}),
@@ -137,6 +141,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               </label>
             ))}
           </fieldset>
+          <SamplePreview productId={productId} productName={product.name} />
           {isNaming ? (
             <NamingFields value={naming} onChange={setNaming} />
           ) : (
@@ -145,22 +150,27 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               <input id="buy-name" type="text" autoComplete="name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="홍길동" />
             </div>
           )}
-          {checkout.sms && (
+          {(checkout.sms || checkout.kakao) && (
             <div className="field">
               <span className="label">감정서 받는 방법</span>
               <div className="segmented" role="group" aria-label="감정서 받는 방법">
                 <button type="button" aria-pressed={delivery === "email"} onClick={() => setDelivery("email")}>
                   이메일
                 </button>
+                {checkout.kakao && (
+                  <button type="button" aria-pressed={delivery === "kakao"} onClick={() => setDelivery("kakao")}>
+                    카카오톡
+                  </button>
+                )}
                 <button type="button" aria-pressed={delivery === "sms"} onClick={() => setDelivery("sms")}>
-                  문자 메시지
+                  문자
                 </button>
               </div>
             </div>
           )}
           {bySms ? (
             <div className="field">
-              <label htmlFor="buy-phone">감정서 링크를 받을 휴대폰 번호</label>
+              <label htmlFor="buy-phone">{byKakao ? "카카오톡으로 받을 휴대폰 번호" : "감정서 링크를 받을 휴대폰 번호"}</label>
               <input
                 id="buy-phone"
                 type="tel"
@@ -171,6 +181,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="010-1234-5678"
               />
+              {byKakao && <p className="muted">카카오톡을 쓰지 않는 번호면 같은 내용이 문자로 갑니다.</p>}
             </div>
           ) : (
             <div className="field">

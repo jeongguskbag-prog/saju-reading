@@ -51,7 +51,7 @@ export default function Privacy() {
           </tr>
           <tr>
             <td>감정서 신청</td>
-            <td>생년월일, 태어난 시각, 성별, 양력·음력, 성함, 이메일 또는 휴대폰 번호(문자로 받기를 고른 경우)</td>
+            <td>생년월일, 태어난 시각, 성별, 양력·음력, 성함, 이메일 또는 휴대폰 번호(문자·카카오톡으로 받기를 고른 경우)</td>
             <td>감정서 작성·제공, 완성 메일 발송, 문의·환불 대응</td>
           </tr>
           <tr>
@@ -85,12 +85,12 @@ export default function Privacy() {
         </thead>
         <tbody>
           <tr><td>토스페이먼츠(주)</td><td>결제 처리</td></tr>
-          <tr><td>(주)카카오</td><td>카카오톡 채널 1:1 상담(카카오톡 상담을 이용하는 경우)</td></tr>
+          <tr><td>(주)카카오</td><td>카카오톡 채널 1:1 상담, 감정서 완성 알림톡 전달(카카오톡으로 받기를 고른 경우)</td></tr>
           <tr><td>Vercel Inc.</td><td>웹사이트 호스팅</td></tr>
           <tr><td>Upstash, Inc.</td><td>주문·감정서 저장</td></tr>
           <tr><td>Anthropic, PBC</td><td>AI 풀이 작성</td></tr>
           <tr><td>Resend, Inc.</td><td>감정서 완성 메일 발송</td></tr>
-          <tr><td>솔라피(SOLAPI)</td><td>감정서 완성 문자 발송(문자로 받기를 고른 경우)</td></tr>
+          <tr><td>솔라피(SOLAPI)</td><td>감정서 완성 문자·카카오톡 알림톡 발송(문자나 카카오톡으로 받기를 고른 경우)</td></tr>
         </tbody>
       </table>
 
