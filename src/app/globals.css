@@ -712,7 +712,6 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .app-products { margin-bottom: 20px; }
 .app-products h2 { font-family: var(--display); font-weight: 400; font-size: 21px; margin: 0 0 12px; }
 .app-products .lp-products { grid-template-columns: 1fr; gap: 18px; }
-.app-products .lp-price.app-free { font-size: 26px; color: var(--accent); }
 .app-products button.lp-cta, .app-products button.lp-cta-ghost { font: inherit; cursor: pointer; }
 .app-products button.lp-cta-ghost { background: transparent; }
 .app-products button.lp-cta { border: 0; }

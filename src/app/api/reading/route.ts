@@ -9,6 +9,8 @@ import { originFrom } from "@/lib/site";
 import { StoreError } from "@/lib/store";
 import { clientIp, takeFreeQuota } from "@/lib/rate-limit";
 import type { Locale } from "@/lib/saju/locale";
+import { parseNamingRequest } from "@/lib/naming/request";
+import { generateNaming } from "@/lib/naming/generate";
 
 // 파트 하나 생성에 1~2분 걸릴 수 있다.
 export const maxDuration = 300;
@@ -50,6 +52,8 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (typeof body?.token === "string" && (PART_KEYS as readonly string[]).concat("naming").includes(askedPart)) {
     return paidPart(request, body.token, askedPart);
   }
+  // 앱(결제 없는 화면)의 작명록: 신청서를 요청에 함께 받아 바로 쓴다.
+  if (askedPart === "naming") return appNaming(request, body, locale);
   const part = askedPart as PartKey;
   if (!PART_KEYS.includes(part)) return NextResponse.json({ error: E.badPart }, { status: 400 });
   if (!isFreeReading() && !isAppRequest(request.headers.get("x-app-key"))) return NextResponse.json({ error: E.paywall }, { status: 402 });
@@ -64,6 +68,24 @@ export async function POST(request: Request): Promise<NextResponse> {
     const quota = await takeFreeQuota(clientIp(request.headers), new Date(), locale);
     if (!quota.ok) return NextResponse.json({ error: quota.message }, { status: 429 });
     return NextResponse.json(await generatePart(chart, part));
+  } catch (error) {
+    return errorResponse(error, locale);
+  }
+}
+
+/** 앱에서 신청한 작명록. 결제한 감정서처럼 저장하지 않고, 앱 접근 키·횟수 제한은 다른 무료 풀이와 같다. */
+async function appNaming(request: Request, body: { input?: unknown; naming?: unknown } | null, locale: Locale): Promise<NextResponse> {
+  const E = ROUTE_ERRORS[locale];
+  if (!isFreeReading() && !isAppRequest(request.headers.get("x-app-key"))) return NextResponse.json({ error: E.paywall }, { status: 402 });
+  const parsed = parseBirthInput(body?.input);
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const naming = parseNamingRequest(body?.naming);
+  if (!naming.ok) return NextResponse.json({ error: naming.error }, { status: 400 });
+  try {
+    const chart = calculateSaju(parsed.value);
+    const quota = await takeFreeQuota(clientIp(request.headers), new Date(), locale);
+    if (!quota.ok) return NextResponse.json({ error: quota.message }, { status: 429 });
+    return NextResponse.json({ part: "naming", naming: await generateNaming(chart, naming.value) });
   } catch (error) {
     return errorResponse(error, locale);
   }

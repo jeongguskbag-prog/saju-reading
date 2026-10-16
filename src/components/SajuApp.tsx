@@ -5,6 +5,8 @@ import type { BirthInput, SajuChart } from "@/lib/saju/calc";
 import { CHAPTER_KEYS, PART_KEYS, type ChapterKey, type PartKey, type PartResult } from "@/lib/report-shared";
 import { DEFAULT_PRODUCT, PRODUCTS, type ProductId } from "@/lib/product";
 import AppProducts, { productCopy } from "./AppProducts";
+import NamingFields, { emptyNamingForm, toNamingRequest, type NamingForm } from "./NamingFields";
+import NamingReport from "./NamingReport";
 import ReportView, { type PartStates } from "./ReportView";
 import YearField from "./YearField";
 import ResultActions from "./ResultActions";
@@ -47,6 +49,9 @@ interface Props {
 const serverChart = (input: BirthInput, t: Messages) => postJson<{ chart: SajuChart }>("/api/chart", input, t).then((r) => r.chart);
 const serverPart = (input: BirthInput, part: PartKey, t: Messages) =>
   postJson<PartResult>("/api/reading", { input, part, locale: input.locale }, t);
+/** 앱 화면의 작명록. 신청서(성씨·돌림자 등)를 함께 보낸다. */
+const serverNaming = (input: BirthInput, naming: unknown, t: Messages) =>
+  postJson<PartResult>("/api/reading", { input, part: "naming", naming, locale: input.locale }, t);
 
 export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], productChoice = false, afterGrade }: Props) {
   const t = useT();
@@ -55,6 +60,10 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
   const [productId, setProductId] = useState<ProductId>(DEFAULT_PRODUCT);
   // 제출할 때 고른 감정서. 결과를 보는 중에 다른 카드를 눌러도 이미 받은 감정서 구성은 바뀌지 않는다.
   const [shownProduct, setShownProduct] = useState<ProductId | null>(null);
+  // 작명록 신청서(앱 화면에서 작명록을 골랐을 때만 보인다).
+  const [namingForm, setNamingForm] = useState<NamingForm>(emptyNamingForm);
+  const lastNaming = useRef<unknown>(null);
+  const isNaming = productChoice && productId === "naming";
   // 중국 대륙은 전국이 한 표준시라 출생 도시 경도로 진태양시를 맞춘다.
   const [cityIndex, setCityIndex] = useState(0);
   const [name, setName] = useState("");
@@ -85,6 +94,13 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
       .catch((err: Error) => run.current === runId && setParts((prev) => ({ ...prev, [part]: { status: "error", message: err.message } })));
   }
 
+  function loadNaming(input: BirthInput, naming: unknown, runId: number) {
+    setParts((prev) => ({ ...prev, naming: { status: "loading" } }));
+    serverNaming(input, naming, t)
+      .then((result) => run.current === runId && setParts((prev) => ({ ...prev, naming: { status: "done", result } })))
+      .catch((err: Error) => run.current === runId && setParts((prev) => ({ ...prev, naming: { status: "error", message: err.message } })));
+  }
+
   const anyLoading = Object.values(parts).some((p) => p?.status === "loading");
 
   async function onSubmit(e: React.FormEvent) {
@@ -97,6 +113,15 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
       setChart(null);
       setError(dateError);
       return;
+    }
+    let namingReq: unknown = null;
+    if (isNaming) {
+      const r = toNamingRequest(namingForm);
+      if (!r.ok) {
+        setError(r.error);
+        return;
+      }
+      namingReq = r.value;
     }
     const input: BirthInput = {
       name: name.trim() || undefined,
@@ -120,9 +145,14 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
       setChart(computed);
       requestAnimationFrame(() => document.getElementById("result")?.scrollIntoView({ behavior: "smooth" }));
       if (productChoice) setShownProduct(productId);
-      // 작명록은 따로 신청서가 필요해 앱 화면(무료 풀이)에서는 쓰지 않는다.
-      const partKeys = productChoice ? PRODUCTS[productId].parts.filter((p): p is PartKey => p !== "naming") : PART_KEYS;
-      if (aiEnabled) partKeys.forEach((part) => loadPart(input, part, runId));
+      if (isNaming) {
+        lastNaming.current = namingReq;
+        if (aiEnabled) loadNaming(input, namingReq, runId);
+        else setParts({ naming: { status: "error", message: t.noAi } });
+      } else {
+        const partKeys = productChoice ? PRODUCTS[productId].parts.filter((p): p is PartKey => p !== "naming") : PART_KEYS;
+        if (aiEnabled) partKeys.forEach((part) => loadPart(input, part, runId));
+      }
     } catch (err) {
       setChart(null);
       setError((err as Error).message);
@@ -234,13 +264,27 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
           </div>
         </details>
 
+        {isNaming && <NamingFields value={namingForm} onChange={setNamingForm} />}
+
         <button className="btn-primary" type="submit" disabled={submitting}>
           {submitting ? t.submitting : t.submit}
         </button>
         {error && <p className="error" role="alert">{error}</p>}
       </form>
 
-      {chart && (
+      {chart && shownProduct === "naming" && (
+        <div id="result">
+          <NamingReport
+            chart={chart}
+            parts={parts}
+            onRetry={() => lastInput.current && loadNaming(lastInput.current, lastNaming.current, run.current)}
+            title={productCopy(t, "naming").name}
+          />
+          <ResultActions chart={chart} busy={anyLoading} />
+        </div>
+      )}
+
+      {chart && shownProduct !== "naming" && (
         <div id="result">
           <ReportView
             chart={chart}

@@ -1,6 +1,7 @@
 "use client";
 
 import { PRODUCT_ORDER, PRODUCTS, withProductYears, type ProductId } from "@/lib/product";
+// 앱은 운영자가 직접 쓰는 화면이라 결제는 없고, 웹과 같은 금액을 보여 주어 어떤 감정서인지 알아보기 쉽게 한다.
 import { useT } from "./LocaleProvider";
 import type { Messages } from "@/lib/messages";
 
@@ -20,19 +21,19 @@ export default function AppProducts({ value, onChange, years }: { value: Product
         {PRODUCT_ORDER.map((id) => {
           const p = PRODUCTS[id];
           const copy = productCopy(t, id);
-          // 작명록은 성씨·돌림자 등 따로 받는 신청서가 있어 웹(천기록 홈페이지)에서만 신청한다.
-          const available = p.available && id !== "naming";
+          // 작명록은 한국 이름·인명용 한자를 쓰므로 한국어 화면에서만 만든다.
+          const available = p.available && (id !== "naming" || t.htmlLang === "ko");
           const selected = available && value === id;
           return (
             <div key={id} className={`lp-plan${selected ? " paid" : ""}${available ? "" : " soon"}`}>
               {id === "full" && <span className="lp-pick">{t.productPick}</span>}
               <h3>{copy.name}</h3>
-              {available && <p className="lp-price app-free">{t.appFree}</p>}
+              {available && <p className="lp-price">{t.price(p.price)}</p>}
               <p className="lp-plan-sum">{withProductYears(copy.summary, years)}</p>
               {available ? (
                 <>
                   <p className="lp-plan-parts">
-                    {p.parts.length - 1 === 5 ? t.productPartsFull : t.productPartsCore} · {t.productExtras}
+                    {id === "naming" ? t.productPartsNaming : `${p.parts.length - 1 === 5 ? t.productPartsFull : t.productPartsCore} · ${t.productExtras}`}
                   </p>
                   <button
                     type="button"
