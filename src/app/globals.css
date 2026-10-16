@@ -698,3 +698,11 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
 }
 .zh-hans .daeun .gz, .zh-hans .donut-center, .zh-hans .table.months td:nth-child(2), .zh-hans .year-scores b { font-family: var(--display); }
+
+/* 하단 언어 전환(한국어 · 대만 · 홍콩) */
+.site-footer-langs { display: flex; flex-wrap: wrap; gap: 6px 16px; padding-top: 10px; border-top: 1px solid var(--border); }
+.site-footer-langs a { color: var(--text-2); text-decoration: none; }
+.site-footer-langs a:hover { text-decoration: underline; }
+.site-footer-langs a[aria-current="true"] { color: var(--text); font-weight: 700; }
+/* 한국어용 keep-all은 띄어쓰기가 없는 중국어를 문장 부호에서만 끊어, 줄이 들쭉날쭉해진다. */
+.zh, .zh * { word-break: normal; line-break: strict; }

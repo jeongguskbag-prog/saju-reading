@@ -1,35 +1,43 @@
-import { BRAND, BUSINESS, orPending } from "@/lib/product";
+import { BUSINESS, orPending } from "@/lib/product";
+import { siteCopy, SITE_ORDER, SITES, type SiteLocale } from "@/lib/site-copy";
 import BrandSeal from "./BrandSeal";
 
-/** 모든 화면 하단: 사업자 정보와 약관·방침 링크. 인쇄(PDF)에는 넣지 않는다. */
-export default function SiteFooter() {
+/** 모든 화면 하단: 사업자 정보와 약관·방침 링크, 언어 전환. 인쇄(PDF)에는 넣지 않는다. */
+export default function SiteFooter({ site = "ko" }: { site?: SiteLocale }) {
+  const t = siteCopy(site);
+  const f = t.footer;
   const b = BUSINESS;
+  const pending = (v: string) => (site === "ko" ? orPending(v) : v || f.pending);
   return (
     <footer className="site-footer no-print">
       <div className="site-footer-inner">
         <p className="site-footer-brand">
           <BrandSeal size={28} title="" />
-          {BRAND.name}
+          {t.brand.name}
         </p>
-        <nav className="site-footer-links" aria-label="약관 및 방침">
-          <a href="/terms">이용약관</a>
+        <nav className="site-footer-links" aria-label={f.linksAria}>
+          <a href="/terms">{f.terms}</a>
           <a href="/privacy">
-            <b>개인정보처리방침</b>
+            <b>{f.privacy}</b>
           </a>
-          <a href="/refund">환불 규정</a>
+          <a href="/refund">{f.refund}</a>
         </nav>
         <dl className="site-footer-biz">
-          <div><dt>상호</dt><dd>{orPending(b.companyName)}</dd></div>
-          <div><dt>대표</dt><dd>{orPending(b.ceo)}</dd></div>
-          <div><dt>사업자등록번호</dt><dd>{orPending(b.bizNumber)}</dd></div>
-          <div><dt>통신판매업 신고</dt><dd>{orPending(b.mailOrderNumber)}</dd></div>
-          <div><dt>주소</dt><dd>{orPending(b.address)}</dd></div>
-          <div><dt>고객센터</dt><dd>{[b.phone, b.email].filter(Boolean).join(" / ") || "등록 예정"}</dd></div>
+          <div><dt>{f.biz.companyName}</dt><dd>{pending(b.companyName)}</dd></div>
+          <div><dt>{f.biz.ceo}</dt><dd>{pending(b.ceo)}</dd></div>
+          <div><dt>{f.biz.bizNumber}</dt><dd>{pending(b.bizNumber)}</dd></div>
+          <div><dt>{f.biz.mailOrderNumber}</dt><dd>{pending(b.mailOrderNumber)}</dd></div>
+          <div><dt>{f.biz.address}</dt><dd>{pending(b.address)}</dd></div>
+          <div><dt>{f.biz.contact}</dt><dd>{[b.phone, b.email].filter(Boolean).join(" / ") || f.pending}</dd></div>
         </dl>
-        <p className="site-footer-note">
-          명식은 만세력 계산 엔진이, 풀이 문장은 AI(Claude)가 작성합니다. 명리학 이론에 기반한 참고 자료이며 미래를 보장하지 않습니다.
-          결제는 토스페이먼츠가 처리하며 카드 정보는 {BRAND.name}에 저장되지 않습니다.
-        </p>
+        <p className="site-footer-note">{f.note(t.brand.name)}</p>
+        <nav className="site-footer-langs" aria-label={f.languages}>
+          {SITE_ORDER.map((l) => (
+            <a key={l} href={SITES[l].path || "/"} hrefLang={SITES[l].hreflang} lang={SITES[l].htmlLang} aria-current={l === site ? "true" : undefined}>
+              {SITES[l].label}
+            </a>
+          ))}
+        </nav>
       </div>
     </footer>
   );

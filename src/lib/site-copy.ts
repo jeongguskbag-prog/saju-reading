@@ -1,0 +1,292 @@
+// 웹사이트(첫 화면·하단·상담 안내)의 나라별 문구. 한국어는 루트(/), 대만은 /zh-tw, 홍콩은 /zh-hk.
+// 명식·등급·감정서 문구는 messages.ts(번체 zh-Hant)를 그대로 쓰고, 여기에는 사이트에만 있는 문구를 둔다.
+import { BRAND, PRODUCTS, REPORT_VALID_DAYS, type ProductId } from "./product";
+import type { Locale, Region } from "./saju/locale";
+
+export type SiteLocale = "ko" | "zh-TW" | "zh-HK";
+
+export interface SiteConfig {
+  site: SiteLocale;
+  /** 주소 앞부분. 한국어는 "" */
+  path: "" | "/zh-tw" | "/zh-hk";
+  /** 명식·감정서 문구의 언어(messages.ts) */
+  locale: Locale;
+  htmlLang: string;
+  hreflang: string;
+  ogLocale: string;
+  /** 출생 지역 선택지(첫째가 기본값) */
+  regions: Region[];
+  /** 언어 전환 링크에 쓰는 이름 */
+  label: string;
+  /** 이 화면에서 감정서를 팔지. 해외 결제가 붙기 전까지 대만·홍콩은 false */
+  sales: boolean;
+}
+
+export const SITES: Record<SiteLocale, SiteConfig> = {
+  ko: { site: "ko", path: "", locale: "ko", htmlLang: "ko", hreflang: "ko-KR", ogLocale: "ko_KR", regions: ["KR"], label: "한국어", sales: true },
+  "zh-TW": {
+    site: "zh-TW",
+    path: "/zh-tw",
+    locale: "zh-Hant",
+    htmlLang: "zh-Hant-TW",
+    hreflang: "zh-TW",
+    ogLocale: "zh_TW",
+    regions: ["TW", "HK", "KR"],
+    label: "繁體中文（台灣）",
+    sales: false,
+  },
+  "zh-HK": {
+    site: "zh-HK",
+    path: "/zh-hk",
+    locale: "zh-Hant",
+    htmlLang: "zh-Hant-HK",
+    hreflang: "zh-HK",
+    ogLocale: "zh_HK",
+    regions: ["HK", "TW", "KR"],
+    label: "繁體中文（香港）",
+    sales: false,
+  },
+};
+
+export const SITE_ORDER: SiteLocale[] = ["ko", "zh-TW", "zh-HK"];
+
+/** 주소(pathname)로 사이트 언어를 고른다. */
+export function siteFromPath(pathname: string): SiteLocale {
+  if (pathname === "/zh-tw" || pathname.startsWith("/zh-tw/")) return "zh-TW";
+  if (pathname === "/zh-hk" || pathname.startsWith("/zh-hk/")) return "zh-HK";
+  return "ko";
+}
+
+/** 검색엔진에 알려 줄 언어별 주소(hreflang). */
+export function languageAlternates(): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const s of SITE_ORDER) out[SITES[s].hreflang] = SITES[s].path || "/";
+  out["x-default"] = "/";
+  return out;
+}
+
+const KO = {
+  numberLocale: "ko-KR",
+  brand: { name: BRAND.name, tagline: BRAND.tagline },
+  landing: {
+    slipSub: "百年綜合四柱",
+    h1: "태어난 순간의 여덟 글자로 100년의 흐름을 적어 드립니다",
+    heroSub:
+      "하늘의 기밀을 열어 인생의 나침반을 밝힙니다. 사주 원국과 대운의 흐름을 정밀하게 계산해, 의뢰인 한 분만을 위한 맞춤 감정서를 엮어 드립니다. 내 사주의 등급은 무료로 먼저 확인하세요.",
+    ctaGrade: "내 사주 등급 보기",
+    ctaPrice: "감정서 안내",
+    gradeTitle: "다섯 등급, 하나의 기준",
+    gradeLead: (from: string, to: string, total: string) =>
+      `${from}년부터 ${to}년까지 태어날 수 있는 사주 ${total}개를 모두 같은 기준으로 계산했습니다. 오행의 균형, 대운의 도움, 용신의 힘, 귀인을 점수로 매기고 그 안에서 내 자리를 보여 드립니다.`,
+    gradeNote:
+      "오른쪽 숫자는 전체 사주 가운데 그 등급에 드는 비율입니다. 같은 일주·격국·용신을 가진 사람이 몇 명 중 한 명인지, 천을귀인과 문창귀인이 있는지, 대운의 전성기가 몇 살부터인지도 함께 알려 드립니다.",
+    contentsTitle: "한 권에 담기는 다섯 부",
+    contentsLead: "등급표와 대운 곡선, 월별 흐름표가 풀이와 함께 책처럼 엮여 PDF로 남습니다.",
+    priceTitle: "천기록 주요 감정 안내",
+    priceLead:
+      "바람의 방향을 아는 배는 길을 잃지 않습니다. 지금 가장 풀리지 않는 고민이나 마주한 전환점이 있다면, 사주 원국과 대운의 흐름으로 그 길을 함께 살펴 드립니다.",
+    pick: "추천",
+    partsAll: "1~5부 전체",
+    partsCore: "1부 천명 · 5부 세운과 개운법",
+    partsExtra: "등급표·대운 곡선·월별 흐름표 · 책자형 PDF",
+    productSoon: "준비 중입니다",
+    applyCta: "생년월일시 넣고 신청하기",
+    payPending: "결제는 준비 중입니다.",
+    steps: [
+      { b: "무료 확인", t: "생년월일시를 넣으면 사주 명식과 등급·희소도를 바로 보여 드립니다." },
+      { b: "감정서 신청", t: "감정서를 고르고 성함과 이메일을 적어 결제합니다." },
+      {
+        b: "완성 메일",
+        t: `결제 즉시 작성을 시작하고, 완성되면 감정서 링크를 메일로 보내 드립니다. 링크는 ${REPORT_VALID_DAYS}일 동안 열 수 있고 PDF로 저장할 수 있습니다.`,
+      },
+    ],
+    methodTitle: "이렇게 계산합니다",
+    method: [
+      {
+        dt: "절기 시각",
+        dd: "년주와 월주는 입춘·경칩 같은 절기가 바뀌는 시각을 분 단위로 따져 세웁니다. 설날이나 1월 1일이 기준이 아닙니다.",
+      },
+      {
+        dt: "한국 시간의 역사",
+        dd: "1954~1961년의 표준시 변경과 1987·1988년 서머타임을 반영해, 그때 시계로 적힌 출생 시각을 바로잡습니다.",
+      },
+      {
+        dt: "태양의 실제 위치",
+        dd: "서울의 경도에 맞춰 약 32분을 보정한 진태양시로 시주를 정합니다. 자시 출생의 날짜 기준도 직접 고를 수 있습니다.",
+      },
+    ],
+    formTitle: "1:1 맞춤 감정 신청",
+    formLead:
+      "생년월일시를 적으면 사주 명식과 등급이 바로 나옵니다. 결과 아래에서 감정서를 골라 신청할 수 있습니다. 태어난 시간을 모르면 ‘모름’을 고르세요. 시주를 빼고 분석합니다.",
+    helpTitle: "도움이 필요하신가요?",
+    faqTitle: "자주 묻는 질문",
+    faq: [
+      {
+        q: "결제를 어떻게 하는지 잘 모르겠어요.",
+        a: "생년월일시를 넣고 '사주 보기'를 누르면 결과 아래에 감정서 신청 칸이 나옵니다. 감정서를 고르고 성함·이메일을 적은 뒤 결제 버튼을 누르면 결제창이 열립니다. 중간에 막히면 아래 상담 안내로 연락 주세요. 하나씩 도와 드립니다.",
+      },
+      {
+        q: "태어난 시간을 모르면 어떻게 하나요?",
+        a: "시주를 뺀 여섯 글자로 계산합니다. 등급과 풀이는 그대로 볼 수 있지만, 시주가 들어간 해석은 빠지고 등급에도 '6글자 기준'이라고 표시됩니다.",
+      },
+      {
+        q: "등급은 어떤 기준으로 정하나요?",
+        a: "오행 균형(30점), 대운의 도움(30점), 신강·신약 중화(15점), 용신의 힘(15점), 천을·문창귀인(10점)을 더한 점수를, 같은 기간에 태어날 수 있는 모든 사주의 점수와 비교합니다. 학파에 따라 판단이 다를 수 있어 참고용으로 드립니다.",
+      },
+      {
+        q: "음력 생일로도 볼 수 있나요?",
+        a: "네. 음력과 윤달을 고를 수 있습니다. 다만 드물게 한국 음력과 하루 차이가 나는 날이 있어, 양력 생일을 알면 양력으로 넣는 것이 가장 정확합니다.",
+      },
+      {
+        q: "입력한 정보는 어디에 쓰이나요?",
+        a: "사주 계산에만 씁니다. 풀이를 쓰는 AI에는 이름을 보내지 않고 간지·오행·대운 같은 계산 결과만 보냅니다.",
+      },
+    ],
+    /** 결과 아래 안내(해외 화면에서 감정서 준비 중일 때). 한국어는 쓰지 않는다. */
+    resultNotice: null as null | { title: string; text: string },
+  },
+  products: Object.fromEntries(Object.values(PRODUCTS).map((p) => [p.id, { name: p.name, summary: p.summary }])) as Record<
+    ProductId,
+    { name: string; summary: string }
+  >,
+  support: {
+    lead: (hasChat: boolean) =>
+      `결제 방법, 생년월일 입력, 감정서 받는 법 등 무엇이든 편하게 물어 주세요. ${hasChat ? "카카오톡으로 1:1 상담해 드리며, 그 밖의 문의는 이메일로 받습니다." : "이메일로 문의해 주시면 도와 드립니다."}`,
+    kakao: "카카오톡 1:1 상담",
+    kakaoFloat: "카톡 상담",
+    kakaoFloatAria: "카카오톡으로 1:1 상담하기",
+    /** 카카오톡을 거의 쓰지 않는 나라 화면에서는 숨긴다 */
+    showKakao: true,
+    mail: (email: string) => `이메일 문의 ${email}`,
+    mailSubject: "[천기록] 문의",
+  },
+  footer: {
+    linksAria: "약관 및 방침",
+    terms: "이용약관",
+    privacy: "개인정보처리방침",
+    refund: "환불 규정",
+    biz: { companyName: "상호", ceo: "대표", bizNumber: "사업자등록번호", mailOrderNumber: "통신판매업 신고", address: "주소", contact: "고객센터" },
+    pending: "등록 예정",
+    note: (brand: string) =>
+      `명식은 만세력 계산 엔진이, 풀이 문장은 AI(Claude)가 작성합니다. 명리학 이론에 기반한 참고 자료이며 미래를 보장하지 않습니다. 결제는 토스페이먼츠가 처리하며 카드 정보는 ${brand}에 저장되지 않습니다.`,
+    languages: "언어",
+  },
+  meta: {
+    title: `${BRAND.name} — ${BRAND.tagline}`,
+    description: "절기를 분 단위로 맞춘 만세력으로 사주를 세우고, 다섯 등급 가운데 내 사주의 자리와 100년의 대운 흐름을 알려 드립니다.",
+  },
+};
+
+export type SiteCopy = typeof KO;
+
+const ZH_TW: SiteCopy = {
+  numberLocale: "zh-TW",
+  brand: { name: "天機錄", tagline: "百年綜合八字" },
+  landing: {
+    slipSub: "百年綜合八字",
+    h1: "以出生那一刻的八個字，為您寫下百年運勢",
+    heroSub: "開啟天機，照亮人生的羅盤。精密推算八字命局與大運走向，為每一位委託人編撰專屬命書。您的命格等級，可先免費查看。",
+    ctaGrade: "查看我的命格等級",
+    ctaPrice: "命書介紹",
+    gradeTitle: "五個等級，同一把尺",
+    gradeLead: (from, to, total) =>
+      `我們以同一標準，計算了 ${from} 年至 ${to} 年間可能出現的全部 ${total} 組八字。將五行平衡、大運助力、用神力量與貴人化為分數，告訴您在其中的位置。`,
+    gradeNote:
+      "右側數字為該等級在全部八字中所佔的比例。同時告訴您：與您相同日柱・格局・用神的人是幾人中的一位、是否有天乙貴人與文昌貴人，以及大運巔峰從幾歲開始。",
+    contentsTitle: "一冊收錄的五章",
+    contentsLead: "等級表、大運曲線、流月運勢表與解讀一同裝訂成冊，以 PDF 保存。",
+    priceTitle: "天機錄 命書服務",
+    priceLead: "繁體中文版完整命書正在準備中，開放後將在此頁面公告。目前可先免費查看八字命盤與命格等級。",
+    pick: "推薦",
+    partsAll: "第一至第五章全冊",
+    partsCore: "第一章 天命・第五章 流年與開運法",
+    partsExtra: "等級表・大運曲線・流月運勢表・書冊式 PDF",
+    productSoon: "準備中",
+    applyCta: "輸入生辰後申請",
+    payPending: "即將開放",
+    steps: [
+      { b: "免費查看", t: "輸入出生年月日時，立即顯示八字命盤、命格等級與稀有度。" },
+      { b: "申請命書", t: "選擇命書，填寫姓名與電子郵件後付款（繁體中文版準備中）。" },
+      { b: "完成通知", t: `付款後立即開始撰寫，完成後以電子郵件寄送命書連結。連結可於 ${REPORT_VALID_DAYS} 天內開啟，並可存成 PDF。` },
+    ],
+    methodTitle: "我們這樣推算",
+    method: [
+      { dt: "節氣時刻", dd: "年柱與月柱以立春、驚蟄等節氣交接的時刻為準，精確到分鐘。不是以農曆新年或 1 月 1 日為界。" },
+      {
+        dt: "出生地的時間歷史",
+        dd: "依出生地（台灣・香港・韓國）當時實施的標準時間與夏令時間校正，將當年時鐘記下的出生時刻還原為正確時間。",
+      },
+      { dt: "太陽的實際位置", dd: "依出生地經度換算真太陽時（台北約 +6 分、香港約 -23 分）來定時柱。子時出生的換日標準也可自行選擇。" },
+    ],
+    formTitle: "免費查看八字命盤",
+    formLead: "填寫出生年月日時，即可看到八字命盤與命格等級。不知道出生時間，請勾選「不詳」，將以去掉時柱的六個字分析。",
+    helpTitle: "需要協助嗎？",
+    faqTitle: "常見問題",
+    faq: [
+      { q: "不知道出生時間怎麼辦？", a: "會以去掉時柱的六個字計算。等級與命盤照樣可以查看，但與時柱相關的解讀會省略，等級旁也會註明以六字計算。" },
+      {
+        q: "等級是怎麼評定的？",
+        a: "將五行平衡（30 分）、大運助力（30 分）、身強身弱的中和程度（15 分）、用神力量（15 分）、天乙・文昌貴人（10 分）相加，再與同一期間可能出生的所有八字比較。各派判斷可能不同，僅供參考。",
+      },
+      { q: "可以用農曆生日查詢嗎？", a: "可以。可選擇農曆與閏月。若知道國曆生日，用國曆輸入最為準確。" },
+      { q: "在台灣以外出生也可以嗎？", a: "可以。請選擇出生地區（台灣・香港・韓國），系統會依當地的時區與夏令時間計算。" },
+      { q: "什麼時候可以購買完整命書？", a: "繁體中文版完整命書正在準備中，開放後會在此頁面公告。如有疑問，歡迎來信詢問。" },
+      { q: "輸入的資料會用在哪裡？", a: "只用於八字計算。撰寫解讀的 AI 不會收到您的姓名，只會收到干支・五行・大運等計算結果。" },
+    ],
+    resultNotice: { title: "完整命書", text: "繁體中文版完整命書（各章詳細解讀）正在準備中，開放後將在此頁面公告。以下為排盤結果。" },
+  },
+  products: {
+    core: { name: "天機錄 核心命盤錄", summary: "先天本質與五行平衡，{Y1}～{Y2} 流年與流月運勢重點分析" },
+    full: { name: "天機錄 綜合命書", summary: "一生大運走向、先天財富格局、事業運、姻緣運、專屬開運法" },
+    naming: { name: "吉運開運命名錄", summary: "補足八字所缺五行，依數理與字義五行量身取名・改名" },
+  },
+  support: {
+    lead: () => "八字輸入、查看結果等任何問題，歡迎來信詢問，我們會盡快回覆。",
+    kakao: "",
+    kakaoFloat: "",
+    kakaoFloatAria: "",
+    showKakao: false,
+    mail: (email) => `電子郵件詢問 ${email}`,
+    mailSubject: "[天機錄] 詢問",
+  },
+  footer: {
+    linksAria: "條款與政策",
+    terms: "服務條款（韓文）",
+    privacy: "隱私權政策（韓文）",
+    refund: "退款規定（韓文）",
+    biz: { companyName: "公司名稱", ceo: "負責人", bizNumber: "營業登記號碼", mailOrderNumber: "通訊銷售業申報", address: "地址", contact: "客服" },
+    pending: "登記中",
+    note: () => "命盤由萬年曆計算引擎推算，解讀文字由 AI（Claude）撰寫。本服務為根據命理學理論的參考資料，不保證未來。本服務由韓國的天機錄營運。",
+    languages: "語言",
+  },
+  meta: {
+    title: "天機錄 — 百年綜合八字｜我的命格是第幾級？",
+    description: "以精確到分鐘的節氣萬年曆排出八字，告訴您在五個等級中的位置與百年大運走勢。依台灣時區與夏令時間計算，可免費查看。",
+  },
+};
+
+/** 문자열 안의 대만식 표현을 홍콩식으로 바꾼다. 함수는 결과 문자열에 적용한다. */
+function toHK<T>(v: T): T {
+  if (typeof v === "string") {
+    return v
+      .replace(/國曆/g, "西曆")
+      .replace(/電子郵件/g, "電郵")
+      .replace(/台灣・香港・韓國/g, "香港・台灣・韓國")
+      .replace(/台北約 \+6 分、香港約 -23 分/g, "香港約 -23 分、台北約 +6 分")
+      .replace(/在台灣以外出生/g, "在香港以外出生")
+      .replace(/依台灣時區/g, "依香港時區") as T;
+  }
+  if (typeof v === "function") {
+    const f = v as unknown as (...a: unknown[]) => unknown;
+    return ((...a: unknown[]) => toHK(f(...a))) as T;
+  }
+  if (Array.isArray(v)) return v.map(toHK) as T;
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, toHK(x)])) as T;
+  return v;
+}
+
+const ZH_HK: SiteCopy = { ...toHK(ZH_TW), numberLocale: "zh-HK" };
+
+const ALL: Record<SiteLocale, SiteCopy> = { ko: KO, "zh-TW": ZH_TW, "zh-HK": ZH_HK };
+
+export const siteCopy = (site: SiteLocale = "ko"): SiteCopy => ALL[site] ?? KO;

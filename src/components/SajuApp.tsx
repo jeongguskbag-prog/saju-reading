@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import type { BirthInput, SajuChart } from "@/lib/saju/calc";
 import { PART_KEYS, type PartKey, type PartResult } from "@/lib/report-shared";
 import ReportView, { type PartStates } from "./ReportView";
@@ -36,13 +36,15 @@ interface Props {
   checkout?: CheckoutInfo;
   /** 고를 수 있는 출생 지역. 둘 이상이면 지역 선택 칸을 보인다. 기본 한국만. */
   regions?: Region[];
+  /** 결제 상자가 없을 때 등급 카드 아래에 넣을 안내(해외 화면의 "감정서 준비 중" 등) */
+  afterGrade?: ReactNode;
 }
 
 const serverChart = (input: BirthInput, t: Messages) => postJson<{ chart: SajuChart }>("/api/chart", input, t).then((r) => r.chart);
 const serverPart = (input: BirthInput, part: PartKey, t: Messages) =>
   postJson<PartResult>("/api/reading", { input, part, locale: input.locale }, t);
 
-export default function SajuApp({ aiEnabled, checkout, regions = ["KR"] }: Props) {
+export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], afterGrade }: Props) {
   const t = useT();
   const locale = useLocale();
   const [region, setRegion] = useState<Region>(regions[0]);
@@ -232,7 +234,13 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"] }: Props
             aiEnabled={aiEnabled}
             parts={parts}
             onRetry={(part) => lastInput.current && loadPart(lastInput.current, part, run.current)}
-            afterGrade={checkout && !aiEnabled && lastInput.current ? <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} /> : undefined}
+            afterGrade={
+              checkout && !aiEnabled && lastInput.current ? (
+                <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} />
+              ) : (
+                afterGrade
+              )
+            }
           />
           <ResultActions chart={chart} busy={anyLoading} />
         </div>
