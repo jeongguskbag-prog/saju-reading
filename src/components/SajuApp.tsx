@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import type { BirthInput, SajuChart } from "@/lib/saju/calc";
 import { CHAPTER_KEYS, PART_KEYS, type ChapterKey, type PartKey, type PartResult } from "@/lib/report-shared";
 import { DEFAULT_PRODUCT, PRODUCTS, type ProductId } from "@/lib/product";
@@ -40,13 +40,15 @@ interface Props {
   regions?: Region[];
   /** 앱 전용 화면(한국어): 웹처럼 감정서를 고르게 하고, 고른 감정서의 파트만 무료로 작성한다. */
   productChoice?: boolean;
+  /** 결제 상자가 없을 때 등급 카드 아래에 넣을 안내(해외 화면의 "감정서 준비 중" 등) */
+  afterGrade?: ReactNode;
 }
 
 const serverChart = (input: BirthInput, t: Messages) => postJson<{ chart: SajuChart }>("/api/chart", input, t).then((r) => r.chart);
 const serverPart = (input: BirthInput, part: PartKey, t: Messages) =>
   postJson<PartResult>("/api/reading", { input, part, locale: input.locale }, t);
 
-export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], productChoice = false }: Props) {
+export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], productChoice = false, afterGrade }: Props) {
   const t = useT();
   const locale = useLocale();
   const [region, setRegion] = useState<Region>(regions[0]);
@@ -244,7 +246,13 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
             aiEnabled={aiEnabled}
             parts={parts}
             onRetry={(part) => lastInput.current && loadPart(lastInput.current, part, run.current)}
-            afterGrade={checkout && !aiEnabled && lastInput.current ? <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} /> : undefined}
+            afterGrade={
+              checkout && !aiEnabled && lastInput.current ? (
+                <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} />
+              ) : (
+                afterGrade
+              )
+            }
             {...(productChoice && shownProduct
               ? {
                   include: CHAPTER_KEYS.filter((k): k is ChapterKey => PRODUCTS[shownProduct].parts.includes(k)),

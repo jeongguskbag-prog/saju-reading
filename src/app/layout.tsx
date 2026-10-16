@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { BRAND } from "@/lib/product";
 import "./globals.css";
 import FontLinks from "@/components/FontLinks";
+import { headers } from "next/headers";
+import { SITES, type SiteLocale } from "@/lib/site-copy";
 
 // 공유 미리보기 이미지(opengraph-image.png)의 절대 주소를 만들 기준 주소.
 const siteUrl =
@@ -21,9 +23,12 @@ export const viewport: Viewport = {
   themeColor: "#24324f",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // 대만(/zh-tw)·홍콩(/zh-hk) 주소는 proxy.ts가 사이트 언어를 알려 준다. 그 밖에는 한국어.
+  const requested = (await headers()).get("x-site-locale") as SiteLocale | null;
+  const lang = SITES[requested && requested in SITES ? requested : "ko"].htmlLang;
   return (
-    <html lang="ko">
+    <html lang={lang}>
       <head>
         <FontLinks />
       </head>

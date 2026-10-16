@@ -707,3 +707,11 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .app-products button.lp-cta, .app-products button.lp-cta-ghost { font: inherit; cursor: pointer; }
 .app-products button.lp-cta-ghost { background: transparent; }
 .app-products button.lp-cta { border: 0; }
+
+/* 하단 언어 전환(한국어 · 대만 · 홍콩) */
+.site-footer-langs { display: flex; flex-wrap: wrap; gap: 6px 16px; padding-top: 10px; border-top: 1px solid var(--border); }
+.site-footer-langs a { color: var(--text-2); text-decoration: none; }
+.site-footer-langs a:hover { text-decoration: underline; }
+.site-footer-langs a[aria-current="true"] { color: var(--text); font-weight: 700; }
+/* 한국어용 keep-all은 띄어쓰기가 없는 중국어를 문장 부호에서만 끊어, 줄이 들쭉날쭉해진다. */
+.zh, .zh * { word-break: normal; line-break: strict; }
