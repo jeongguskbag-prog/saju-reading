@@ -18,8 +18,8 @@ export default function AppEntry({ serverAi, locale = "ko", regions }: { serverA
   return (
     <LocaleProvider locale={locale}>
       <AppLanguage current={locale} />
-      {/* 한국어 앱은 웹처럼 감정서(핵심 명식록·종합 감정서)를 고른다. 결제는 없다. */}
-      <SajuApp aiEnabled={serverAi && hasKey} regions={regions} productChoice={locale === "ko"} />
+      {/* 웹처럼 감정서(핵심 명식록·종합 감정서)를 고른다. 결제는 없다. 작명록은 한국어 웹에서만 신청한다. */}
+      <SajuApp aiEnabled={serverAi && hasKey} regions={regions} productChoice />
     </LocaleProvider>
   );
 }

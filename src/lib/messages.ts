@@ -201,6 +201,20 @@ const KO = {
   saveHtml: "HTML로 저장",
   saveBusy: "풀이가 끝나면 풀이까지 포함해 저장할 수 있습니다.",
   saveHelp: "PDF는 인쇄 화면에서 “PDF로 저장”을 고르세요. PDF를 못 여는 분께는 HTML 파일을 보내 주세요(인터넷 브라우저로 열림).",
+
+  // 앱 감정서 고르기(AppProducts). 상품 이름·소개는 null이면 product.ts(한국어)를 쓴다.
+  productsTitle: "받으실 감정서를 고르세요",
+  productsAria: "감정서 고르기",
+  productNames: null as Partial<Record<"core" | "full" | "naming", { name: string; summary: string }>> | null,
+  productPick: "추천",
+  appFree: "앱 무료",
+  productPartsFull: "1~5부 전체",
+  productPartsCore: "1부 천명 · 5부 세운과 개운법",
+  productExtras: "유형표·대운 곡선·월별 흐름표 · 책자형 PDF",
+  productChoose: "이 감정서로 받기",
+  productChosen: "✓ 선택됨 · 생년월일시 넣기",
+  productWebOnly: "홈페이지에서 신청할 수 있습니다",
+  productSoon: "준비 중입니다",
   fileResult: "결과",
 };
 
@@ -390,6 +404,23 @@ const ZH: Messages = {
   saveHtml: "儲存為 HTML",
   saveBusy: "解讀完成後，即可連同解讀內容一起儲存。",
   saveHelp: "PDF 請在列印畫面中選擇「儲存為 PDF」。若對方無法開啟 PDF，可傳送 HTML 檔案（用瀏覽器即可開啟）。",
+
+  productsTitle: "請選擇要取得的命書",
+  productsAria: "選擇命書",
+  productNames: {
+    core: { name: "天機錄 核心命盤錄", summary: "先天本質與五行平衡，{Y1}～{Y2} 流年與流月運勢重點分析" },
+    full: { name: "天機錄 綜合命書", summary: "一生大運走向、先天財富格局、事業運、姻緣運、專屬開運法" },
+    naming: { name: "吉運開運命名錄", summary: "補足八字所缺五行，依數理與字義五行量身取名・改名" },
+  },
+  productPick: "推薦",
+  appFree: "App 免費",
+  productPartsFull: "第 1～5 部全部",
+  productPartsCore: "第 1 部 天命 · 第 5 部 流年與開運法",
+  productExtras: "類型表・大運曲線・流月表 · 冊子版 PDF",
+  productChoose: "選擇這份命書",
+  productChosen: "✓ 已選擇 · 輸入出生資料",
+  productWebOnly: "僅提供韓文版",
+  productSoon: "準備中",
   fileResult: "結果",
 };
 
@@ -577,6 +608,23 @@ const ZH_HANS: Messages = {
   saveHtml: "保存为 HTML",
   saveBusy: "解读完成后，即可连同解读内容一起保存。",
   saveHelp: "PDF 请在打印界面中选择「保存为 PDF」。若对方无法打开 PDF，可发送 HTML 文件（用浏览器即可打开）。",
+
+  productsTitle: "请选择要获取的命书",
+  productsAria: "选择命书",
+  productNames: {
+    core: { name: "天机录 核心命盘录", summary: "先天本质与五行平衡，{Y1}～{Y2} 流年与流月运势重点分析" },
+    full: { name: "天机录 综合命书", summary: "一生大运走向、先天财富格局、事业运、姻缘运、专属开运法" },
+    naming: { name: "吉运开运命名录", summary: "补足八字所缺五行，依数理与字义五行量身取名・改名" },
+  },
+  productPick: "推荐",
+  appFree: "应用免费",
+  productPartsFull: "第 1～5 部全部",
+  productPartsCore: "第 1 部 天命 · 第 5 部 流年与开运法",
+  productExtras: "类型表・大运曲线・流月表 · 册子版 PDF",
+  productChoose: "选择这份命书",
+  productChosen: "✓ 已选择 · 输入出生信息",
+  productWebOnly: "仅提供韩文版",
+  productSoon: "准备中",
   fileResult: "结果",
 };
 

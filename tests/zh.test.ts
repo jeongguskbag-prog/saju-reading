@@ -135,7 +135,14 @@ describe("번체 화면 사전", () => {
     for (const [k, v] of Object.entries(zh)) {
       if (typeof v === "string") samples.push(v);
       else if (Array.isArray(v)) samples.push(...v);
-      else if (typeof v === "object") samples.push(...Object.values(v as Record<string, string>));
+      else if (v && typeof v === "object") {
+        // 상품 이름처럼 한 단계 더 들어간 문구도 모은다.
+        const walk = (o: unknown): void => {
+          if (typeof o === "string") samples.push(o);
+          else if (o && typeof o === "object") Object.values(o).forEach(walk);
+        };
+        walk(v);
+      }
       else if (typeof v === "function") {
         // 인자 자리에 숫자·한자를 넣어 본다(한국어 키를 받는 함수는 번체로 바꿔 돌려줘야 한다).
         const out = (v as (...a: unknown[]) => unknown)(...(k === "god" ? ["편관"] : k === "mark" ? ["주의"] : k === "noble" ? ["천을귀인"] : k === "el" || k === "elShort" ? ["wood"] : k === "regionName" || k === "solarCorrection" ? ["TW"] : k === "glyphSub" ? ["갑", "wood"] : k === "elementMissing" ? [["木"]] : [1, 2, 3, 4]));

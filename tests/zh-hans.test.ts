@@ -104,7 +104,14 @@ describe("간체 문장", () => {
     for (const [k, v] of Object.entries(zh)) {
       if (typeof v === "string") samples.push(v);
       else if (Array.isArray(v)) samples.push(...v);
-      else if (typeof v === "object") samples.push(...Object.values(v as Record<string, string>));
+      else if (v && typeof v === "object") {
+        // 상품 이름처럼 한 단계 더 들어간 문구도 모은다.
+        const walk = (o: unknown): void => {
+          if (typeof o === "string") samples.push(o);
+          else if (o && typeof o === "object") Object.values(o).forEach(walk);
+        };
+        walk(v);
+      }
       else if (typeof v === "function") {
         const args =
           k === "god" ? ["편관"] : k === "mark" ? ["주의"] : k === "noble" ? ["천을귀인"] : k === "el" || k === "elShort" ? ["wood"]

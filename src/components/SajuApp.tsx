@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import type { BirthInput, SajuChart } from "@/lib/saju/calc";
 import { CHAPTER_KEYS, PART_KEYS, type ChapterKey, type PartKey, type PartResult } from "@/lib/report-shared";
 import { DEFAULT_PRODUCT, PRODUCTS, type ProductId } from "@/lib/product";
-import AppProducts from "./AppProducts";
+import AppProducts, { productCopy } from "./AppProducts";
 import ReportView, { type PartStates } from "./ReportView";
 import YearField from "./YearField";
 import ResultActions from "./ResultActions";
@@ -257,7 +257,7 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
             {...(productChoice && shownProduct
               ? {
                   include: CHAPTER_KEYS.filter((k): k is ChapterKey => PRODUCTS[shownProduct].parts.includes(k)),
-                  title: PRODUCTS[shownProduct].name,
+                  title: productCopy(t, shownProduct).name,
                 }
               : {})}
           />
