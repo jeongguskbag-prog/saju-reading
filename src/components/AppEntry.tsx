@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import SajuApp from "./SajuApp";
 import { LocaleProvider } from "./LocaleProvider";
+import AppLanguage from "./AppLanguage";
 import type { Locale, Region } from "@/lib/saju/locale";
 
 /**
@@ -16,6 +17,7 @@ export default function AppEntry({ serverAi, locale = "ko", regions }: { serverA
   }, []);
   return (
     <LocaleProvider locale={locale}>
+      <AppLanguage current={locale} />
       {/* 한국어 앱은 웹처럼 감정서(핵심 명식록·종합 감정서)를 고른다. 결제는 없다. */}
       <SajuApp aiEnabled={serverAi && hasKey} regions={regions} productChoice={locale === "ko"} />
     </LocaleProvider>

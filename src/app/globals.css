@@ -727,3 +727,14 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 
 /* 감정서 풀이 문장 속 한자. 휴대폰 기본 글꼴 대신 웹 글꼴로 고정해 PDF에서 빠지지 않게 한다. */
 .hz { font-family: "Noto Serif KR", "Noto Serif CJK KR", "Batang", "AppleMyungjo", serif; }
+
+/* 앱 화면 언어 고르기(한국어 · 繁體中文 · 简体中文) */
+.app-lang { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 0 0 18px; }
+.app-lang button {
+  display: grid; gap: 1px; justify-items: center; padding: 8px 4px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font: inherit;
+}
+.app-lang button b { font-size: 14px; color: var(--text); }
+.app-lang button small { font-size: 11px; }
+.app-lang button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.app-lang button[aria-pressed="true"] b { color: var(--accent-ink); }
