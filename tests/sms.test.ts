@@ -73,3 +73,31 @@ describe("문자 발송", () => {
     expect(text).toContain("2026.11.14까지");
   });
 });
+
+describe("카카오톡 알림톡", () => {
+  it("카카오톡을 고르면 알림톡 옵션과 대체 문자를 함께 보낸다", async () => {
+    vi.stubEnv("KAKAO_PF_ID", "KA01PF");
+    vi.stubEnv("KAKAO_TEMPLATE_ID", "KA01TP");
+    const order = await createOrder(input, "", "core", now, undefined, "01012345678", "kakao");
+    expect(order.channel).toBe("kakao");
+    vi.stubGlobal("fetch", vi.fn(async () => json({ orderId: order.id, status: "DONE", totalAmount: order.amount, approvedAt: now.toISOString() })));
+    const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
+    const report = (await getReport(paid.token!))!;
+    for (const part of ["intro", "part1", "part5"] as const) {
+      await savePart(paid.token!, part, part === "intro" ? { part, intro: { coverKeywords: ["k"], summary: "s", preface: ["p"] } } : { part, chapter: { sections: [{ heading: "h", paragraphs: ["p"] }], actionPlan: [] } });
+    }
+    const sms = vi.fn(async () => json({ failedMessageList: [] }));
+    vi.stubGlobal("fetch", sms);
+    expect(await sendCompletionIfReady(report, "https://x.test")).toBe(true);
+    const body = JSON.parse((sms.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+    const m = body.messages[0];
+    expect(m.kakaoOptions).toMatchObject({ pfId: "KA01PF", templateId: "KA01TP", disableSms: false });
+    expect(m.kakaoOptions.variables["#{링크}"]).toBe(`https://x.test/r/${paid.token}`);
+    expect(m.text).toContain("천기록 핵심 명식록 작성이 완료되었습니다");
+    expect(m.text).not.toContain("#{");
+  });
+
+  it("알림톡 설정이 없으면 카카오톡 주문을 받지 않는다", async () => {
+    await expect(createOrder(input, "", "core", now, undefined, "01012345678", "kakao")).rejects.toThrow("카카오톡");
+  });
+});

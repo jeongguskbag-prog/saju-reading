@@ -5,7 +5,7 @@ import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, SALES_OPEN, sellableProdu
 import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
 import { getStore, requireStore } from "./store";
 import type { NamingRequest } from "./naming/engine";
-import { isSmsEnabled, normalizePhone } from "./sms";
+import { isKakaoEnabled, isSmsEnabled, normalizePhone } from "./sms";
 import { isAiEnabled } from "./reading";
 
 export interface Order {
@@ -29,6 +29,8 @@ export interface Order {
   naming?: NamingRequest;
   /** 감정서 링크를 문자로 받을 휴대폰 번호(숫자만). 있으면 완성 때 문자를 보낸다. */
   phone?: string;
+  /** 휴대폰으로 받는 방법: 문자(기본) 또는 카카오톡 알림톡 */
+  channel?: "sms" | "kakao";
 }
 
 export class OrderError extends Error {
@@ -53,7 +55,7 @@ export function isValidEmail(email: string): boolean {
 }
 
 /** 토스 결제창·승인 키와 저장소, AI 키가 모두 있어야 결제를 연다. */
-export function checkoutConfig(): { enabled: boolean; clientKey: string | null; testMode: boolean; mobilePhone: boolean; sms: boolean } {
+export function checkoutConfig(): { enabled: boolean; clientKey: string | null; testMode: boolean; mobilePhone: boolean; sms: boolean; kakao: boolean } {
   const clientKey = process.env.TOSS_CLIENT_KEY || null;
   const secret = process.env.TOSS_SECRET_KEY;
   const testKey = Boolean(clientKey?.startsWith("test_"));
@@ -70,6 +72,8 @@ export function checkoutConfig(): { enabled: boolean; clientKey: string | null; 
     mobilePhone: enabled && process.env.TOSS_MOBILE_PHONE === "1",
     // 감정서 링크를 문자로 받기(솔라피 키·발신번호가 있을 때)
     sms: enabled && isSmsEnabled(),
+    // 감정서 링크를 카카오톡 알림톡으로 받기(솔라피 + 카카오 채널·템플릿)
+    kakao: enabled && isKakaoEnabled(),
   };
 }
 
@@ -82,6 +86,7 @@ export async function createOrder(
   now = new Date(),
   naming?: NamingRequest,
   phone?: string,
+  channel: "sms" | "kakao" = "sms",
 ): Promise<Order> {
   const product = sellableProducts().find((p) => p.id === productId);
   if (!product) throw new OrderError("지금은 신청할 수 없는 상품입니다.");
@@ -90,6 +95,7 @@ export async function createOrder(
   const mobile = phone ? normalizePhone(phone) : null;
   if (phone && !mobile) throw new OrderError("휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)");
   if (mobile && !isSmsEnabled()) throw new OrderError("지금은 문자로 받을 수 없습니다. 이메일로 받아 주세요.");
+  if (mobile && channel === "kakao" && !isKakaoEnabled()) throw new OrderError("지금은 카카오톡으로 받을 수 없습니다. 문자나 이메일로 받아 주세요.");
   if (email ? !isValidEmail(email) : !mobile) throw new OrderError("이메일 주소를 확인해 주세요.");
   const chart = calculateSaju(input, now); // 입력 오류(InputError)는 호출한 쪽에서 메시지로 돌려준다.
   if (product.parts.includes("naming")) {
@@ -113,7 +119,7 @@ export async function createOrder(
     amount: product.price,
     orderName: product.name,
     ...(product.parts.includes("naming") && naming ? { naming } : {}),
-    ...(mobile ? { phone: mobile } : {}),
+    ...(mobile ? { phone: mobile, channel } : {}),
     status: "pending",
     createdAt: now.toISOString(),
   };

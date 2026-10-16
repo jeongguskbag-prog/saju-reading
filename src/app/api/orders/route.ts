@@ -21,7 +21,8 @@ export async function POST(request: Request) {
   }
   try {
     const phone = typeof body?.phone === "string" && body.phone.trim() ? body.phone.trim() : undefined;
-    const order = await createOrder(parsed.value, String(body?.email ?? "").trim(), body?.productId, new Date(), naming, phone);
+    const channel = body?.channel === "kakao" ? "kakao" : "sms";
+    const order = await createOrder(parsed.value, String(body?.email ?? "").trim(), body?.productId, new Date(), naming, phone, channel);
     return NextResponse.json({
       orderId: order.id,
       orderName: order.orderName,

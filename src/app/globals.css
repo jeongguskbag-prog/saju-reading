@@ -95,7 +95,7 @@ header.site p { margin: 0; color: var(--text-2); font-size: 14px; }
 .field label, .field .label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-2); }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .row > * { flex: 1 1 0; min-width: 0; }
-input[type="text"], input[type="number"], input[type="email"], select {
+input[type="text"], input[type="number"], input[type="email"], input[type="tel"], select {
   width: 100%;
   font: inherit;
   font-size: 16px;
@@ -621,7 +621,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .purchase-price { margin: 0 0 14px; font-family: var(--display); font-size: 32px; line-height: 1.1; }
 .purchase-agree { align-items: flex-start; font-size: 13px; line-height: 1.6; }
 .purchase-agree input { margin-top: 3px; flex: none; }
-.purchase input[type="email"] { width: 100%; }
+.purchase input[type="email"], .purchase input[type="tel"] { width: 100%; }
 .report-notice h2 { margin-bottom: 6px; }
 .report-notice p { margin: 0 0 8px; }
 .pay-result p { margin: 0 0 10px; }
@@ -775,3 +775,12 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   .naming-part .naming-card + .naming-card { break-before: page; }
   .naming .card.method { break-before: auto; }
 }
+
+/* 감정서 견본 미리 보기(결제 칸, 개인정보 입력 바로 위) */
+.sample-preview { border: 1px dashed var(--border); border-radius: 10px; padding: 14px; display: grid; gap: 10px; }
+.sample-preview h3 { margin: 0; font-size: 16px; }
+.sample-preview p { margin: 0; font-size: 14px; word-break: keep-all; }
+.sample-thumbs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; }
+.sample-thumbs a { flex: 0 0 auto; width: 120px; text-decoration: none; color: var(--text-2); font-size: 12px; text-align: center; scroll-snap-align: start; }
+.sample-thumbs img { display: block; width: 120px; height: auto; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); background: #fff; }
+.sample-thumbs span { display: block; margin-top: 4px; }

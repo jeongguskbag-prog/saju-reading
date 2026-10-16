@@ -12,13 +12,13 @@ export const metadata: Metadata = { alternates: { canonical: "/", languages: lan
 export const dynamic = "force-dynamic";
 
 export default function Home() {
-  const { enabled, testMode, mobilePhone, sms } = checkoutConfig();
+  const { enabled, testMode, mobilePhone, sms, kakao } = checkoutConfig();
   // FREE_READING=1이면 예전처럼 바로 무료 풀이, 아니면 등급까지 무료 + 리포트 구매.
   const free = isFreeReading() && isAiEnabled();
   return (
     <Landing
       checkoutOpen={enabled}
-      form={<SajuApp aiEnabled={free} checkout={free ? undefined : { enabled, testMode, mobilePhone, sms }} />}
+      form={<SajuApp aiEnabled={free} checkout={free ? undefined : { enabled, testMode, mobilePhone, sms, kakao }} />}
     />
   );
 }
