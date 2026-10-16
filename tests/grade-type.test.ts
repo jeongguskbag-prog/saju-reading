@@ -34,3 +34,16 @@ describe("AI에 넘기는 명식", () => {
     expect(zh).not.toMatch(/第\d級/);
   });
 });
+
+describe("예전에 저장된 명식", () => {
+  it("유형 이름이 없는 명식도 AI 지시문에 유형을 넣는다", async () => {
+    const { calculateSaju } = await import("@/lib/saju/calc");
+    const { chartForPrompt, chartForPromptZh, chartForPromptHans } = await import("@/lib/reading");
+    const chart = calculateSaju({ gender: "male", calendar: "solar", year: 1975, month: 11, day: 20, hour: 12, minute: 0 });
+    // 유형 필드가 생기기 전 저장본을 흉내 낸다.
+    const old = { ...chart, grade: { ...chart.grade, tier: { level: chart.grade.tier.level, name: chart.grade.tier.name, desc: chart.grade.tier.desc, share: chart.grade.tier.share } } } as typeof chart;
+    for (const data of [chartForPrompt(old), chartForPromptZh(old), chartForPromptHans(old)]) {
+      expect(JSON.stringify(data)).not.toContain("undefined");
+    }
+  });
+});

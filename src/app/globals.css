@@ -391,7 +391,8 @@ details.advanced[open] summary { margin-bottom: 10px; }
   .preface { border: 0; padding: 0 2px; break-after: page; }
   .toc { break-after: page; }
   .part { break-before: page; margin-top: 0; }
-  .part-head { padding-bottom: 10px; margin-bottom: 14px; border-bottom: 2px solid var(--accent); }
+  /* 파트 제목만 쪽 끝에 홀로 남지 않게 다음 내용과 붙인다. */
+  .part-head { padding-bottom: 10px; margin-bottom: 14px; border-bottom: 2px solid var(--accent); break-after: avoid; page-break-after: avoid; }
   .part-head h2 { font-size: 26px; }
   .card.method { break-before: page; }
   .daeun { flex-wrap: wrap; overflow: visible; }
