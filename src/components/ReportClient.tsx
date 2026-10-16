@@ -18,8 +18,8 @@ interface Props {
   chart: SajuChart;
   initialParts: Partial<Record<PartKey, PartResult>>;
   justPaid: boolean;
-  email: string;
-  mailEnabled: boolean;
+  /** 완성 링크를 보낼 곳(이메일, 가린 휴대폰 번호). 보낼 수 없으면 null */
+  sendTo: string | null;
   orderId: string;
 }
 
@@ -80,7 +80,7 @@ function whenVisible(): Promise<void> {
   });
 }
 
-export default function ReportClient({ token, partKeys, productName, expiresAt, chart, initialParts, justPaid, email, mailEnabled, orderId }: Props) {
+export default function ReportClient({ token, partKeys, productName, expiresAt, chart, initialParts, justPaid, sendTo, orderId }: Props) {
   const [parts, setParts] = useState<PartStates>(() =>
     Object.fromEntries(Object.entries(initialParts).map(([k, result]) => [k, { status: "done", result }])),
   );
@@ -140,8 +140,8 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
           : `${josa(productName, "이", "가")} 완성되었습니다.`}
       </p>
       <p className="muted">
-        {mailEnabled
-          ? `완성되면 ${email}로 감정서 링크를 보내 드립니다. `
+        {sendTo
+          ? `완성되면 ${sendTo}(으)로 감정서 링크를 보내 드립니다. `
           : "이 페이지 주소가 감정서 열쇠입니다. 아래 버튼으로 복사해 두세요. "}
         감정서는 {untilText}까지 열 수 있으니 기간 안에 PDF로 저장해 두세요. 링크를 아는 사람은 누구나 볼 수 있으니 공유에
         주의해 주세요. 주문번호 {orderId}

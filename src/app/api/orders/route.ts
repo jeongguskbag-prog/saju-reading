@@ -20,13 +20,15 @@ export async function POST(request: Request) {
     naming = n.value;
   }
   try {
-    const order = await createOrder(parsed.value, String(body?.email ?? "").trim(), body?.productId, new Date(), naming);
+    const phone = typeof body?.phone === "string" && body.phone.trim() ? body.phone.trim() : undefined;
+    const order = await createOrder(parsed.value, String(body?.email ?? "").trim(), body?.productId, new Date(), naming, phone);
     return NextResponse.json({
       orderId: order.id,
       orderName: order.orderName,
       amount: order.amount,
       customerKey: order.customerKey,
-      customerEmail: order.email,
+      customerEmail: order.email || undefined,
+      customerMobilePhone: order.phone,
       customerName: order.input.name,
       clientKey: config.clientKey,
     });

@@ -5,6 +5,7 @@ import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, SALES_OPEN, sellableProdu
 import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
 import { getStore, requireStore } from "./store";
 import type { NamingRequest } from "./naming/engine";
+import { isSmsEnabled, normalizePhone } from "./sms";
 import { isAiEnabled } from "./reading";
 
 export interface Order {
@@ -26,6 +27,8 @@ export interface Order {
   token?: string;
   /** 작명록 신청서(작명록 주문만) */
   naming?: NamingRequest;
+  /** 감정서 링크를 문자로 받을 휴대폰 번호(숫자만). 있으면 완성 때 문자를 보낸다. */
+  phone?: string;
 }
 
 export class OrderError extends Error {
@@ -50,13 +53,14 @@ export function isValidEmail(email: string): boolean {
 }
 
 /** 토스 결제창·승인 키와 저장소, AI 키가 모두 있어야 결제를 연다. */
-export function checkoutConfig(): { enabled: boolean; clientKey: string | null; testMode: boolean; mobilePhone: boolean } {
+export function checkoutConfig(): { enabled: boolean; clientKey: string | null; testMode: boolean; mobilePhone: boolean; sms: boolean } {
   const clientKey = process.env.TOSS_CLIENT_KEY || null;
   const secret = process.env.TOSS_SECRET_KEY;
   const testKey = Boolean(clientKey?.startsWith("test_"));
-  // 실제 사이트(Vercel Production)에서는 테스트 키로 결제를 열지 않는다. 돈이 나가지 않는 결제로 감정서를
-  // 무료로 받아 갈 수 있기 때문. live_ 키로 바꾸면 저절로 열린다(꼭 실제 사이트에서 시험해야 하면 ALLOW_TEST_PAYMENTS=1).
-  const testBlocked = testKey && process.env.VERCEL_ENV === "production" && process.env.ALLOW_TEST_PAYMENTS !== "1";
+  // 테스트 키여도 결제 화면을 연다(화면에 "테스트 결제 모드" 안내가 나온다). 돈이 나가지 않는 결제로 감정서를
+  // 받아 갈 수 있으므로, 실제 사이트에서 테스트 결제를 막으려면 Vercel에 BLOCK_TEST_PAYMENTS=1을 넣는다.
+  // live_ 키로 바꾸면 실제 결제가 된다.
+  const testBlocked = testKey && process.env.VERCEL_ENV === "production" && process.env.BLOCK_TEST_PAYMENTS === "1";
   const enabled = SALES_OPEN && !testBlocked && Boolean(clientKey && secret && getStore() && isAiEnabled());
   return {
     enabled,
@@ -64,6 +68,8 @@ export function checkoutConfig(): { enabled: boolean; clientKey: string | null; 
     testMode: testKey,
     // 휴대폰 결제는 토스페이먼츠와 별도 계약이 필요해, 계약 후 TOSS_MOBILE_PHONE=1로 켠다.
     mobilePhone: enabled && process.env.TOSS_MOBILE_PHONE === "1",
+    // 감정서 링크를 문자로 받기(솔라피 키·발신번호가 있을 때)
+    sms: enabled && isSmsEnabled(),
   };
 }
 
@@ -75,11 +81,16 @@ export async function createOrder(
   productId: ProductId = DEFAULT_PRODUCT,
   now = new Date(),
   naming?: NamingRequest,
+  phone?: string,
 ): Promise<Order> {
   const product = sellableProducts().find((p) => p.id === productId);
   if (!product) throw new OrderError("지금은 신청할 수 없는 상품입니다.");
   if (!input.name?.trim()) throw new OrderError("감정서에 들어갈 성함을 적어 주세요.");
-  if (!isValidEmail(email)) throw new OrderError("이메일 주소를 확인해 주세요.");
+  // 받는 곳: 이메일 또는 휴대폰(문자) 가운데 하나는 있어야 한다.
+  const mobile = phone ? normalizePhone(phone) : null;
+  if (phone && !mobile) throw new OrderError("휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)");
+  if (mobile && !isSmsEnabled()) throw new OrderError("지금은 문자로 받을 수 없습니다. 이메일로 받아 주세요.");
+  if (email ? !isValidEmail(email) : !mobile) throw new OrderError("이메일 주소를 확인해 주세요.");
   const chart = calculateSaju(input, now); // 입력 오류(InputError)는 호출한 쪽에서 메시지로 돌려준다.
   if (product.parts.includes("naming")) {
     if (!naming) throw new OrderError("작명 신청 내용을 적어 주세요.");
@@ -102,6 +113,7 @@ export async function createOrder(
     amount: product.price,
     orderName: product.name,
     ...(product.parts.includes("naming") && naming ? { naming } : {}),
+    ...(mobile ? { phone: mobile } : {}),
     status: "pending",
     createdAt: now.toISOString(),
   };

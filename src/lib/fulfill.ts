@@ -2,6 +2,7 @@
 // 손님이 결제 직후 창을 닫아도 결제 승인 단계에서 이 작업을 이어서 돌리므로 감정서와 메일이 빠지지 않는다.
 // 손님 화면도 같은 파트를 요청할 수 있는데, 파트마다 잠금이 있어 AI는 한 번만 부른다.
 import { sendReportEmail } from "./mail";
+import { sendReportSms } from "./sms";
 import { getReport, getSavedPart, getSavedParts, lockPart, markMailed, savePart, unlockPart, unmarkMailed, type Report } from "./orders";
 import { generatePart, ReadingError } from "./reading";
 import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
@@ -40,8 +41,14 @@ export async function sendCompletionIfReady(report: Report, origin?: string): Pr
   const saved = await getSavedParts(report.order.token!, report.product.parts);
   if (report.product.parts.some((p) => !saved[p])) return false;
   if (!(await markMailed(report.order.id))) return false;
-  const ok = await sendReportEmail(report.order, `${origin}/r/${report.order.token}`, report.expiresAt);
-  // 메일 설정이 없거나 실패하면 표시를 지워, 나중에 다시 보낼 수 있게 한다.
+  const url = `${origin}/r/${report.order.token}`;
+  // 이메일과 문자(휴대폰 번호를 남긴 경우)를 함께 보낸다. 하나라도 가면 보낸 것으로 본다.
+  const [mailed, texted] = await Promise.all([
+    report.order.email ? sendReportEmail(report.order, url, report.expiresAt) : Promise.resolve(false),
+    sendReportSms(report.order, url, report.expiresAt),
+  ]);
+  const ok = mailed || texted;
+  // 메일·문자 설정이 없거나 모두 실패하면 표시를 지워, 나중에 다시 보낼 수 있게 한다.
   if (!ok) await unmarkMailed(report.order.id);
   return ok;
 }

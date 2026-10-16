@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import ReportClient from "@/components/ReportClient";
 import SiteShell from "@/components/SiteShell";
 import { isMailEnabled } from "@/lib/mail";
+import { isSmsEnabled, maskPhone } from "@/lib/sms";
 import { getReport, getSavedParts } from "@/lib/orders";
 import { BRAND, BUSINESS, REPORT_VALID_DAYS } from "@/lib/product";
 
@@ -46,8 +47,14 @@ export default async function ReportPage({ params, searchParams }: { params: Par
         chart={report.chart}
         initialParts={saved}
         justPaid={fresh === "1"}
-        email={report.order.email}
-        mailEnabled={isMailEnabled()}
+        sendTo={
+          [
+            isMailEnabled() && report.order.email ? report.order.email : null,
+            isSmsEnabled() && report.order.phone ? `휴대폰 ${maskPhone(report.order.phone)}` : null,
+          ]
+            .filter(Boolean)
+            .join(", ") || null
+        }
         orderId={report.order.id}
       />
     </SiteShell>

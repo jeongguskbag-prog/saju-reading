@@ -11,6 +11,8 @@ export interface CheckoutInfo {
   testMode: boolean;
   /** 휴대폰 결제를 열었는지(토스 계약 후 TOSS_MOBILE_PHONE=1) */
   mobilePhone: boolean;
+  /** 감정서 링크를 문자로 받을 수 있는지(솔라피 설정) */
+  sms?: boolean;
 }
 
 type PayMethod = "CARD" | "MOBILE_PHONE";
@@ -46,6 +48,9 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [productId, setProductId] = useState<ProductId>(DEFAULT_PRODUCT);
   const [name, setName] = useState(input.name ?? "");
   const [email, setEmail] = useState("");
+  const [delivery, setDelivery] = useState<"email" | "sms">("email");
+  const [phone, setPhone] = useState("");
+  const bySms = Boolean(checkout.sms) && delivery === "sms";
   const [agree, setAgree] = useState(false);
   const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [busy, setBusy] = useState(false);
@@ -70,7 +75,9 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         : `${naming.surname.trim()}○○`
       : name.trim();
     if (!reportName) return setError("감정서에 들어갈 성함을 적어 주세요.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return setError("감정서를 받을 이메일 주소를 확인해 주세요.");
+    if (bySms) {
+      if (!/^01[016789]\d{7,8}$/.test(phone.replace(/[\s-]/g, ""))) return setError("감정서를 받을 휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return setError("감정서를 받을 이메일 주소를 확인해 주세요.");
     if (!agree) return setError("주문 내용과 청약철회 안내에 동의해 주세요.");
     setBusy(true);
     try {
@@ -79,7 +86,8 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           input: { ...input, name: reportName },
-          email: email.trim(),
+          email: bySms ? "" : email.trim(),
+          ...(bySms ? { phone: phone.trim() } : {}),
           agree,
           productId,
           ...(isNaming ? { naming: namingReq } : {}),
@@ -96,7 +104,8 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         orderName: order.orderName,
         successUrl: `${location.origin}/pay/success`,
         failUrl: `${location.origin}/pay/fail`,
-        customerEmail: order.customerEmail,
+        ...(order.customerEmail ? { customerEmail: order.customerEmail } : {}),
+        ...(order.customerMobilePhone ? { customerMobilePhone: order.customerMobilePhone } : {}),
         customerName: order.customerName,
       });
     } catch (err) {
@@ -112,8 +121,8 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
     <section className="card purchase no-print" aria-labelledby="purchase-h">
       <h2 id="purchase-h">1:1 맞춤 감정서 신청</h2>
       <p className="purchase-lead">
-        이 명식을 바탕으로 의뢰인 한 분만을 위한 감정서를 써서 책자로 엮어 드립니다. 결제하면 바로 작성을 시작하고, 완성되면 이메일로 감정서
-        링크를 보내 드립니다.
+        이 명식을 바탕으로 의뢰인 한 분만을 위한 감정서를 써서 책자로 엮어 드립니다. 결제하면 바로 작성을 시작하고, 완성되면 이메일이나 문자로
+        감정서 링크를 보내 드립니다.
       </p>
       {checkout.enabled ? (
         <form className="form-grid" onSubmit={onBuy} noValidate>
@@ -136,19 +145,48 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               <input id="buy-name" type="text" autoComplete="name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="홍길동" />
             </div>
           )}
-          <div className="field">
-            <label htmlFor="buy-email">감정서를 받을 이메일</label>
-            <input
-              id="buy-email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              value={email}
-              maxLength={100}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@example.com"
-            />
-          </div>
+          {checkout.sms && (
+            <div className="field">
+              <span className="label">감정서 받는 방법</span>
+              <div className="segmented" role="group" aria-label="감정서 받는 방법">
+                <button type="button" aria-pressed={delivery === "email"} onClick={() => setDelivery("email")}>
+                  이메일
+                </button>
+                <button type="button" aria-pressed={delivery === "sms"} onClick={() => setDelivery("sms")}>
+                  문자 메시지
+                </button>
+              </div>
+            </div>
+          )}
+          {bySms ? (
+            <div className="field">
+              <label htmlFor="buy-phone">감정서 링크를 받을 휴대폰 번호</label>
+              <input
+                id="buy-phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={phone}
+                maxLength={20}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="010-1234-5678"
+              />
+            </div>
+          ) : (
+            <div className="field">
+              <label htmlFor="buy-email">감정서를 받을 이메일</label>
+              <input
+                id="buy-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={email}
+                maxLength={100}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+              />
+            </div>
+          )}
           {checkout.mobilePhone && (
             <div className="field">
               <span className="label">결제 수단</span>
