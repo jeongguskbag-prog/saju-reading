@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BirthInput } from "@/lib/saju/calc";
-import { confirmOrder, createOrder, getOrder, getReport, savePart } from "@/lib/orders";
+import { confirmOrder, createOrder, getOrder, getReport, markSaved, savePart } from "@/lib/orders";
 import { createMemoryStore, setStoreForTest } from "@/lib/store";
 import { deliverReport, deliveryDelayMinutes, webRevealMinutes, fileLinks, scheduleDelivery } from "@/lib/delivery";
 import { sendCompletionIfReady } from "@/lib/fulfill";
@@ -55,19 +55,35 @@ describe("감정서 파일 발송", () => {
     expect((await getOrder(paid.id))?.deliverAt).toBeUndefined();
   });
 
-  it("받는 곳 없이 주문하면(웹) 예약도 발송도 하지 않는다", async () => {
-    vi.stubEnv("QSTASH_TOKEN", "q");
-    vi.stubEnv("QSTASH_CURRENT_SIGNING_KEY", "a");
-    vi.stubEnv("QSTASH_NEXT_SIGNING_KEY", "b");
-    const order = await createOrder(input, "", "core", now);
+  it("받을 곳을 고르지 않으면 주문을 받지 않는다", async () => {
+    await expect(createOrder(input, "", "core", now)).rejects.toThrow("받을 곳");
+    await expect(createOrder(input, "", "core", now, undefined, undefined, ["email"])).rejects.toThrow("이메일");
+  });
+
+  it("손님이 화면에서 PDF·HTML을 모두 저장했으면 파일을 보내지 않는다", async () => {
+    const paid = await paidCore();
+    await fillParts(paid.token!);
+    await markSaved(paid.id, "pdf");
+    const report = (await getReport(paid.token!, now))!;
+    const mail = vi.fn(async () => json({ id: "m1" }));
+    vi.stubGlobal("fetch", mail);
+    await markSaved(paid.id, "html");
+    expect(await deliverReport(report, "https://x.test", fakeFiles)).toBe("saved");
+    expect(mail).not.toHaveBeenCalled();
+  });
+
+  it("휴대폰 번호만 적고 이메일로만 받기를 고르면 문자는 보내지 않는다", async () => {
+    vi.stubEnv("SOLAPI_API_KEY", "k");
+    vi.stubEnv("SOLAPI_API_SECRET", "s");
+    vi.stubEnv("SMS_FROM", "0212345678");
+    const order = await createOrder(input, "c@d.co", "core", now, undefined, "010-1234-5678", ["email"]);
     vi.stubGlobal("fetch", vi.fn(async () => json({ orderId: order.id, status: "DONE", totalAmount: order.amount, approvedAt: now.toISOString() })));
     const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
-    const publish = vi.fn(async () => json({ messageId: "x" }));
-    vi.stubGlobal("fetch", publish);
-    expect(await scheduleDelivery(paid, "https://x.test", now)).toBeNull();
     await fillParts(paid.token!);
-    expect(await deliverReport((await getReport(paid.token!, now))!, "https://x.test", fakeFiles)).toBe("none");
-    expect(publish).not.toHaveBeenCalled();
+    const calls = vi.fn(async () => json({ id: "m" }));
+    vi.stubGlobal("fetch", calls);
+    expect(await deliverReport((await getReport(paid.token!, now))!, "https://x.test", fakeFiles)).toBe("sent");
+    expect(calls.mock.calls.map((c) => (c as unknown as [string])[0]).every((u) => u.includes("/emails"))).toBe(true);
   });
 
   it("다 쓰기 전에는 보내지 않는다", async () => {

@@ -50,8 +50,8 @@ export default async function ReportPage({ params, searchParams }: { params: Par
         justPaid={fresh === "1"}
         sendTo={
           [
-            isMailEnabled() && report.order.email ? report.order.email : null,
-            isSmsEnabled() && report.order.phone
+            isMailEnabled() && report.order.email && (!report.order.notify || report.order.notify.includes("email")) ? report.order.email : null,
+            isSmsEnabled() && report.order.phone && phoneChannels(report.order).length
               ? `${phoneChannels(report.order)
                   .filter((c) => c === "sms" || isKakaoEnabled())
                   .map((c) => (c === "kakao" ? "카카오톡" : "문자"))

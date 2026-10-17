@@ -67,10 +67,7 @@ describe("문자 발송", () => {
   it("문자 설정이 없으면 휴대폰 주문을 받지 않는다", async () => {
     vi.stubEnv("SOLAPI_API_KEY", "");
     await expect(createOrder(input, "", "core", now, undefined, "01012345678")).rejects.toThrow("문자");
-    // 웹 신청서는 받는 곳 없이 주문한다(화면에서 바로 저장).
-    const webOrder = await createOrder(input, "", "core", now);
-    expect(webOrder.email).toBe("");
-    expect(webOrder.phone).toBeUndefined();
+    await expect(createOrder(input, "", "core", now)).rejects.toThrow("받을 곳");
   });
 
   it("문자 본문에 상품 이름과 열람 기한이 들어간다", () => {
@@ -108,8 +105,9 @@ describe("카카오톡 알림톡", () => {
     vi.stubEnv("KAKAO_TEMPLATE_ID", "KA01TP");
     vi.stubEnv("RESEND_API_KEY", "re_x");
     vi.stubEnv("MAIL_FROM", "천기록 <a@b.co>");
-    const order = await createOrder(input, "c@d.co", "core", now, undefined, "010-1234-5678", ["kakao", "sms"]);
+    const order = await createOrder(input, "c@d.co", "core", now, undefined, "010-1234-5678", ["email", "kakao", "sms"]);
     expect(order.channels).toEqual(["kakao", "sms"]);
+    expect(order.notify).toEqual(["email", "kakao", "sms"]);
     vi.stubGlobal("fetch", vi.fn(async () => json({ orderId: order.id, status: "DONE", totalAmount: order.amount, approvedAt: now.toISOString() })));
     const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
     const report = (await getReport(paid.token!))!;

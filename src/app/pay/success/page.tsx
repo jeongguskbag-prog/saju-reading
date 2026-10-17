@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import SiteShell from "@/components/SiteShell";
 import { completeReport } from "@/lib/fulfill";
 import { scheduleDelivery } from "@/lib/delivery";
+import { sendReceipt } from "@/lib/receipt";
 import { confirmOrder, OrderError } from "@/lib/orders";
 import { originFrom } from "@/lib/site";
 import { StoreError } from "@/lib/store";
@@ -26,7 +27,10 @@ export default async function PaySuccess({ searchParams }: { searchParams: Param
       if (justPaid && token) {
         const origin = originFrom(await headers());
         const t = token;
-        // 이메일·문자 발송은 신청 10분 뒤로 예약한다(QStash 설정이 없으면 완성 즉시 보낸다).
+        // 주문번호·결제 내역은 지금 고른 곳으로 보낸다.
+        after(() => sendReceipt(order, origin).catch((e) => console.error("결제 확인 발송 실패", e)));
+        // 감정서 파일은 신청 10분 뒤까지 화면에서 저장하지 않았으면 고른 곳으로 보낸다(QStash 예약).
+        // QStash 설정이 없으면 완성 즉시 보낸다.
         await scheduleDelivery(order, origin);
         // 손님이 창을 닫아도 감정서를 끝까지 쓴다. 화면에는 완성되는 대로 바로 보인다.
         after(() => completeReport(t, origin));

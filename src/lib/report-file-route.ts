@@ -1,5 +1,5 @@
 // /r/토큰/pdf, /r/토큰/html: 문자·메일의 "파일 받기" 링크. 열 때마다 감정서 화면을 파일로 만들어 내려준다.
-import { getReport, getSavedParts } from "./orders";
+import { getReport, getSavedParts, markSaved } from "./orders";
 import { attachmentHeader, renderReportFiles } from "./render";
 import { originFrom } from "./site";
 import { webRevealMinutes } from "./delivery";
@@ -20,6 +20,8 @@ export async function fileResponse(request: Request, token: string, ext: "pdf" |
   try {
     const files = await renderReportFiles(originFrom(request.headers), report);
     const body = ext === "pdf" ? new Uint8Array(files.pdf) : files.html;
+    // 저장한 파일은 나중에 다시 보내지 않는다(10분 뒤 발송은 저장하지 않은 손님에게만).
+    await markSaved(report.order.id, ext).catch(() => {});
     return new Response(body, {
       headers: {
         "Content-Type": ext === "pdf" ? "application/pdf" : "text/html; charset=utf-8",

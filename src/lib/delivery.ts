@@ -5,7 +5,7 @@
 // QStash 설정이 없으면 예전처럼 감정서가 완성되는 즉시 링크를 보낸다.
 import { sendReportEmail } from "./mail";
 import { sendReportSms } from "./sms";
-import { getSavedParts, markMailed, setDeliverAt, unmarkMailed, type Order, type Report } from "./orders";
+import { getSavedParts, markMailed, savedBoth, setDeliverAt, unmarkMailed, type Order, type Report } from "./orders";
 import { renderReportFiles, type ReportFiles } from "./render";
 
 export function isDeliveryScheduleEnabled(): boolean {
@@ -24,7 +24,11 @@ export const deliveryDelayMinutes = () => minutesEnv(process.env.DELIVERY_DELAY_
 export const webRevealMinutes = () => minutesEnv(process.env.WEB_REVEAL_MINUTES, 3);
 
 /** 이메일이나 휴대폰 번호를 남겼는지(웹 신청서는 남기지 않고 화면에서 바로 저장한다) */
-export const hasDestination = (order: Pick<Order, "email" | "phone">) => Boolean(order.email || order.phone);
+export const hasDestination = (order: Pick<Order, "email" | "phone" | "notify">) =>
+  order.notify ? order.notify.length > 0 : Boolean(order.email || order.phone);
+
+/** 이메일로 보낼지: 새 주문은 손님이 이메일을 고른 경우만 */
+const wantsEmail = (order: Order) => Boolean(order.email) && (!order.notify || order.notify.includes("email"));
 
 /** 손님에게 받을 파일 주소 */
 export function fileLinks(origin: string, token: string) {
@@ -74,7 +78,7 @@ export async function verifyQstash(signature: string | null, body: string, url: 
   }
 }
 
-export type DeliverOutcome = "sent" | "already" | "incomplete" | "failed" | "none";
+export type DeliverOutcome = "sent" | "already" | "incomplete" | "failed" | "none" | "saved";
 
 /**
  * 감정서가 다 됐으면 PDF·HTML을 만들어 이메일(첨부)과 문자·카카오톡(받기 링크)으로 보낸다. 주문당 한 번.
@@ -84,6 +88,8 @@ export async function deliverReport(report: Report, origin: string, render = ren
   if (!hasDestination(report.order)) return "none";
   const saved = await getSavedParts(report.order.token!, report.product.parts);
   if (report.product.parts.some((p) => !saved[p])) return "incomplete";
+  // 손님이 화면에서 두 파일을 모두 저장했으면 보내지 않는다.
+  if (await savedBoth(report.order.id)) return "saved";
   if (!(await markMailed(report.order.id))) return "already";
   let files: ReportFiles | null = null;
   try {
@@ -93,7 +99,7 @@ export async function deliverReport(report: Report, origin: string, render = ren
   }
   const links = fileLinks(origin, report.order.token!);
   const [mailed, texted] = await Promise.all([
-    report.order.email ? sendReportEmail(report.order, links.view, report.expiresAt, { files, links }) : Promise.resolve(false),
+    wantsEmail(report.order) ? sendReportEmail(report.order, links.view, report.expiresAt, { files, links }) : Promise.resolve(false),
     sendReportSms(report.order, links.view, report.expiresAt, links),
   ]);
   if (mailed || texted) return "sent";

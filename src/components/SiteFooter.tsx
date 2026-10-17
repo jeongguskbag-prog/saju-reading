@@ -21,6 +21,7 @@ export default function SiteFooter({ site = "ko" }: { site?: SiteLocale }) {
             <b>{f.privacy}</b>
           </a>
           <a href="/refund">{f.refund}</a>
+          <a href="/order">{f.lookup}</a>
         </nav>
         <dl className="site-footer-biz">
           <div><dt>{f.biz.companyName}</dt><dd>{pending(b.companyName)}</dd></div>

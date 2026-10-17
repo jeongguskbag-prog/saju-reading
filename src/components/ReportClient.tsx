@@ -214,13 +214,12 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
   const sendAtText = sendAt
     ? `${sendAt.getUTCMonth() + 1}월 ${sendAt.getUTCDate()}일 ${sendAt.getUTCHours() < 12 ? "오전" : "오후"} ${sendAt.getUTCHours() % 12 || 12}시${sendAt.getUTCMinutes() ? ` ${sendAt.getUTCMinutes()}분` : ""}`
     : "";
+  const lookupNote = "감정서 주소를 잃어버리셔도 사이트 아래 '주문 조회'에서 주문번호와 연락처로 다시 찾을 수 있습니다. ";
   const delivery = sendTo
-    ? sendAt
-      ? sendAt.getTime() - 9 * 3_600_000 > Date.now()
-        ? `${sendAtText}에 ${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
-        : `${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
-      : `완성되면 ${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
-    : "이 페이지 주소가 감정서 열쇠입니다. 파일을 저장하고, 주소도 복사해 두시면 기간 안에 다시 열 수 있습니다. ";
+    ? sendAt && sendAt.getTime() - 9 * 3_600_000 > Date.now()
+      ? `${sendAtText}까지 PDF 파일과 HTML 문서를 저장하지 않으시면 ${sendTo}(으)로 보내 드립니다. ${lookupNote}`
+      : `${lookupNote}`
+    : `이 페이지 주소가 감정서 열쇠입니다. 파일을 저장하고, 주소도 복사해 두세요. ${lookupNote}`;
   const notice = (
     <section className="card report-notice no-print" aria-live="polite">
       {justPaid && <h2>신청이 접수되었습니다</h2>}

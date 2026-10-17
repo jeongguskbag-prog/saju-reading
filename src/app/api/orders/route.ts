@@ -21,10 +21,13 @@ export async function POST(request: Request) {
   }
   try {
     const phone = typeof body?.phone === "string" && body.phone.trim() ? body.phone.trim() : undefined;
-    // 받는 곳: channels(["kakao","sms"])를 받는다. 예전 화면의 channel 하나도 받아 준다.
-    const raw: unknown[] = Array.isArray(body?.channels) ? body.channels : phone ? [body?.channel === "kakao" ? "kakao" : "sms"] : [];
-    const channels = raw.filter((c): c is "kakao" | "sms" => c === "kakao" || c === "sms");
-    const order = await createOrder(parsed.value, String(body?.email ?? "").trim(), body?.productId, new Date(), naming, phone, channels);
+    // 주문번호·결제 내역을 받을 곳: targets(["email","kakao","sms"]). 예전 화면의 channels·channel도 받아 준다.
+    const email = String(body?.email ?? "").trim();
+    const raw: unknown[] = Array.isArray(body?.targets)
+      ? body.targets
+      : [...(email ? ["email"] : []), ...(Array.isArray(body?.channels) ? body.channels : phone ? [body?.channel === "kakao" ? "kakao" : "sms"] : [])];
+    const targets = raw.filter((c): c is "email" | "kakao" | "sms" => c === "email" || c === "kakao" || c === "sms");
+    const order = await createOrder(parsed.value, email, body?.productId, new Date(), naming, phone, targets);
     return NextResponse.json({
       orderId: order.id,
       orderName: order.orderName,
