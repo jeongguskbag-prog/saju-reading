@@ -786,3 +786,14 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .lp-sample { margin: 24px 0 8px; max-width: 46em; }
 .lp-sample .sample-preview { background: var(--surface); }
 .sample-preview .segmented { flex-wrap: wrap; }
+
+/* 첫 화면 바로 아래: 재미 운세와 다른 점(근거) 강조 */
+.lp-trust { background: var(--cover); color: var(--cover-ink); }
+.lp-trust h2 { color: var(--cover-ink); }
+.lp-trust .lp-lead { color: var(--cover-ink); opacity: 0.86; }
+.lp-trust-eyebrow { margin: 0 0 8px; font-size: 13px; letter-spacing: 0.3em; color: #e8a49c; font-weight: 700; }
+.lp-trust-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.lp-trust-grid li { border: 1px solid rgba(236, 233, 225, 0.22); border-radius: 12px; padding: 18px; background: rgba(255, 255, 255, 0.04); }
+.lp-trust-head { margin: 0 0 8px; font-family: var(--display); font-size: 19px; line-height: 1.4; word-break: keep-all; }
+.lp-trust-head b { color: #f2c46d; font-weight: 400; font-size: 24px; margin-right: 2px; }
+.lp-trust-grid li > p:last-child { margin: 0; font-size: 15px; line-height: 1.75; opacity: 0.85; word-break: keep-all; }

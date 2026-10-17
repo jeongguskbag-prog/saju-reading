@@ -78,6 +78,26 @@ export default function Landing({ form, checkoutOpen = false, site = "ko" }: { f
         </div>
       </header>
 
+      {/* 재미로 보는 운세와 다른 점: 계산 자료와 명리학 근거를 첫 화면 바로 아래에서 강조한다. */}
+      <section id="trust" className="lp-section lp-trust" aria-labelledby="trust-h">
+        <div className="lp-inner">
+          <p className="lp-trust-eyebrow">{L.trustEyebrow}</p>
+          <h2 id="trust-h">{L.trustTitle}</h2>
+          <p className="lp-lead">{L.trustLead}</p>
+          <ul className="lp-trust-grid">
+            {L.trust(from, to, fmt(stats.total)).map((x) => (
+              <li key={x.n}>
+                <p className="lp-trust-head">
+                  <b>{x.n}</b>
+                  {x.t}
+                </p>
+                <p>{x.d}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       <Section
         id="grade"
         title={L.gradeTitle}
