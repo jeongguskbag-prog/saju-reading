@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: `주문 조회 — ${BRAND.name}`, ro
 export default async function OrderPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
   return (
-    <SiteShell>
+    <SiteShell nav="my">
       <OrderLookup next={next} />
       <SupportBox compact />
     </SiteShell>

@@ -11,7 +11,7 @@ const DETAIL: Record<(typeof EXTRA_ORDER)[number], { hanja: string; how: string 
 
 export default function ExtraProducts({ years, checkoutOpen }: { years: [number, number]; checkoutOpen: boolean }) {
   return (
-    <div className="lp-extras">
+    <div className="lp-extras" id="extras">
       <h3 className="lp-extras-h">함께 보는 감정서</h3>
       <p className="lp-lead">사주 감정서 밖의 전통 술수도 같은 방식으로, 실제 계산에 바탕을 두고 씁니다.</p>
       <div className="lp-products">

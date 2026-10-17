@@ -17,6 +17,7 @@ import ReviewsSection from "./ReviewsSection";
 import TopicCards from "./TopicCards";
 import { Basis, Compare, Excerpt, FlowBand, ForWhom, HowWeRead, PART_QUESTIONS, Receive } from "./LandingStory";
 import StickyCta from "./StickyCta";
+import BottomNav from "./BottomNav";
 import type { Review } from "@/lib/reviews";
 import { FloatingKakao, SupportBox } from "./SupportLinks";
 
@@ -262,6 +263,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
       <SiteFooter site={site} />
       <FloatingKakao site={site} />
       {site === "ko" && <StickyCta />}
+      {site === "ko" && <BottomNav />}
     </div>
   );
 }
