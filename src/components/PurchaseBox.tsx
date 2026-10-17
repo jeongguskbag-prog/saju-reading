@@ -223,6 +223,10 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
           <button className="btn-primary" type="submit" disabled={busy}>
             {busy ? "결제창을 여는 중…" : `${won(product.price)} 결제하고 감정서 신청`}
           </button>
+          <p className="purchase-time">
+            ⏳ 결제 후 명식 계산부터 각 부의 풀이 작성, 책자 편집까지 차례로 진행되어 <b>완성까지 최대 1시간가량</b> 걸릴 수 있습니다.
+            창을 닫으셔도 작성은 이어지며, 완성되면 바로 알려 드립니다.
+          </p>
           <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
           {checkout.testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}
           <SupportBox compact />

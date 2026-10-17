@@ -136,7 +136,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
       {justPaid && <h2>신청이 접수되었습니다</h2>}
       <p>
         {busy
-          ? `${josa(productName, "을", "를")} 쓰고 있습니다(${doneCount}/${partKeys.length}). 몇 분 걸리며, 이 창을 닫아도 작성은 이어집니다.`
+          ? `${josa(productName, "을", "를")} 쓰고 있습니다(${doneCount}/${partKeys.length}). 각 부의 풀이를 차례로 쓰고 책자로 엮느라 완성까지 최대 1시간가량 걸릴 수 있습니다. 이 창을 닫아도 작성은 이어지고, 완성되면 알려 드립니다.`
           : `${josa(productName, "이", "가")} 완성되었습니다.`}
       </p>
       <p className="muted">

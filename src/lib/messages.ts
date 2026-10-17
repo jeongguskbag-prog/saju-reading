@@ -176,7 +176,7 @@ const KO = {
   toc: "목차",
   preface: "발간사",
   methodToc: "감정서 작성 방식 및 고지",
-  writing: (label: string) => `${label} 풀이를 작성하고 있습니다. 1~2분 정도 걸립니다.`,
+  writing: (label: string) => `${label} 풀이를 작성하고 있습니다. 잠시만 기다려 주세요.`,
   retryPart: "이 파트 다시 작성",
   actionPlan: "실천 개운법",
   partsTitle: "항목별 풀이",
