@@ -12,8 +12,19 @@ export const gunghapRequestSchema = z.object({
 });
 export type GunghapRequest = z.infer<typeof gunghapRequestSchema>;
 
+/** 신년 운세록: 볼 해(올해 또는 내년) */
+export const newyearRequestSchema = z.object({ year: z.number().int().min(2000).max(2100) });
+export type NewyearRequest = z.infer<typeof newyearRequestSchema>;
+
+/** 한국 시간 기준 올해·내년 */
+export const newyearChoices = (now = new Date()): [number, number] => {
+  const y = new Date(now.getTime() + 9 * 3_600_000).getUTCFullYear();
+  return [y, y + 1];
+};
+
 const SCHEMAS: Partial<Record<ExtraKind, z.ZodType>> = {
   gunghap: gunghapRequestSchema,
+  newyear: newyearRequestSchema,
 };
 
 export type ExtraRequestParse = { ok: true; value: unknown } | { ok: false; error: string };

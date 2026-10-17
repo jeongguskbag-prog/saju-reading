@@ -15,5 +15,6 @@ export function extraRequestSummary(kind: ExtraKind, request: unknown): string {
     const r = request as GunghapRequest;
     return `${GUNGHAP_RELATIONS[r.relation]} · 상대 ${r.partner.name} ${birthLine(r.partner)}`;
   }
+  if (kind === "newyear") return `${(request as { year: number }).year}년`;
   return "";
 }

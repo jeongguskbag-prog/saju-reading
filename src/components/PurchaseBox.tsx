@@ -7,6 +7,7 @@ import SamplePreview from "./SamplePreview";
 import NamingFields, { emptyNamingForm, toNamingRequest, type NamingForm } from "./NamingFields";
 import GunghapFields, { emptyGunghapForm, toGunghapRequest, type GunghapForm } from "./extras/GunghapFields";
 import { isExtraKind } from "@/lib/extras/kinds";
+import { newyearChoices } from "@/lib/extras/requests";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withProductYears, won, type ProductId } from "@/lib/product";
 
 export interface CheckoutInfo {
@@ -70,6 +71,9 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const isNaming = productId === "naming";
   const [gunghap, setGunghap] = useState<GunghapForm>(() => emptyGunghapForm(input.gender));
   const isExtra = isExtraKind(productId);
+  const yearChoices = newyearChoices();
+  // 10월부터는 내년을 먼저 고른다.
+  const [newyearYear, setNewyearYear] = useState(() => (new Date().getMonth() >= 9 ? yearChoices[1] : yearChoices[0]));
   const coreProducts = products.filter((p) => !isExtraKind(p.id));
   const extraProducts = products.filter((p) => isExtraKind(p.id));
 
@@ -88,6 +92,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       if (!r.ok) return setError(r.error);
       extraReq = r.value;
     }
+    if (productId === "newyear") extraReq = { year: newyearYear };
     // 작명록은 아기 이름이 아직 없으니 "김○○", 개명은 지금 이름으로 표지에 적는다.
     const reportName = isNaming
       ? naming.mode === "rename"
@@ -187,6 +192,18 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             </div>
           )}
           {productId === "gunghap" && <GunghapFields value={gunghap} onChange={setGunghap} />}
+          {productId === "newyear" && (
+            <div className="field">
+              <span className="label">볼 해</span>
+              <div className="segmented" role="group" aria-label="볼 해">
+                {yearChoices.map((y) => (
+                  <button key={y} type="button" aria-pressed={newyearYear === y} onClick={() => setNewyearYear(y)}>
+                    {y}년
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="field">
             <label htmlFor="buy-email">이메일 (선택)</label>
             <input id="buy-email" type="email" inputMode="email" autoComplete="email" value={email} maxLength={100} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />

@@ -1001,3 +1001,11 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .gh-mini-row { display: flex; align-items: center; gap: 8px; }
 .gh-mini-row .gh-mini { flex: 1; }
 .gh-mini-row b { width: 2.2em; text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
+.ny-month { padding-top: 14px; padding-bottom: 14px; }
+.ny-month.good { border-left: 3px solid #1baf7a; }
+.ny-month.care { border-left: 3px solid #d28a00; }
+.ny-month-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ny-month-head h3 { margin: 0; font-size: 17px; white-space: nowrap; }
+.ny-month-head h3 span { font-family: var(--display); font-weight: 400; color: var(--accent); margin-left: 4px; }
+.ny-month-head .gh-mini-row { flex: 0 1 220px; }
+.ny-month p { margin: 6px 0 0; }

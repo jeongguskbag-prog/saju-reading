@@ -66,10 +66,10 @@ export const PRODUCTS: Record<ProductId, Product> = {
   newyear: {
     id: "newyear",
     name: "천기록 신년 운세록",
-    price: 29000,
+    price: 19000,
     parts: ["newyear"],
-    summary: "토정비결 괘와 {Y1}년 세운·열두 달 월운으로 보는 한 해의 흐름",
-    available: false,
+    summary: "한 해의 간지가 내 명식·대운에 들어오는 모습과 삼재, 열두 달 월운과 달마다 할 일",
+    available: true,
   },
   taekil: {
     id: "taekil",
