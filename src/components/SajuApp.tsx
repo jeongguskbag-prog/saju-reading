@@ -74,15 +74,16 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
   // 중국 대륙은 전국이 한 표준시라 출생 도시 경도로 진태양시를 맞춘다.
   const [cityIndex, setCityIndex] = useState(0);
   const [name, setName] = useState("");
-  const [gender, setGender] = useState<BirthInput["gender"]>("female");
+  // 성별·생년월일·시각은 비워 두고 시작한다(미리 채운 값으로 결과가 나오지 않게). 빠진 칸은 제출할 때 알린다.
+  const [gender, setGender] = useState<BirthInput["gender"] | "">("");
   const [calendar, setCalendar] = useState<BirthInput["calendar"]>("solar");
   const [isLeapMonth, setIsLeapMonth] = useState(false);
-  const [year, setYear] = useState("1995");
-  const [month, setMonth] = useState("1");
-  const [day, setDay] = useState("1");
+  const [year, setYear] = useState("");
+  const [month, setMonth] = useState("");
+  const [day, setDay] = useState("");
   const [timeUnknown, setTimeUnknown] = useState(false);
-  const [hour, setHour] = useState("12");
-  const [minute, setMinute] = useState("0");
+  const [hour, setHour] = useState("");
+  const [minute, setMinute] = useState("");
   const [solarTimeCorrection, setSolarTimeCorrection] = useState(true);
   const [dayBoundary, setDayBoundary] = useState<"at23" | "at0">("at23");
   // 결혼·자녀(선택, 한국어 화면). 애정·가족 풀이를 상황에 맞추는 데만 쓴다. 같은 버튼을 다시 누르면 선택이 풀린다.
@@ -126,6 +127,18 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
     setError(null);
     setParts({});
     const runId = ++run.current;
+    // 빠진 칸을 한 번에 알려 준다. 작명록은 아기 이름이 아직 없을 수 있어 성함을 묻지 않는다.
+    const missing = [
+      !isNaming && !name.trim() && t.needName,
+      !gender && t.needGender,
+      (!year || !month || !day) && t.needDate,
+      !timeUnknown && !hour && t.needTime,
+    ].filter((x): x is string => Boolean(x));
+    if (missing.length) {
+      setChart(null);
+      setError(t.needFields(missing));
+      return;
+    }
     const dateError = checkBirthDate(year, Number(month), Number(day), calendar, t);
     if (dateError) {
       setChart(null);
@@ -152,14 +165,14 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
     }
     const input: BirthInput = {
       name: name.trim() || undefined,
-      gender,
+      gender: gender as BirthInput["gender"],
       calendar,
       isLeapMonth: calendar === "lunar" ? isLeapMonth : undefined,
       year: Number(year),
       month: Number(month),
       day: Number(day),
       hour: timeUnknown ? null : Number(hour),
-      minute: timeUnknown ? null : Number(minute),
+      minute: timeUnknown ? null : Number(minute || 0),
       // 한국어 웹은 예전과 같은 요청 모양을 유지한다.
       ...(locale === "ko" ? {} : { locale }),
       ...(region === "KR" ? {} : { region }),
@@ -245,11 +258,13 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
           <div className="row">
             <YearField value={year} onChange={setYear} />
             <select aria-label={t.monthAria} value={month} onChange={(e) => setMonth(e.target.value)}>
+              <option value="" disabled>{t.monthAria}</option>
               {Array.from({ length: 12 }, (_, i) => (
                 <option key={i + 1} value={i + 1}>{t.monthOption(i + 1)}</option>
               ))}
             </select>
             <select aria-label={t.dayAria} value={day} onChange={(e) => setDay(e.target.value)}>
+              <option value="" disabled>{t.dayAria}</option>
               {Array.from({ length: 31 }, (_, i) => (
                 <option key={i + 1} value={i + 1}>{t.dayOption(i + 1)}</option>
               ))}
@@ -265,12 +280,23 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
         <div className="field">
           <span className="label">{t.birthTime}</span>
           <div className="row">
-            <select aria-label={t.hourAria} value={hour} disabled={timeUnknown} onChange={(e) => setHour(e.target.value)}>
+            <select
+              aria-label={t.hourAria}
+              value={hour}
+              disabled={timeUnknown}
+              // 시를 고르면 분은 0분으로 채운다(분까지 모르는 분이 많다). 필요하면 바꾸면 된다.
+              onChange={(e) => {
+                setHour(e.target.value);
+                if (!minute) setMinute("0");
+              }}
+            >
+              <option value="" disabled>{t.hourAria}</option>
               {HOURS.map((h) => (
                 <option key={h} value={h}>{t.hourOption(h)}</option>
               ))}
             </select>
             <select aria-label={t.minuteAria} value={minute} disabled={timeUnknown} onChange={(e) => setMinute(e.target.value)}>
+              <option value="" disabled>{t.minuteAria}</option>
               {MINUTES.map((m) => (
                 <option key={m} value={m}>{t.minuteOption(m)}</option>
               ))}

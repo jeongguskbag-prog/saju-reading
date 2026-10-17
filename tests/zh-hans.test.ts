@@ -115,7 +115,7 @@ describe("간체 문장", () => {
       else if (typeof v === "function") {
         const args =
           k === "god" ? ["편관"] : k === "mark" ? ["주의"] : k === "noble" ? ["천을귀인"] : k === "el" || k === "elShort" ? ["wood"]
-          : k === "regionName" || k === "solarCorrection" ? ["CN"] : k === "glyphSub" ? ["갑", "wood"] : k === "elementMissing" ? [["木"]] : [1, 2, 3, 4];
+          : k === "regionName" || k === "solarCorrection" ? ["CN"] : k === "glyphSub" ? ["갑", "wood"] : k === "elementMissing" || k === "needFields" ? [["木"]] : [1, 2, 3, 4];
         const out = (v as (...a: unknown[]) => unknown)(...args);
         if (typeof out === "string") samples.push(out);
       }

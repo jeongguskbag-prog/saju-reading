@@ -145,7 +145,7 @@ describe("번체 화면 사전", () => {
       }
       else if (typeof v === "function") {
         // 인자 자리에 숫자·한자를 넣어 본다(한국어 키를 받는 함수는 번체로 바꿔 돌려줘야 한다).
-        const out = (v as (...a: unknown[]) => unknown)(...(k === "god" ? ["편관"] : k === "mark" ? ["주의"] : k === "noble" ? ["천을귀인"] : k === "el" || k === "elShort" ? ["wood"] : k === "regionName" || k === "solarCorrection" ? ["TW"] : k === "glyphSub" ? ["갑", "wood"] : k === "elementMissing" ? [["木"]] : [1, 2, 3, 4]));
+        const out = (v as (...a: unknown[]) => unknown)(...(k === "god" ? ["편관"] : k === "mark" ? ["주의"] : k === "noble" ? ["천을귀인"] : k === "el" || k === "elShort" ? ["wood"] : k === "regionName" || k === "solarCorrection" ? ["TW"] : k === "glyphSub" ? ["갑", "wood"] : k === "elementMissing" || k === "needFields" ? [["木"]] : [1, 2, 3, 4]));
         if (typeof out === "string") samples.push(out);
       }
     }
