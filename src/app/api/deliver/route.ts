@@ -1,4 +1,4 @@
-// QStash가 예약 시각(신청 50분 뒤)에 부르는 곳: 감정서를 마저 쓰고 PDF·HTML을 만들어 보낸다.
+// QStash가 예약 시각(신청 10분 뒤)에 부르는 곳: 감정서를 마저 쓰고 PDF·HTML을 만들어 보낸다.
 // 실패하면 500을 돌려 QStash가 다시 부르게 한다. 같은 주문은 한 번만 보낸다.
 import { completeReport } from "@/lib/fulfill";
 import { deliverReport, verifyQstash } from "@/lib/delivery";

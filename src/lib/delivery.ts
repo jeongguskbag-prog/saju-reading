@@ -1,6 +1,6 @@
 // 감정서 파일(PDF·HTML) 발송(서버 전용).
-// 결제 직후 Upstash QStash에 "신청 50분 뒤 /api/deliver를 불러 달라"고 예약해 두고, 그때 파일을 만들어 보낸다.
-// 손님 화면에는 감정서가 완성되는 대로 바로 보이고, 이메일·문자 발송만 예약 시각에 맞춘다.
+// 결제 직후 Upstash QStash에 "신청 10분 뒤 /api/deliver를 불러 달라"고 예약해 두고, 그때 파일을 만들어 보낸다.
+// 손님 화면에는 신청 3분 뒤부터 감정서가 보이고, 이메일·카카오톡·문자 발송은 예약 시각(10분 뒤)에 맞춘다.
 // 필요한 설정: QSTASH_TOKEN, QSTASH_CURRENT_SIGNING_KEY, QSTASH_NEXT_SIGNING_KEY (선택: QSTASH_URL, DELIVERY_DELAY_MINUTES)
 // QStash 설정이 없으면 예전처럼 감정서가 완성되는 즉시 링크를 보낸다.
 import { sendReportEmail } from "./mail";
@@ -12,12 +12,16 @@ export function isDeliveryScheduleEnabled(): boolean {
   return Boolean(process.env.QSTASH_TOKEN && process.env.QSTASH_CURRENT_SIGNING_KEY && process.env.QSTASH_NEXT_SIGNING_KEY);
 }
 
-/** 신청(결제) 뒤 몇 분 뒤에 보낼지. 기본 50분. */
-export function deliveryDelayMinutes(): number {
-  const raw = process.env.DELIVERY_DELAY_MINUTES;
+const minutesEnv = (raw: string | undefined, fallback: number) => {
   const n = raw === undefined || raw === "" ? NaN : Number(raw);
-  return Number.isFinite(n) && n >= 0 && n <= 24 * 60 ? n : 50;
-}
+  return Number.isFinite(n) && n >= 0 && n <= 24 * 60 ? n : fallback;
+};
+
+/** 신청(결제) 뒤 몇 분 뒤에 파일을 보낼지. 기본 10분. */
+export const deliveryDelayMinutes = () => minutesEnv(process.env.DELIVERY_DELAY_MINUTES, 10);
+
+/** 신청(결제) 뒤 몇 분 뒤부터 화면에서 감정서를 보여 줄지. 기본 3분. */
+export const webRevealMinutes = () => minutesEnv(process.env.WEB_REVEAL_MINUTES, 3);
 
 /** 손님에게 받을 파일 주소 */
 export function fileLinks(origin: string, token: string) {

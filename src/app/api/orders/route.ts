@@ -21,8 +21,10 @@ export async function POST(request: Request) {
   }
   try {
     const phone = typeof body?.phone === "string" && body.phone.trim() ? body.phone.trim() : undefined;
-    const channel = body?.channel === "kakao" ? "kakao" : "sms";
-    const order = await createOrder(parsed.value, String(body?.email ?? "").trim(), body?.productId, new Date(), naming, phone, channel);
+    // 받는 곳: channels(["kakao","sms"])를 받는다. 예전 화면의 channel 하나도 받아 준다.
+    const raw: unknown[] = Array.isArray(body?.channels) ? body.channels : phone ? [body?.channel === "kakao" ? "kakao" : "sms"] : [];
+    const channels = raw.filter((c): c is "kakao" | "sms" => c === "kakao" || c === "sms");
+    const order = await createOrder(parsed.value, String(body?.email ?? "").trim(), body?.productId, new Date(), naming, phone, channels);
     return NextResponse.json({
       orderId: order.id,
       orderName: order.orderName,

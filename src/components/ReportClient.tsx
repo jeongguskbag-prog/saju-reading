@@ -24,6 +24,8 @@ interface Props {
   orderId: string;
   /** 파일을 보낼 시각(ISO). 발송을 예약하지 않았으면 null(완성 즉시 발송) */
   deliverAt: string | null;
+  /** 화면에 감정서를 펼치기까지 남은 시간(ms). 결제 뒤 몇 분(기본 3분)을 기다린다. 0이면 바로 보여 준다. */
+  revealInMs: number;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -83,11 +85,24 @@ function whenVisible(): Promise<void> {
   });
 }
 
-export default function ReportClient({ token, partKeys, productName, expiresAt, chart, initialParts, justPaid, sendTo, orderId, deliverAt }: Props) {
+export default function ReportClient({ token, partKeys, productName, expiresAt, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs }: Props) {
   const [parts, setParts] = useState<PartStates>(() =>
     Object.fromEntries(Object.entries(initialParts).map(([k, result]) => [k, { status: "done", result }])),
   );
   const [copied, setCopied] = useState(false);
+  // 결제 직후 몇 분은 작성 중 화면을 보여 주고, 그 뒤에 감정서를 펼친다(작성은 그동안에도 계속된다).
+  const [waitMs, setWaitMs] = useState(revealInMs);
+  useEffect(() => {
+    if (revealInMs <= 0) return;
+    const openAt = Date.now() + revealInMs;
+    const timer = setInterval(() => {
+      const left = Math.max(0, openAt - Date.now());
+      setWaitMs(left);
+      if (!left) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [revealInMs]);
+  const waiting = waitMs > 0;
   const started = useRef(false);
 
   function load(part: PartKey) {
@@ -124,13 +139,13 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
 
   // 서버가 감정서를 파일로 만들 때(헤드리스 크롬) 쓰는 함수: 다 쓰인 뒤에만 연다.
   useEffect(() => {
-    if (doneCount !== partKeys.length) return;
+    if (waiting || doneCount !== partKeys.length) return;
     const w = window as unknown as { __reportHtml?: () => string };
     w.__reportHtml = () => buildResultHtml(document.getElementById("result")!, productName, "ko");
     return () => {
       delete w.__reportHtml;
     };
-  }, [doneCount, partKeys.length, productName]);
+  }, [waiting, doneCount, partKeys.length, productName]);
 
   async function copyLink() {
     try {
@@ -151,7 +166,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
   const delivery = sendTo
     ? sendAt
       ? sendAt.getTime() - 9 * 3_600_000 > Date.now()
-        ? `${sendAtText}에 ${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. 그 전이라도 완성되면 이 화면에서 바로 보실 수 있습니다. `
+        ? `${sendAtText}에 ${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
         : `${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
       : `완성되면 ${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
     : "이 페이지 주소가 감정서 열쇠입니다. 아래 버튼으로 복사해 두세요. ";
@@ -160,7 +175,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
       {justPaid && <h2>신청이 접수되었습니다</h2>}
       <p>
         {busy
-          ? `${josa(productName, "을", "를")} 쓰고 있습니다(${doneCount}/${partKeys.length}). 각 부의 풀이를 차례로 쓰고 책자로 엮느라 완성까지 최대 1시간가량 걸릴 수 있습니다. 이 창을 닫아도 작성은 이어지고, 완성되면 알려 드립니다.`
+          ? `${josa(productName, "을", "를")} 쓰고 있습니다(${doneCount}/${partKeys.length}). 각 부의 풀이를 쓰고 책자로 엮고 있으니 잠시만 기다려 주세요. 이 창을 닫아도 작성은 이어집니다.`
           : `${josa(productName, "이", "가")} 완성되었습니다.`}
       </p>
       <p className="muted">
@@ -173,6 +188,31 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
       </button>
     </section>
   );
+
+  if (waiting) {
+    const sec = Math.ceil(waitMs / 1000);
+    return (
+      <div id="result">
+        <section className="card report-waiting no-print" aria-live="polite">
+          {justPaid && <p className="eyebrow">신청이 접수되었습니다</p>}
+          <h2>{josa(productName, "을", "를")} 작성하고 있습니다</h2>
+          <span className="spinner" aria-hidden />
+          <p className="report-waiting-time">
+            {Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}
+          </p>
+          <p>
+            명식을 계산하고 각 부의 풀이를 써서 책자로 엮고 있습니다({doneCount}/{partKeys.length}). 잠시 뒤 이 화면에 감정서가 열립니다.
+          </p>
+          <p className="muted">
+            {delivery}이 창을 닫아도 작성은 이어지니, 나중에 같은 링크로 다시 열어 보셔도 됩니다. 주문번호 {orderId}
+          </p>
+          <button type="button" className="btn-secondary" onClick={copyLink}>
+            {copied ? "링크를 복사했습니다" : "감정서 링크 복사"}
+          </button>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div id="result">

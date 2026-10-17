@@ -7,6 +7,14 @@ import { BRAND, REPORT_VALID_DAYS } from "./product";
 import type { Order } from "./orders";
 import { josa } from "./josa";
 
+export type PhoneChannel = "kakao" | "sms";
+
+/** 휴대폰으로 보낼 곳. 예전 주문(channel 하나)도 같은 모양으로 돌려준다. */
+export function phoneChannels(order: Pick<Order, "phone" | "channels" | "channel">): PhoneChannel[] {
+  if (!order.phone) return [];
+  return order.channels?.length ? order.channels : [order.channel ?? "sms"];
+}
+
 export function isSmsEnabled(): boolean {
   return Boolean(process.env.SOLAPI_API_KEY && process.env.SOLAPI_API_SECRET && process.env.SMS_FROM);
 }
@@ -81,12 +89,29 @@ export function solapiAuth(apiKey: string, secret: string, now = new Date(), sal
 
 /**
  * 보냈으면 true. 실패해도 결제 흐름을 막지 않는다.
- * 손님이 카카오톡을 고르고 알림톡 설정이 있으면 알림톡, 아니면 문자(90바이트가 넘으면 솔라피가 장문 LMS로)로 보낸다.
+ * 손님이 고른 곳 모두로 보낸다: 카카오톡(알림톡)과 문자를 함께 골랐으면 둘 다 간다.
+ * 카카오톡만 골랐을 때 알림톡이 실패하면(카카오톡 미사용자 등) 같은 내용이 문자로 대신 간다.
  */
 export async function sendReportSms(order: Order, url: string, expiresAt: string, links?: FileLinks): Promise<boolean> {
-  if (!isSmsEnabled() || !order.phone) return false;
-  const kakao = order.channel === "kakao" && isKakaoEnabled();
-  const vars = kakao ? kakaoVariables(order, url, expiresAt, links) : null;
+  const channels = phoneChannels(order).filter((c) => (c === "kakao" ? isKakaoEnabled() : isSmsEnabled()));
+  // 카카오톡을 골랐는데 알림톡 설정이 빠졌으면 문자로라도 보낸다.
+  if (!channels.length && order.phone && isSmsEnabled()) channels.push("sms");
+  if (!isSmsEnabled() || !order.phone || !channels.length) return false;
+  const from = process.env.SMS_FROM!.replace(/\D/g, "");
+  const subject = `[${BRAND.name}] 감정서 완성`;
+  const messages = channels.map((c) => {
+    if (c === "sms") return { to: order.phone, from, text: reportSmsText(order, url, expiresAt, links), subject, autoTypeDetect: true };
+    const vars = kakaoVariables(order, url, expiresAt, links);
+    return {
+      to: order.phone,
+      from,
+      // 알림톡은 템플릿 문구와 같은 글을 함께 넣어 두면, 실패할 때 이 글이 문자로 대신 간다(문자도 고른 경우는 겹치지 않게 끈다).
+      text: kakaoText(vars),
+      subject,
+      autoTypeDetect: true,
+      kakaoOptions: { pfId: process.env.KAKAO_PF_ID, templateId: process.env.KAKAO_TEMPLATE_ID, variables: vars, disableSms: channels.includes("sms") },
+    };
+  });
   const base = (process.env.SOLAPI_API_BASE || "https://api.solapi.com").replace(/\/$/, "");
   try {
     const res = await fetch(`${base}/messages/v4/send-many/detail`, {
@@ -95,26 +120,13 @@ export async function sendReportSms(order: Order, url: string, expiresAt: string
         Authorization: solapiAuth(process.env.SOLAPI_API_KEY!, process.env.SOLAPI_API_SECRET!),
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        messages: [
-          {
-            to: order.phone,
-            from: process.env.SMS_FROM!.replace(/\D/g, ""),
-            // 알림톡은 템플릿 문구와 같은 글을 함께 넣어 두면, 실패할 때 이 글이 문자로 대신 간다.
-            text: vars ? kakaoText(vars) : reportSmsText(order, url, expiresAt, links),
-            subject: `[${BRAND.name}] 감정서 완성`,
-            autoTypeDetect: true,
-            ...(vars
-              ? { kakaoOptions: { pfId: process.env.KAKAO_PF_ID, templateId: process.env.KAKAO_TEMPLATE_ID, variables: vars, disableSms: false } }
-              : {}),
-          },
-        ],
-      }),
+      body: JSON.stringify({ messages }),
     });
     const data = (await res.json().catch(() => ({}))) as { failedMessageList?: unknown[] };
-    const failed = Array.isArray(data.failedMessageList) && data.failedMessageList.length > 0;
-    if (!res.ok || failed) console.error("문자 발송 실패", res.status, JSON.stringify(data).slice(0, 500));
-    return res.ok && !failed;
+    const failedCount = Array.isArray(data.failedMessageList) ? data.failedMessageList.length : 0;
+    if (!res.ok || failedCount) console.error("문자 발송 실패", res.status, JSON.stringify(data).slice(0, 500));
+    // 하나라도 갔으면 보낸 것으로 본다.
+    return res.ok && failedCount < messages.length;
   } catch (error) {
     console.error("문자 발송 실패", error);
     return false;

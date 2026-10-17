@@ -81,8 +81,8 @@ describe("카카오톡 알림톡", () => {
   it("카카오톡을 고르면 알림톡 옵션과 대체 문자를 함께 보낸다", async () => {
     vi.stubEnv("KAKAO_PF_ID", "KA01PF");
     vi.stubEnv("KAKAO_TEMPLATE_ID", "KA01TP");
-    const order = await createOrder(input, "", "core", now, undefined, "01012345678", "kakao");
-    expect(order.channel).toBe("kakao");
+    const order = await createOrder(input, "", "core", now, undefined, "01012345678", ["kakao"]);
+    expect(order.channels).toEqual(["kakao"]);
     vi.stubGlobal("fetch", vi.fn(async () => json({ orderId: order.id, status: "DONE", totalAmount: order.amount, approvedAt: now.toISOString() })));
     const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
     const report = (await getReport(paid.token!))!;
@@ -100,7 +100,38 @@ describe("카카오톡 알림톡", () => {
     expect(m.text).not.toContain("#{");
   });
 
+  it("카카오톡·문자·이메일을 모두 고르면 세 곳 모두로 보낸다", async () => {
+    vi.stubEnv("KAKAO_PF_ID", "KA01PF");
+    vi.stubEnv("KAKAO_TEMPLATE_ID", "KA01TP");
+    vi.stubEnv("RESEND_API_KEY", "re_x");
+    vi.stubEnv("MAIL_FROM", "천기록 <a@b.co>");
+    const order = await createOrder(input, "c@d.co", "core", now, undefined, "010-1234-5678", ["kakao", "sms"]);
+    expect(order.channels).toEqual(["kakao", "sms"]);
+    vi.stubGlobal("fetch", vi.fn(async () => json({ orderId: order.id, status: "DONE", totalAmount: order.amount, approvedAt: now.toISOString() })));
+    const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
+    const report = (await getReport(paid.token!))!;
+    for (const part of ["intro", "part1", "part5"] as const) {
+      await savePart(paid.token!, part, part === "intro" ? { part, intro: { coverKeywords: ["k"], summary: "s", preface: ["p"] } } : { part, chapter: { sections: [{ heading: "h", paragraphs: ["p"] }], actionPlan: [] } });
+    }
+    const calls = vi.fn(async (url: string) => (url.includes("/emails") ? json({ id: "m" }) : json({ failedMessageList: [] })));
+    vi.stubGlobal("fetch", calls);
+    expect(await sendCompletionIfReady(report, "https://x.test")).toBe(true);
+    const urls = calls.mock.calls.map((c) => c[0] as string);
+    expect(urls.filter((u) => u.includes("/emails"))).toHaveLength(1);
+    const smsCall = calls.mock.calls.find((c) => (c[0] as string).includes("send-many"))!;
+    const msgs = JSON.parse((smsCall as unknown as [string, RequestInit])[1].body as string).messages;
+    expect(msgs).toHaveLength(2);
+    // 문자도 따로 가므로 알림톡 실패 때 대체 문자는 끈다(같은 문자가 두 번 가지 않게).
+    expect(msgs[0].kakaoOptions.disableSms).toBe(true);
+    expect(msgs[1].kakaoOptions).toBeUndefined();
+  });
+
+  it("휴대폰 번호만 있고 받을 곳을 고르지 않았거나, 고르고 번호가 없으면 거절한다", async () => {
+    await expect(createOrder(input, "", "core", now, undefined, "01012345678", [])).rejects.toThrow("골라");
+    await expect(createOrder(input, "c@d.co", "core", now, undefined, undefined, ["sms"])).rejects.toThrow("휴대폰 번호");
+  });
+
   it("알림톡 설정이 없으면 카카오톡 주문을 받지 않는다", async () => {
-    await expect(createOrder(input, "", "core", now, undefined, "01012345678", "kakao")).rejects.toThrow("카카오톡");
+    await expect(createOrder(input, "", "core", now, undefined, "01012345678", ["kakao"])).rejects.toThrow("카카오톡");
   });
 });

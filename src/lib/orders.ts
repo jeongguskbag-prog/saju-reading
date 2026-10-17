@@ -5,7 +5,8 @@ import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, SALES_OPEN, sellableProdu
 import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
 import { getStore, requireStore } from "./store";
 import type { NamingRequest } from "./naming/engine";
-import { isKakaoEnabled, isSmsEnabled, normalizePhone } from "./sms";
+import { isKakaoEnabled, isSmsEnabled, normalizePhone, type PhoneChannel } from "./sms";
+export { phoneChannels, type PhoneChannel } from "./sms";
 import { isAiEnabled } from "./reading";
 
 export interface Order {
@@ -29,8 +30,10 @@ export interface Order {
   naming?: NamingRequest;
   /** 감정서 링크를 문자로 받을 휴대폰 번호(숫자만). 있으면 완성 때 문자를 보낸다. */
   phone?: string;
-  /** 휴대폰으로 받는 방법: 문자(기본) 또는 카카오톡 알림톡 */
-  channel?: "sms" | "kakao";
+  /** 휴대폰으로 받는 곳(카카오톡 알림톡·문자, 둘 다 가능) */
+  channels?: PhoneChannel[];
+  /** 예전 주문: 휴대폰으로 받는 방법 하나 */
+  channel?: PhoneChannel;
   /** 파일(PDF·HTML)을 보내기로 예약한 시각(ISO). 있으면 완성되어도 바로 보내지 않고 이때 보낸다. */
   deliverAt?: string;
 }
@@ -88,17 +91,21 @@ export async function createOrder(
   now = new Date(),
   naming?: NamingRequest,
   phone?: string,
-  channel: "sms" | "kakao" = "sms",
+  channels: PhoneChannel[] = phone ? ["sms"] : [],
 ): Promise<Order> {
   const product = sellableProducts().find((p) => p.id === productId);
   if (!product) throw new OrderError("지금은 신청할 수 없는 상품입니다.");
   if (!input.name?.trim()) throw new OrderError("감정서에 들어갈 성함을 적어 주세요.");
-  // 받는 곳: 이메일 또는 휴대폰(문자) 가운데 하나는 있어야 한다.
+  // 받는 곳: 이메일·카카오톡·문자 가운데 고른 곳 모두로 보낸다. 하나는 있어야 한다.
+  const picked = [...new Set(channels)].filter((c): c is PhoneChannel => c === "kakao" || c === "sms");
   const mobile = phone ? normalizePhone(phone) : null;
+  if (picked.length && !phone) throw new OrderError("카카오톡·문자로 받을 휴대폰 번호를 적어 주세요.");
   if (phone && !mobile) throw new OrderError("휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)");
-  if (mobile && !isSmsEnabled()) throw new OrderError("지금은 문자로 받을 수 없습니다. 이메일로 받아 주세요.");
-  if (mobile && channel === "kakao" && !isKakaoEnabled()) throw new OrderError("지금은 카카오톡으로 받을 수 없습니다. 문자나 이메일로 받아 주세요.");
-  if (email ? !isValidEmail(email) : !mobile) throw new OrderError("이메일 주소를 확인해 주세요.");
+  if (mobile && !picked.length) throw new OrderError("휴대폰으로 받을 곳(카카오톡 또는 문자)을 골라 주세요.");
+  if (picked.includes("sms") && !isSmsEnabled()) throw new OrderError("지금은 문자로 받을 수 없습니다. 다른 곳으로 받아 주세요.");
+  if (picked.includes("kakao") && !isKakaoEnabled()) throw new OrderError("지금은 카카오톡으로 받을 수 없습니다. 다른 곳으로 받아 주세요.");
+  if (email && !isValidEmail(email)) throw new OrderError("이메일 주소를 확인해 주세요.");
+  if (!email && !mobile) throw new OrderError("감정서를 받을 이메일이나 휴대폰 번호를 적어 주세요.");
   const chart = calculateSaju(input, now); // 입력 오류(InputError)는 호출한 쪽에서 메시지로 돌려준다.
   if (product.parts.includes("naming")) {
     if (!naming) throw new OrderError("작명 신청 내용을 적어 주세요.");
@@ -121,7 +128,7 @@ export async function createOrder(
     amount: product.price,
     orderName: product.name,
     ...(product.parts.includes("naming") && naming ? { naming } : {}),
-    ...(mobile ? { phone: mobile, channel } : {}),
+    ...(mobile ? { phone: mobile, channels: picked } : {}),
     status: "pending",
     createdAt: now.toISOString(),
   };

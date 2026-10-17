@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BirthInput } from "@/lib/saju/calc";
 import { confirmOrder, createOrder, getOrder, getReport, savePart } from "@/lib/orders";
 import { createMemoryStore, setStoreForTest } from "@/lib/store";
-import { deliverReport, deliveryDelayMinutes, fileLinks, scheduleDelivery } from "@/lib/delivery";
+import { deliverReport, deliveryDelayMinutes, webRevealMinutes, fileLinks, scheduleDelivery } from "@/lib/delivery";
 import { sendCompletionIfReady } from "@/lib/fulfill";
 import { reportEmail } from "@/lib/mail";
 import { kakaoText, kakaoVariables, reportSmsText } from "@/lib/sms";
@@ -40,12 +40,13 @@ async function fillParts(token: string) {
 const fakeFiles = async () => ({ pdf: Buffer.from("%PDF-1.7 test"), html: "<!doctype html><p>감정서</p>", baseName: "천기록_홍길동_핵심감정서" });
 
 describe("감정서 파일 발송", () => {
-  it("발송 지연은 기본 50분, 설정으로 바꿀 수 있다", () => {
-    expect(deliveryDelayMinutes()).toBe(50);
+  it("발송 지연은 기본 10분, 설정으로 바꿀 수 있다", () => {
+    expect(deliveryDelayMinutes()).toBe(10);
+    expect(webRevealMinutes()).toBe(3);
     vi.stubEnv("DELIVERY_DELAY_MINUTES", "0");
     expect(deliveryDelayMinutes()).toBe(0);
     vi.stubEnv("DELIVERY_DELAY_MINUTES", "abc");
-    expect(deliveryDelayMinutes()).toBe(50);
+    expect(deliveryDelayMinutes()).toBe(10);
   });
 
   it("QStash 설정이 없으면 예약하지 않고(null) 완성 즉시 보낸다", async () => {

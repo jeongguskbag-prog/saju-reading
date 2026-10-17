@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import ReportClient from "@/components/ReportClient";
 import SiteShell from "@/components/SiteShell";
 import { isMailEnabled } from "@/lib/mail";
-import { isKakaoEnabled, isSmsEnabled, maskPhone } from "@/lib/sms";
+import { isKakaoEnabled, isSmsEnabled, maskPhone, phoneChannels } from "@/lib/sms";
+import { webRevealMinutes } from "@/lib/delivery";
 import { getReport, getSavedParts } from "@/lib/orders";
 import { BRAND, BUSINESS, REPORT_VALID_DAYS } from "@/lib/product";
 
@@ -13,11 +14,11 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: `내 감정서 — ${BRAND.name}`, robots: { index: false, follow: false } };
 
 type Params = Promise<{ token: string }>;
-type Search = Promise<{ new?: string }>;
+type Search = Promise<{ new?: string; render?: string }>;
 
 export default async function ReportPage({ params, searchParams }: { params: Params; searchParams: Search }) {
   const { token } = await params;
-  const { new: fresh } = await searchParams;
+  const { new: fresh, render } = await searchParams;
   const report = await getReport(token);
   if (!report) notFound();
   if (report.expired) {
@@ -51,7 +52,10 @@ export default async function ReportPage({ params, searchParams }: { params: Par
           [
             isMailEnabled() && report.order.email ? report.order.email : null,
             isSmsEnabled() && report.order.phone
-              ? `${report.order.channel === "kakao" && isKakaoEnabled() ? "카카오톡" : "휴대폰"} ${maskPhone(report.order.phone)}`
+              ? `${phoneChannels(report.order)
+                  .filter((c) => c === "sms" || isKakaoEnabled())
+                  .map((c) => (c === "kakao" ? "카카오톡" : "문자"))
+                  .join("·") || "문자"} ${maskPhone(report.order.phone)}`
               : null,
           ]
             .filter(Boolean)
@@ -59,6 +63,12 @@ export default async function ReportPage({ params, searchParams }: { params: Par
         }
         orderId={report.order.id}
         deliverAt={report.order.deliverAt ?? null}
+        // 결제 뒤 몇 분(기본 3분)이 지나야 화면에 감정서를 펼친다. 파일 만들기(render=1)는 기다리지 않는다.
+        revealInMs={
+          render === "1"
+            ? 0
+            : Math.max(0, new Date(report.order.paidAt ?? report.order.createdAt).getTime() + webRevealMinutes() * 60_000 - Date.now())
+        }
       />
     </SiteShell>
   );

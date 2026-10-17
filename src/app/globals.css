@@ -802,3 +802,10 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .lp-pledge ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 .lp-pledge li { font-size: 15px; line-height: 1.7; opacity: 0.9; word-break: keep-all; }
 .purchase-time { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--surface-2); font-size: 14px; line-height: 1.7; word-break: keep-all; }
+
+/* 결제 직후 감정서를 펼치기 전 기다림 화면 */
+.report-waiting { text-align: center; padding: 36px 22px; }
+.report-waiting .eyebrow { color: var(--accent, #b0262c); font-size: 13px; letter-spacing: 0.08em; margin: 0 0 6px; }
+.report-waiting .spinner { display: inline-block; margin: 6px 0 4px; }
+.report-waiting-time { font-size: 30px; font-variant-numeric: tabular-nums; margin: 4px 0 10px; letter-spacing: 0.04em; }
+.report-waiting .btn-secondary { margin-top: 6px; }
