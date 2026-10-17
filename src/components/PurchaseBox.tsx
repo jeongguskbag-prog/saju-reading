@@ -172,6 +172,9 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         이 명식을 바탕으로 의뢰인 한 분만을 위한 감정서를 써서 책자로 엮어 드립니다. 결제하면 바로 작성을 시작해 약 3분 뒤
         화면에 감정서가 열리고, PDF 파일과 HTML 문서로 바로 저장하실 수 있습니다. 주문번호와 결제 내역은 고르신 곳으로 보내 드립니다.
       </p>
+      <p className="purchase-basis">
+        ✓ 감정서는 무작위로 쓰지 않습니다. 입력하신 생년월일시로 만세력과 명리 계산값을 정확히 구한 뒤, 그 데이터만을 근거로 작성합니다.
+      </p>
       {checkout.enabled ? (
         <form className="form-grid" onSubmit={onBuy} noValidate>
           <fieldset className="plan-pick">

@@ -128,6 +128,48 @@ export function HowWeRead() {
   );
 }
 
+const BASIS: [string, string][] = [
+  ["만세력과 절기 시각", "태어난 순간을 절기가 바뀌는 시각까지 따져 해·달·날·시의 간지를 세웁니다. 출생지 경도에 맞춘 진태양시와 과거 서머타임도 반영합니다."],
+  ["명리 이론에 따른 계산", "십신·지장간·신강약·격국·용신, 10년 대운과 해마다의 세운·월운을 정해진 공식으로 계산합니다."],
+  ["궁합·택일", "두 명식의 합·충·형·해·파·원진과 오행 보완을, 택일은 날마다의 일진과 전통 역서(황도·흑도, 건제 12직, 마땅한 일·꺼리는 일)를 함께 따집니다."],
+  ["주역 원문·자미두수 명반", "주역 점은 『주역』 64괘의 괘사·효사 원문과 주희의 변효 점법을, 자미두수는 생년월일시로 세운 열두 궁의 별 배치를 근거로 합니다."],
+];
+
+/** 무작위로 쓰지 않습니다: 감정서의 근거 데이터 */
+export function Basis() {
+  return (
+    <section className="lp-section sunk lp-basis" aria-labelledby="basis-h">
+      <div className="lp-inner narrow">
+        <p className="lp-eyebrow">감정서의 근거</p>
+        <h2 id="basis-h">
+          무작위로 뽑아 쓰지 않습니다.
+          <br />
+          정확한 계산 데이터로 씁니다
+        </h2>
+        <ul className="receive-list">
+          {BASIS.map(([t, d]) => (
+            <li key={t}>
+              <span className="check" aria-hidden>✓</span>
+              <div>
+                <b>{t}</b>
+                <p>{d}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="basis-note">
+          <b>같은 생년월일시를 넣으면 계산값은 언제나 똑같이 나옵니다.</b> 감정서의 문장은 이 계산값만을 근거로 쓰며, 계산에 없는 간지·별·날짜·점수를
+          지어내지 않습니다. 근거가 된 명식표·점수표·일진표는 감정서 안에 그대로 실어 드려 직접 확인하실 수 있습니다.
+        </p>
+        <p className="muted small">
+          ※ 주역 점은 점법의 본래 방식대로 괘를 한 번 얻는 과정(시초점의 확률)이 있습니다. 얻은 괘는 저장되어 바뀌지 않고, 그 풀이는 원문과 정해진
+          점법을 따릅니다.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 /** 목차 각 부를 손님이 궁금해할 질문으로 */
 export const PART_QUESTIONS: Record<string, string> = {
   part1: "나는 어떤 그릇을 타고났을까",

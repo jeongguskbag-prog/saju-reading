@@ -14,7 +14,7 @@ import SiteFooter from "./SiteFooter";
 import LangSwitch from "./LangSwitch";
 import ReviewsSection from "./ReviewsSection";
 import TopicCards from "./TopicCards";
-import { Compare, Excerpt, FlowBand, ForWhom, HowWeRead, PART_QUESTIONS, Receive } from "./LandingStory";
+import { Basis, Compare, Excerpt, FlowBand, ForWhom, HowWeRead, PART_QUESTIONS, Receive } from "./LandingStory";
 import StickyCta from "./StickyCta";
 import type { Review } from "@/lib/reviews";
 import { FloatingKakao, SupportBox } from "./SupportLinks";
@@ -145,6 +145,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
       {site === "ko" && <ForWhom />}
       {site === "ko" && <TopicCards years={years} />}
       {site === "ko" && <HowWeRead />}
+      {site === "ko" && <Basis />}
 
       <Section id="contents" tone="sunk" title={L.contentsTitle} lead={L.contentsLead}>
         <ol className="lp-toc">

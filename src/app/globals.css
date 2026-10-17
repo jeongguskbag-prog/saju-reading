@@ -1061,3 +1061,5 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   .zw-center p { font-size: 11px; }
 }
 .zw-cell.flagged .zw-stars { padding-right: 30px; }
+.basis-note { margin: 20px 0 8px; padding: 14px 16px; border-left: 3px solid var(--accent); background: var(--surface, rgba(0,0,0,.02)); line-height: 1.75; word-break: keep-all; }
+.purchase-basis { margin: -4px 0 14px; font-size: 14px; color: var(--text-2); font-weight: 600; word-break: keep-all; }
