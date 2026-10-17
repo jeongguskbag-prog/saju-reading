@@ -86,7 +86,8 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
     const phoneOk = /^01[016789]\d{7,8}$/.test(phone.replace(/[\s-]/g, ""));
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
     if (email.trim() && !emailOk) return setError("이메일 주소를 확인해 주세요.");
-    if (phone.trim() && !phoneOk) return setError("휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)");
+    if (!phone.trim()) return setError("휴대폰 번호를 적어 주세요. (필수)");
+    if (!phoneOk) return setError("휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)");
     if (!picked.length) return setError("주문 내역과 감정서 파일을 받을 곳을 하나 이상 골라 주세요.");
     if (picked.includes("email") && !email.trim()) return setError("이메일로 받으시려면 이메일 주소를 적어 주세요.");
     if (picked.some((t) => t !== "email") && !phone.trim()) return setError("카카오톡·문자로 받으시려면 휴대폰 번호를 적어 주세요.");
@@ -160,12 +161,14 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             </div>
           )}
           <div className="field">
-            <label htmlFor="buy-email">이메일</label>
+            <label htmlFor="buy-email">이메일 (선택)</label>
             <input id="buy-email" type="email" inputMode="email" autoComplete="email" value={email} maxLength={100} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
           </div>
           <div className="field">
-            <label htmlFor="buy-phone">휴대폰 번호</label>
-            <input id="buy-phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} maxLength={20} onChange={(e) => setPhone(e.target.value)} placeholder="010-1234-5678" />
+            <label htmlFor="buy-phone">
+              휴대폰 번호 <span className="req">(필수)</span>
+            </label>
+            <input id="buy-phone" type="tel" inputMode="tel" autoComplete="tel" required aria-required="true" value={phone} maxLength={20} onChange={(e) => setPhone(e.target.value)} placeholder="010-1234-5678" />
             <p className="muted">적어 주신 이메일·휴대폰 번호와 주문번호로 나중에 감정서를 다시 찾을 수 있습니다(주문 조회).</p>
           </div>
           <div className="field">

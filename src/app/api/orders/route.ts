@@ -21,6 +21,8 @@ export async function POST(request: Request) {
   }
   try {
     const phone = typeof body?.phone === "string" && body.phone.trim() ? body.phone.trim() : undefined;
+    // 휴대폰 번호는 필수(주문 조회·고객 연락용)
+    if (!phone) return NextResponse.json({ error: "휴대폰 번호를 적어 주세요." }, { status: 400 });
     // 주문번호·결제 내역을 받을 곳: targets(["email","kakao","sms"]). 예전 화면의 channels·channel도 받아 준다.
     const email = String(body?.email ?? "").trim();
     const raw: unknown[] = Array.isArray(body?.targets)

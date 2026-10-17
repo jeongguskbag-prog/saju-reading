@@ -129,3 +129,19 @@ describe("주문 기록(관리)", async () => {
     expect(checkAdminPassword("")).toBe(false);
   });
 });
+
+describe("주문 접수 API", () => {
+  it("휴대폰 번호가 없으면 주문을 받지 않는다", async () => {
+    vi.stubEnv("TOSS_CLIENT_KEY", "test_ck_x");
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant-x");
+    const { POST } = await import("@/app/api/orders/route");
+    const body = { input, agree: true, email: "c@d.co", targets: ["email"], productId: "core" };
+    const call = (b: object) => POST(new Request("http://x/api/orders", { method: "POST", body: JSON.stringify(b) }));
+    const res = await call(body);
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain("휴대폰");
+    const ok = await call({ ...body, phone: "010-1234-5678" });
+    expect(ok.status).toBe(200);
+    expect((await ok.json()).customerMobilePhone).toBe("01012345678");
+  });
+});

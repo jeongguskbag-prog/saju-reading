@@ -829,3 +829,5 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .admin-table-wrap { overflow-x: auto; margin-top: 12px; }
 .admin-table { font-size: 12.5px; white-space: nowrap; }
 .admin-table th, .admin-table td { padding: 6px 8px; }
+
+.req { color: var(--accent); font-weight: 400; font-size: 0.9em; }
