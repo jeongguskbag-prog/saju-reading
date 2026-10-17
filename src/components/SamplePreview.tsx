@@ -1,4 +1,7 @@
-import type { ProductId } from "@/lib/product";
+"use client";
+
+import { useState } from "react";
+import { PRODUCT_ORDER, PRODUCTS, type ProductId } from "@/lib/product";
 
 /**
  * 감정서 견본 미리 보기. 가상의 의뢰인으로 실제 감정서와 같은 방식으로 만든 PDF(public/samples)를 보여 준다.
@@ -41,12 +44,30 @@ const SAMPLES: Record<ProductId, { file: string; pages: number; thumbs: { src: s
   },
 };
 
-export default function SamplePreview({ productId, productName }: { productId: ProductId; productName: string }) {
-  const s = SAMPLES[productId];
+const SHORT: Record<ProductId, string> = { core: "핵심 명식록", full: "종합 감정서", naming: "작명록" };
+
+/**
+ * productId를 주면 그 상품의 견본만(결제 칸에서 고른 상품), 주지 않으면 상품을 바꿔 볼 수 있는 단추와 함께 보여 준다
+ * (결제가 열리지 않았을 때·첫 화면 상품 안내).
+ */
+export default function SamplePreview({ productId }: { productId?: ProductId }) {
+  const ids = PRODUCT_ORDER.filter((id) => PRODUCTS[id].available && SAMPLES[id]);
+  const [picked, setPicked] = useState<ProductId>(ids.includes("full") ? "full" : ids[0]);
+  const id = productId ?? picked;
+  const s = SAMPLES[id];
   if (!s) return null;
   return (
-    <section className="sample-preview" aria-labelledby="sample-h">
-      <h3 id="sample-h">{productName} 견본 미리 보기</h3>
+    <section className="sample-preview" aria-labelledby={`sample-h-${id}`}>
+      <h3 id={`sample-h-${id}`}>{PRODUCTS[id].name} 견본 미리 보기</h3>
+      {!productId && ids.length > 1 && (
+        <div className="segmented" role="group" aria-label="견본 고르기">
+          {ids.map((x) => (
+            <button key={x} type="button" aria-pressed={x === id} onClick={() => setPicked(x)}>
+              {SHORT[x]}
+            </button>
+          ))}
+        </div>
+      )}
       <p className="muted">
         {s.who}으로 만든 견본입니다. 결제하시면 이와 같은 A4 책자 모양의 감정서를 받아 PDF로 저장하실 수 있습니다. 견본은 {s.pages}쪽이며,{" "}
         {s.real}

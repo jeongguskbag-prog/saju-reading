@@ -783,3 +783,6 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .sample-thumbs a { flex: 0 0 auto; width: 120px; text-decoration: none; color: var(--text-2); font-size: 12px; text-align: center; scroll-snap-align: start; }
 .sample-thumbs img { display: block; width: 120px; height: auto; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); background: #fff; }
 .sample-thumbs span { display: block; margin-top: 4px; }
+.lp-sample { margin: 24px 0 8px; max-width: 46em; }
+.lp-sample .sample-preview { background: var(--surface); }
+.sample-preview .segmented { flex-wrap: wrap; }

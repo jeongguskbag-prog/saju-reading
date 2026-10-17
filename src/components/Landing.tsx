@@ -7,6 +7,7 @@ import { siteCopy, SITES, type SiteLocale } from "@/lib/site-copy";
 import { GRADE_TIERS } from "@/lib/saju/grade";
 import stats from "@/lib/saju/grade-stats.json";
 import Seal from "./Seal";
+import SamplePreview from "./SamplePreview";
 import BrandSeal from "./BrandSeal";
 import SiteFooter from "./SiteFooter";
 import { FloatingKakao, SupportBox } from "./SupportLinks";
@@ -158,6 +159,11 @@ export default function Landing({ form, checkoutOpen = false, site = "ko" }: { f
             );
           })}
         </div>
+        {site === "ko" && (
+          <div className="lp-sample">
+            <SamplePreview />
+          </div>
+        )}
         <ol className="lp-steps">
           {L.steps.map((st) => (
             <li key={st.b}><b>{st.b}</b> {st.t}</li>

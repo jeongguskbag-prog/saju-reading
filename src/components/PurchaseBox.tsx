@@ -141,7 +141,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               </label>
             ))}
           </fieldset>
-          <SamplePreview productId={productId} productName={product.name} />
+          <SamplePreview productId={productId} />
           {isNaming ? (
             <NamingFields value={naming} onChange={setNaming} />
           ) : (
@@ -235,6 +235,8 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       ) : (
         <>
           <p className="muted">감정서 결제는 준비 중입니다. 열리면 이 자리에서 바로 신청할 수 있습니다.</p>
+          {/* 결제가 닫혀 있어도 견본은 먼저 볼 수 있게 한다. */}
+          <SamplePreview />
           <SupportBox compact />
         </>
       )}
