@@ -23,6 +23,9 @@ export const deliveryDelayMinutes = () => minutesEnv(process.env.DELIVERY_DELAY_
 /** 신청(결제) 뒤 몇 분 뒤부터 화면에서 감정서를 보여 줄지. 기본 3분. */
 export const webRevealMinutes = () => minutesEnv(process.env.WEB_REVEAL_MINUTES, 3);
 
+/** 이메일이나 휴대폰 번호를 남겼는지(웹 신청서는 남기지 않고 화면에서 바로 저장한다) */
+export const hasDestination = (order: Pick<Order, "email" | "phone">) => Boolean(order.email || order.phone);
+
 /** 손님에게 받을 파일 주소 */
 export function fileLinks(origin: string, token: string) {
   const base = `${origin}/r/${token}`;
@@ -34,7 +37,7 @@ export function fileLinks(origin: string, token: string) {
  * 예약 시각을 주문에 먼저 적어, 그 사이 감정서가 완성되어도 바로 보내지 않게 한다.
  */
 export async function scheduleDelivery(order: Order, origin: string, now = new Date()): Promise<string | null> {
-  if (!isDeliveryScheduleEnabled() || !order.token) return null;
+  if (!isDeliveryScheduleEnabled() || !order.token || !hasDestination(order)) return null;
   const paidAt = new Date(order.paidAt ?? now.toISOString()).getTime();
   const deliverAt = new Date(paidAt + deliveryDelayMinutes() * 60_000);
   await setDeliverAt(order.id, deliverAt.toISOString());
@@ -71,13 +74,14 @@ export async function verifyQstash(signature: string | null, body: string, url: 
   }
 }
 
-export type DeliverOutcome = "sent" | "already" | "incomplete" | "failed";
+export type DeliverOutcome = "sent" | "already" | "incomplete" | "failed" | "none";
 
 /**
  * 감정서가 다 됐으면 PDF·HTML을 만들어 이메일(첨부)과 문자·카카오톡(받기 링크)으로 보낸다. 주문당 한 번.
  * 파일 만들기에 실패해도 감정서 링크와 받기 링크는 보낸다(받기 링크는 열 때 다시 만든다).
  */
 export async function deliverReport(report: Report, origin: string, render = renderReportFiles): Promise<DeliverOutcome> {
+  if (!hasDestination(report.order)) return "none";
   const saved = await getSavedParts(report.order.token!, report.product.parts);
   if (report.product.parts.some((p) => !saved[p])) return "incomplete";
   if (!(await markMailed(report.order.id))) return "already";

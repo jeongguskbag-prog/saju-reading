@@ -96,7 +96,7 @@ export async function createOrder(
   const product = sellableProducts().find((p) => p.id === productId);
   if (!product) throw new OrderError("지금은 신청할 수 없는 상품입니다.");
   if (!input.name?.trim()) throw new OrderError("감정서에 들어갈 성함을 적어 주세요.");
-  // 받는 곳: 이메일·카카오톡·문자 가운데 고른 곳 모두로 보낸다. 하나는 있어야 한다.
+  // 받는 곳(선택): 이메일·카카오톡·문자 가운데 고른 곳 모두로 보낸다. 웹 신청서는 받는 곳 없이 화면에서 바로 저장한다.
   const picked = [...new Set(channels)].filter((c): c is PhoneChannel => c === "kakao" || c === "sms");
   const mobile = phone ? normalizePhone(phone) : null;
   if (picked.length && !phone) throw new OrderError("카카오톡·문자로 받을 휴대폰 번호를 적어 주세요.");
@@ -105,7 +105,6 @@ export async function createOrder(
   if (picked.includes("sms") && !isSmsEnabled()) throw new OrderError("지금은 문자로 받을 수 없습니다. 다른 곳으로 받아 주세요.");
   if (picked.includes("kakao") && !isKakaoEnabled()) throw new OrderError("지금은 카카오톡으로 받을 수 없습니다. 다른 곳으로 받아 주세요.");
   if (email && !isValidEmail(email)) throw new OrderError("이메일 주소를 확인해 주세요.");
-  if (!email && !mobile) throw new OrderError("감정서를 받을 이메일이나 휴대폰 번호를 적어 주세요.");
   const chart = calculateSaju(input, now); // 입력 오류(InputError)는 호출한 쪽에서 메시지로 돌려준다.
   if (product.parts.includes("naming")) {
     if (!naming) throw new OrderError("작명 신청 내용을 적어 주세요.");

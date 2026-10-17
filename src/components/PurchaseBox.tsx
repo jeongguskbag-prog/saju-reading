@@ -19,8 +19,6 @@ export interface CheckoutInfo {
 }
 
 type PayMethod = "CARD" | "MOBILE_PHONE";
-type Target = "email" | "kakao" | "sms";
-const TARGET_LABEL: Record<Target, string> = { email: "이메일", kakao: "카카오톡", sms: "문자" };
 
 interface TossPaymentsInstance {
   payment(opts: { customerKey: string }): {
@@ -47,20 +45,11 @@ function loadSdk(): Promise<NonNullable<Window["TossPayments"]>> {
   });
 }
 
-/** 무료 결과의 등급 카드 아래: 감정서를 고르고, 성함·이메일을 받아 토스 결제창을 연다. */
+/** 무료 결과의 등급 카드 아래: 감정서를 고르고, 성함을 받아 토스 결제창을 연다. */
 export default function PurchaseBox({ input, checkout, years }: { input: BirthInput; checkout: CheckoutInfo; years: [number, number] }) {
   const products = sellableProducts();
   const [productId, setProductId] = useState<ProductId>(DEFAULT_PRODUCT);
   const [name, setName] = useState(input.name ?? "");
-  const [email, setEmail] = useState("");
-  // 받는 곳: 이메일·카카오톡·문자 가운데 원하는 곳을 모두 고른다. 고른 곳 모두로 보낸다.
-  const [targets, setTargets] = useState<Target[]>(["email"]);
-  const [phone, setPhone] = useState("");
-  const offered: Target[] = ["email", ...(checkout.kakao ? (["kakao"] as const) : []), ...(checkout.sms ? (["sms"] as const) : [])];
-  const picked = targets.filter((t) => offered.includes(t));
-  const byEmail = picked.includes("email");
-  const phoneTargets = picked.filter((t): t is "kakao" | "sms" => t !== "email");
-  const toggleTarget = (t: Target) => setTargets((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
   const [agree, setAgree] = useState(false);
   const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [busy, setBusy] = useState(false);
@@ -85,11 +74,6 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         : `${naming.surname.trim()}○○`
       : name.trim();
     if (!reportName) return setError("감정서에 들어갈 성함을 적어 주세요.");
-    if (!picked.length) return setError("감정서를 받을 곳(이메일·카카오톡·문자)을 하나 이상 골라 주세요.");
-    if (byEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return setError("감정서를 받을 이메일 주소를 확인해 주세요.");
-    if (phoneTargets.length && !/^01[016789]\d{7,8}$/.test(phone.replace(/[\s-]/g, ""))) {
-      return setError("감정서를 받을 휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)");
-    }
     if (!agree) return setError("주문 내용과 청약철회 안내에 동의해 주세요.");
     setBusy(true);
     try {
@@ -98,8 +82,8 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           input: { ...input, name: reportName },
-          email: byEmail ? email.trim() : "",
-          ...(phoneTargets.length ? { phone: phone.trim(), channels: phoneTargets } : {}),
+          // 웹 신청서는 받는 곳을 묻지 않는다. 감정서는 이 화면에서 바로 보고 PDF·HTML로 저장한다.
+          email: "",
           agree,
           productId,
           ...(isNaming ? { naming: namingReq } : {}),
@@ -134,7 +118,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       <h2 id="purchase-h">1:1 맞춤 감정서 신청</h2>
       <p className="purchase-lead">
         이 명식을 바탕으로 의뢰인 한 분만을 위한 감정서를 써서 책자로 엮어 드립니다. 결제하면 바로 작성을 시작해 약 3분 뒤
-        이 화면에서 감정서를 보실 수 있고, 신청 10분 뒤 고르신 곳(이메일·카카오톡·문자)으로 PDF 파일과 HTML 파일을 보내 드립니다.
+        화면에 감정서가 열리고, PDF 파일과 HTML 문서로 바로 저장하실 수 있습니다.
       </p>
       {checkout.enabled ? (
         <form className="form-grid" onSubmit={onBuy} noValidate>
@@ -156,54 +140,6 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             <div className="field">
               <label htmlFor="buy-name">의뢰인 성함</label>
               <input id="buy-name" type="text" autoComplete="name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="홍길동" />
-            </div>
-          )}
-          {offered.length > 1 && (
-            <div className="field">
-              <span className="label">감정서 받는 곳 (여러 곳을 고르면 모두 보내 드립니다)</span>
-              <div className="chip-row" role="group" aria-label="감정서 받는 곳">
-                {offered.map((t) => (
-                  <button key={t} type="button" className="chip" aria-pressed={picked.includes(t)} onClick={() => toggleTarget(t)}>
-                    {picked.includes(t) ? "✓ " : ""}
-                    {TARGET_LABEL[t]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {byEmail && (
-            <div className="field">
-              <label htmlFor="buy-email">감정서를 받을 이메일</label>
-              <input
-                id="buy-email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                value={email}
-                maxLength={100}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-              />
-              <p className="muted">PDF 파일과 HTML 파일을 메일에 첨부해 보내 드립니다.</p>
-            </div>
-          )}
-          {phoneTargets.length > 0 && (
-            <div className="field">
-              <label htmlFor="buy-phone">{phoneTargets.map((t) => TARGET_LABEL[t]).join("·")}{phoneTargets[phoneTargets.length - 1] === "sms" ? "로" : "으로"} 받을 휴대폰 번호</label>
-              <input
-                id="buy-phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                value={phone}
-                maxLength={20}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="010-1234-5678"
-              />
-              <p className="muted">
-                감정서 링크와 PDF·HTML 파일 받기 링크를 보내 드립니다.
-                {phoneTargets.includes("kakao") && !phoneTargets.includes("sms") ? " 카카오톡을 쓰지 않는 번호면 같은 내용이 문자로 갑니다." : ""}
-              </p>
             </div>
           )}
           {checkout.mobilePhone && (
@@ -232,8 +168,8 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             {busy ? "결제창을 여는 중…" : `${won(product.price)} 결제하고 감정서 신청`}
           </button>
           <p className="purchase-time">
-            ⏳ 결제 후 명식 계산, 각 부의 풀이 작성, 책자 편집을 거쳐 <b>약 3분 뒤</b> 화면에서 감정서가 열리고,
-            <b>신청 10분 뒤</b> 감정서 PDF 파일과 HTML 파일을 보내 드립니다. 창을 닫으셔도 작성과 발송은 이어집니다.
+            ⏳ 결제 후 명식 계산, 각 부의 풀이 작성, 책자 편집을 거쳐 <b>약 3분 뒤</b> 화면에 감정서가 열립니다.
+            열리면 <b>PDF 파일 저장</b>·<b>HTML 문서 저장</b> 버튼으로 바로 내려받으세요. 감정서 화면 주소도 함께 저장해 두시면 기간 안에 다시 열 수 있습니다.
           </p>
           <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
           {checkout.testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}

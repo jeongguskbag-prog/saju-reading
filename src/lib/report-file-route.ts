@@ -2,6 +2,7 @@
 import { getReport, getSavedParts } from "./orders";
 import { attachmentHeader, renderReportFiles } from "./render";
 import { originFrom } from "./site";
+import { webRevealMinutes } from "./delivery";
 
 const text = (msg: string, status: number) =>
   new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
@@ -10,6 +11,8 @@ export async function fileResponse(request: Request, token: string, ext: "pdf" |
   const report = await getReport(token);
   if (!report) return text("감정서를 찾을 수 없습니다.", 404);
   if (report.expired) return text("감정서 열람 기간이 지났습니다.", 410);
+  const openAt = new Date(report.order.paidAt ?? report.order.createdAt).getTime() + webRevealMinutes() * 60_000;
+  if (Date.now() < openAt) return text("감정서를 작성하고 있습니다. 결제 약 3분 뒤부터 받으실 수 있습니다.", 425);
   const saved = await getSavedParts(token, report.product.parts);
   if (report.product.parts.some((p) => !saved[p])) {
     return text("감정서를 아직 작성하고 있습니다. 완성된 뒤에 다시 받아 주세요.", 409);

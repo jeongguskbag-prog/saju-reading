@@ -67,7 +67,10 @@ describe("문자 발송", () => {
   it("문자 설정이 없으면 휴대폰 주문을 받지 않는다", async () => {
     vi.stubEnv("SOLAPI_API_KEY", "");
     await expect(createOrder(input, "", "core", now, undefined, "01012345678")).rejects.toThrow("문자");
-    await expect(createOrder(input, "", "core", now)).rejects.toThrow("이메일");
+    // 웹 신청서는 받는 곳 없이 주문한다(화면에서 바로 저장).
+    const webOrder = await createOrder(input, "", "core", now);
+    expect(webOrder.email).toBe("");
+    expect(webOrder.phone).toBeUndefined();
   });
 
   it("문자 본문에 상품 이름과 열람 기한이 들어간다", () => {

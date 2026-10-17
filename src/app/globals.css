@@ -806,6 +806,21 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 /* 결제 직후 감정서를 펼치기 전 기다림 화면 */
 .report-waiting { text-align: center; padding: 36px 22px; }
 .report-waiting .eyebrow { color: var(--accent, #b0262c); font-size: 13px; letter-spacing: 0.08em; margin: 0 0 6px; }
-.report-waiting .spinner { display: inline-block; margin: 6px 0 4px; }
-.report-waiting-time { font-size: 30px; font-variant-numeric: tabular-nums; margin: 4px 0 10px; letter-spacing: 0.04em; }
+.report-waiting-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 18px 0 8px; }
+.report-waiting-bar span { display: block; height: 100%; background: var(--accent); transition: width 1s linear; }
+.report-waiting-time { font-size: 15px; font-variant-numeric: tabular-nums; margin: 0 0 14px; color: var(--text-2, #57544d); }
+.report-steps { list-style: none; padding: 0; margin: 0 auto 16px; max-width: 280px; text-align: left; }
+.report-steps li { display: flex; align-items: center; gap: 10px; padding: 7px 0; color: var(--text-3, #9a978d); }
+.report-steps li.done { color: var(--text, #2a2926); }
+.report-steps li.now { color: var(--accent); font-weight: 700; }
+.report-steps i { width: 18px; display: inline-flex; justify-content: center; font-style: normal; }
+.report-steps .spinner { width: 14px; height: 14px; }
 .report-waiting .btn-secondary { margin-top: 6px; }
+
+/* 결제한 감정서: 서버가 만든 PDF·HTML 파일 저장 버튼 */
+.file-buttons { margin: 14px 0 6px; }
+.file-buttons .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.file-buttons .action-buttons button { flex: 1 1 180px; }
+.file-buttons .muted { margin-top: 8px; }
+.btn-link { background: none; border: 0; padding: 4px 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; font-size: 14px; }
+.report-files h2 { margin-bottom: 4px; }

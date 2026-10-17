@@ -34,6 +34,6 @@ export async function POST(request: Request) {
 }
 
 function result(outcome: string) {
-  if (outcome === "sent" || outcome === "already") return Response.json({ status: outcome });
+  if (outcome === "sent" || outcome === "already" || outcome === "none") return Response.json({ status: outcome });
   return Response.json({ status: outcome }, { status: 500 });
 }

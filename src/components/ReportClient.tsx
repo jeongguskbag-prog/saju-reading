@@ -5,7 +5,6 @@ import type { SajuChart } from "@/lib/saju/calc";
 import type { ChapterKey, ReportPartKey as PartKey, PartResult } from "@/lib/report-shared";
 import ReportView, { type PartStates } from "./ReportView";
 import NamingReport from "./NamingReport";
-import ResultActions from "./ResultActions";
 import { josa } from "@/lib/josa";
 import { buildResultHtml } from "@/lib/export";
 
@@ -26,6 +25,58 @@ interface Props {
   deliverAt: string | null;
   /** 화면에 감정서를 펼치기까지 남은 시간(ms). 결제 뒤 몇 분(기본 3분)을 기다린다. 0이면 바로 보여 준다. */
   revealInMs: number;
+}
+
+/** 서버가 만든 감정서 파일(PDF·HTML)을 내려받는 버튼. 만드는 데 몇 초 걸려 그동안 버튼에 표시한다. */
+function FileButtons({ token, ready }: { token: string; ready: boolean }) {
+  const [making, setMaking] = useState<"pdf" | "html" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  async function save(ext: "pdf" | "html") {
+    setError(null);
+    setMaking(ext);
+    try {
+      const res = await fetch(`/r/${token}/${ext}`);
+      if (!res.ok) throw new Error((await res.text().catch(() => "")) || "파일을 만들지 못했습니다.");
+      const name = /filename\*=UTF-8''([^;]+)/.exec(res.headers.get("Content-Disposition") ?? "")?.[1];
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name ? decodeURIComponent(name) : `chungirok-report.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setMaking(null);
+    }
+  }
+  return (
+    <div className="file-buttons no-print">
+      <div className="action-buttons">
+        <button type="button" className="btn-primary" disabled={!ready || making !== null} onClick={() => save("pdf")}>
+          {making === "pdf" ? "PDF 파일을 만드는 중…" : "PDF 파일 저장"}
+        </button>
+        <button type="button" className="btn-secondary" disabled={!ready || making !== null} onClick={() => save("html")}>
+          {making === "html" ? "HTML 문서를 만드는 중…" : "HTML 문서 저장"}
+        </button>
+      </div>
+      <p className="muted">
+        {ready
+          ? "PDF는 책자 모양 그대로 인쇄·보관용, HTML 문서는 인터넷 없이도 브라우저로 여는 보관용입니다. 파일을 만드는 데 10초쯤 걸릴 수 있습니다."
+          : "감정서를 다 쓰면 저장 버튼이 켜집니다."}
+      </p>
+      {error && (
+        <p className="error" role="alert">
+          {error}{" "}
+          <button type="button" className="btn-link" onClick={() => window.print()}>
+            브라우저 인쇄로 PDF 저장
+          </button>
+        </p>
+      )}
+    </div>
+  );
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -169,7 +220,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
         ? `${sendAtText}에 ${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
         : `${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
       : `완성되면 ${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
-    : "이 페이지 주소가 감정서 열쇠입니다. 아래 버튼으로 복사해 두세요. ";
+    : "이 페이지 주소가 감정서 열쇠입니다. 파일을 저장하고, 주소도 복사해 두시면 기간 안에 다시 열 수 있습니다. ";
   const notice = (
     <section className="card report-notice no-print" aria-live="polite">
       {justPaid && <h2>신청이 접수되었습니다</h2>}
@@ -183,31 +234,53 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
         감정서는 {untilText}까지 열 수 있으니 기간 안에 PDF로 저장해 두세요. 링크를 아는 사람은 누구나 볼 수 있으니 공유에
         주의해 주세요. 주문번호 {orderId}
       </p>
-      <button type="button" className="btn-secondary" onClick={copyLink}>
-        {copied ? "링크를 복사했습니다" : "감정서 링크 복사"}
+      <FileButtons token={token} ready={!busy && doneCount === partKeys.length} />
+      <button type="button" className="btn-link" onClick={copyLink}>
+        {copied ? "감정서 주소를 복사했습니다" : "감정서 주소 복사"}
       </button>
     </section>
   );
 
   if (waiting) {
     const sec = Math.ceil(waitMs / 1000);
+    const written = doneCount === partKeys.length;
+    const total = Math.max(revealInMs, 1);
+    const percent = Math.min(99, Math.round(((total - waitMs) / total) * 100));
+    // 실제 진행에 맞춘 단계: 풀이를 다 쓰면 책자 편집 단계로 넘어간다.
+    const steps: { label: string; state: "done" | "now" | "next" }[] = [
+      { label: "명식 계산", state: "done" },
+      { label: `각 부의 풀이 작성 (${doneCount}/${partKeys.length})`, state: written ? "done" : "now" },
+      { label: "책자 편집·마무리", state: written ? "now" : "next" },
+      { label: "감정서 열기", state: "next" },
+    ];
     return (
       <div id="result">
         <section className="card report-waiting no-print" aria-live="polite">
           {justPaid && <p className="eyebrow">신청이 접수되었습니다</p>}
           <h2>{josa(productName, "을", "를")} 작성하고 있습니다</h2>
-          <span className="spinner" aria-hidden />
-          <p className="report-waiting-time">
-            {Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}
-          </p>
           <p>
-            명식을 계산하고 각 부의 풀이를 써서 책자로 엮고 있습니다({doneCount}/{partKeys.length}). 잠시 뒤 이 화면에 감정서가 열립니다.
+            명식 계산부터 각 부의 풀이 작성, 책자 편집까지 차례로 진행되어 <b>약 3분</b> 걸립니다. 잠시만 기다려 주세요.
           </p>
+          <div className="report-waiting-bar" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+            <span style={{ width: `${percent}%` }} />
+          </div>
+          <p className="report-waiting-time">
+            남은 시간 {Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}
+          </p>
+          <ol className="report-steps">
+            {steps.map((st) => (
+              <li key={st.label} className={st.state}>
+                <i aria-hidden>{st.state === "done" ? "✓" : st.state === "now" ? <span className="spinner" /> : "·"}</i>
+                {st.label}
+              </li>
+            ))}
+          </ol>
           <p className="muted">
-            {delivery}이 창을 닫아도 작성은 이어지니, 나중에 같은 링크로 다시 열어 보셔도 됩니다. 주문번호 {orderId}
+            작업이 끝나면 이 화면에 감정서가 열리고, PDF 파일과 HTML 문서로 바로 저장하실 수 있습니다. {sendTo ? delivery : ""}
+            이 창을 닫아도 작성은 이어지니, 아래 버튼으로 이 화면 주소를 복사해 두시면 나중에 다시 열어 보실 수 있습니다. 주문번호 {orderId}
           </p>
           <button type="button" className="btn-secondary" onClick={copyLink}>
-            {copied ? "링크를 복사했습니다" : "감정서 링크 복사"}
+            {copied ? "감정서 주소를 복사했습니다" : "감정서 주소 복사"}
           </button>
         </section>
       </div>
@@ -229,7 +302,10 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
           title={productName}
         />
       )}
-      <ResultActions chart={chart} busy={busy} />
+      <section className="card report-files no-print">
+        <h2>감정서 저장</h2>
+        <FileButtons token={token} ready={!busy && doneCount === partKeys.length} />
+      </section>
     </div>
   );
 }

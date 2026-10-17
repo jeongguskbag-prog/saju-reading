@@ -55,6 +55,21 @@ describe("감정서 파일 발송", () => {
     expect((await getOrder(paid.id))?.deliverAt).toBeUndefined();
   });
 
+  it("받는 곳 없이 주문하면(웹) 예약도 발송도 하지 않는다", async () => {
+    vi.stubEnv("QSTASH_TOKEN", "q");
+    vi.stubEnv("QSTASH_CURRENT_SIGNING_KEY", "a");
+    vi.stubEnv("QSTASH_NEXT_SIGNING_KEY", "b");
+    const order = await createOrder(input, "", "core", now);
+    vi.stubGlobal("fetch", vi.fn(async () => json({ orderId: order.id, status: "DONE", totalAmount: order.amount, approvedAt: now.toISOString() })));
+    const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
+    const publish = vi.fn(async () => json({ messageId: "x" }));
+    vi.stubGlobal("fetch", publish);
+    expect(await scheduleDelivery(paid, "https://x.test", now)).toBeNull();
+    await fillParts(paid.token!);
+    expect(await deliverReport((await getReport(paid.token!, now))!, "https://x.test", fakeFiles)).toBe("none");
+    expect(publish).not.toHaveBeenCalled();
+  });
+
   it("다 쓰기 전에는 보내지 않는다", async () => {
     const paid = await paidCore();
     const report = (await getReport(paid.token!, now))!;
