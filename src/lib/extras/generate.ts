@@ -28,6 +28,12 @@ export async function checkExtra(chart: SajuChart, kind: ExtraKind, request: unk
     return;
   }
   if (kind === "iching") return;
+  if (kind === "ziwei") {
+    if (!chart.localTime) throw new ExtraError("자미두수 명반은 태어난 시각이 있어야 세울 수 있습니다. 시각을 넣고 다시 신청해 주세요.");
+    const { computeZiwei } = await import("./ziwei");
+    computeZiwei(chart, now);
+    return;
+  }
   throw new ExtraError("아직 준비 중인 상품입니다.");
 }
 
@@ -39,6 +45,10 @@ export async function generateExtra(chart: SajuChart, kind: ExtraKind, request: 
   if (kind === "newyear") {
     const { generateNewyear } = await import("./newyear");
     return generateNewyear(chart, request as NewyearRequest);
+  }
+  if (kind === "ziwei") {
+    const { generateZiwei } = await import("./ziwei");
+    return generateZiwei(chart, paidAt);
   }
   if (kind === "iching") {
     const { generateIching } = await import("./iching");

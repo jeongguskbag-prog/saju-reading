@@ -97,6 +97,8 @@ export interface SajuChart {
   locale: Locale;
   /** 사주 계산에 실제로 쓴 시각 설명 */
   timeNote: string | null;
+  /** 시주를 세운 출생지 시각(진태양시 보정 반영). 시각을 모르면 null. 자미두수 명반에 쓴다. */
+  localTime?: { y: number; m: number; d: number; h: number; mi: number } | null;
   pillars: { hour: Pillar | null; day: Pillar; month: Pillar; year: Pillar };
   dayMaster: { stem: Stem; ko: string; element: Element; polarity: "yang" | "yin" };
   zodiac: string;
@@ -355,6 +357,7 @@ export function calculateSaju(input: BirthInput, now: Date = new Date(), interna
     solarDate: `${date.y}-${pad(date.m)}-${pad(date.d)}`,
     lunarDate,
     timeNote,
+    localTime: timeKnown ? (({ y, m, d, h, mi }) => ({ y, m, d, h, mi }))(fieldsOf(localMs)) : null,
     pillars,
     dayMaster: { stem: dayStem, ko: STEM_KO[dayStem], element: dayEl, polarity: STEM_POLARITY[dayStem] },
     zodiac: T.zodiac(BRANCH_ANIMAL[pillars.year.branch]),

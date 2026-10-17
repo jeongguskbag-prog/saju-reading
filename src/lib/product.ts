@@ -93,7 +93,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
     price: 39000,
     parts: ["ziwei"],
     summary: "열두 궁에 별을 배치한 자미두수 명반으로 보는 타고난 성향과 10년 대한",
-    available: false,
+    available: true,
   },
 };
 

@@ -97,6 +97,8 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       extraReq = r.value;
     }
     if (productId === "newyear") extraReq = { year: newyearYear };
+    if (productId === "ziwei" && (input.hour === null || input.hour === undefined))
+      return setError("자미두수 명반은 태어난 시각이 있어야 세울 수 있습니다. 위 입력 칸에서 시각을 넣고 다시 확인해 주세요.");
     if (productId === "iching") {
       const r = toIchingRequest(iching);
       if (!r.ok) return setError(r.error);
@@ -206,6 +208,11 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             </div>
           )}
           {productId === "gunghap" && <GunghapFields value={gunghap} onChange={setGunghap} />}
+          {productId === "ziwei" && (input.hour === null || input.hour === undefined) && (
+            <p className="error" role="alert">
+              자미두수 명반은 태어난 시각이 있어야 세울 수 있습니다. 위 입력 칸에서 태어난 시각을 넣고 다시 확인해 주세요.
+            </p>
+          )}
           {productId === "iching" && <IchingFields value={iching} onChange={setIching} />}
           {productId === "taekil" && <TaekilFields value={taekil} onChange={setTaekil} />}
           {productId === "newyear" && (
