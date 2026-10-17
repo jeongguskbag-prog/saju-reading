@@ -39,9 +39,11 @@ function FileButtons({ token, ready, productName, personName }: { token: string;
   const [making, setMaking] = useState<"pdf" | "html" | null>(null);
   const [error, setError] = useState<string | null>(null);
   // 카카오톡 등 앱 안의 브라우저는 파일 저장을 막는 경우가 많아 바깥 브라우저로 여는 길을 안내한다.
-  const [env, setEnv] = useState<{ inApp: InAppKind; mobile: boolean }>({ inApp: null, mobile: false });
+  const [env, setEnv] = useState<{ inApp: InAppKind; mobile: boolean; ourApp: boolean }>({ inApp: null, mobile: false, ourApp: false });
   useEffect(() => {
-    setEnv({ inApp: inAppBrowser(navigator.userAgent), mobile: isMobile(navigator.userAgent) });
+    // 우리 천기록 앱(AndroidBridge)은 앱이 직접 PDF·HTML 저장을 해 주므로 바깥 브라우저 안내를 띄우지 않는다.
+    const ourApp = Boolean(window.AndroidBridge);
+    setEnv({ inApp: ourApp ? null : inAppBrowser(navigator.userAgent), mobile: isMobile(navigator.userAgent), ourApp });
   }, []);
   const external = env.inApp ? externalOpenUrl(env.inApp, location.href.split("#")[0]) : null;
   /** 받은 내용을 파일로 내려받게 한다 */
@@ -58,6 +60,13 @@ function FileButtons({ token, ready, productName, personName }: { token: string;
 
   async function save(ext: "pdf" | "html") {
     setError(null);
+    // 천기록 앱: 앱이 넣어 준 저장 기능을 쓴다(PDF는 시스템 인쇄 창의 "PDF로 저장", HTML은 파일 저장 창).
+    if (env.ourApp && window.AndroidBridge) {
+      fetch(`/r/${token}/saved`, { method: "POST" }).catch(() => {});
+      if (ext === "pdf") return window.AndroidBridge.print(fileBase);
+      const result = document.getElementById("result");
+      if (result && typeof window.AndroidBridge.saveHtml === "function") return window.AndroidBridge.saveHtml(fileBase, buildResultHtml(result, productName, "ko"));
+    }
     // 휴대폰: 파일 주소로 바로 이동해 내려받는다(앱 안 브라우저·휴대폰 브라우저에서 blob 저장이 안 되는 경우가 있다).
     // 서버가 첨부파일로 돌려주므로 화면은 그대로 남는다.
     if (env.mobile || env.inApp) {

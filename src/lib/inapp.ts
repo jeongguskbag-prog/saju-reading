@@ -2,7 +2,8 @@
 export type InAppKind = "kakao" | "android" | "ios" | null;
 
 export function inAppBrowser(ua: string): InAppKind {
-  const inApp = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|FB_IAB|Line\/|DaumApps|everytimeApp|BAND\/|; wv\)/i.test(ua);
+  // 이름이 알려진 앱만 본다. 일반 WebView(; wv) 표시는 우리 천기록 앱에도 붙으므로 보지 않는다.
+  const inApp = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|FB_IAB|Line\/|DaumApps|everytimeApp|BAND\//i.test(ua);
   if (!inApp) return null;
   if (/KAKAOTALK/i.test(ua)) return "kakao";
   return /Android/i.test(ua) ? "android" : "ios";
