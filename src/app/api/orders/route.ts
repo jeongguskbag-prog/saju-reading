@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       ? body.targets
       : [...(email ? ["email"] : []), ...(Array.isArray(body?.channels) ? body.channels : phone ? [body?.channel === "kakao" ? "kakao" : "sms"] : [])];
     const targets = raw.filter((c): c is "email" | "kakao" | "sms" => c === "email" || c === "kakao" || c === "sms");
-    const order = await createOrder(parsed.value, email, body?.productId, new Date(), naming, phone, targets);
+    const order = await createOrder(parsed.value, email, body?.productId, new Date(), naming, phone, targets, body?.extra);
     return NextResponse.json({
       orderId: order.id,
       orderName: order.orderName,

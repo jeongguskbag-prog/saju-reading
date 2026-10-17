@@ -7,7 +7,7 @@ import { PRODUCT_ORDER, PRODUCTS, type ProductId } from "@/lib/product";
  * 감정서 견본 미리 보기. 가상의 의뢰인으로 실제 감정서와 같은 방식으로 만든 PDF(public/samples)를 보여 준다.
  * 견본 다시 만들기: data/samples/README.md
  */
-const SAMPLES: Record<ProductId, { file: string; pages: number; thumbs: { src: string; label: string }[]; real: string; who: string }> = {
+const SAMPLES: Partial<Record<ProductId, { file: string; pages: number; thumbs: { src: string; label: string }[]; real: string; who: string }>> = {
   full: {
     file: "/samples/full-sample.pdf",
     pages: 15,
@@ -44,7 +44,7 @@ const SAMPLES: Record<ProductId, { file: string; pages: number; thumbs: { src: s
   },
 };
 
-const SHORT: Record<ProductId, string> = { core: "핵심 명식록", full: "종합 감정서", naming: "작명록" };
+const SHORT: Partial<Record<ProductId, string>> = { core: "핵심 명식록", full: "종합 감정서", naming: "작명록" };
 
 /**
  * productId를 주면 그 상품의 견본만(결제 칸에서 고른 상품), 주지 않으면 상품을 바꿔 볼 수 있는 단추와 함께 보여 준다

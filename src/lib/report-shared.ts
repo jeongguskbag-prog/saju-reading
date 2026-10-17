@@ -1,12 +1,13 @@
 // 서버(생성)와 브라우저(표시)가 함께 쓰는 감정서 구조. Anthropic SDK를 import하지 않는다.
 import { z } from "zod";
 import type { NamingComputed, NamingRequest } from "./naming/engine";
+import type { ExtraKind, ExtraResult } from "./extras/kinds";
 
 export const PART_KEYS = ["intro", "part1", "part2", "part3", "part4", "part5"] as const;
 export type PartKey = (typeof PART_KEYS)[number];
 export type ChapterKey = Exclude<PartKey, "intro">;
 /** 결제한 상품의 파트. 사주 감정서 파트에 작명록(naming)을 더한다. 무료 풀이는 PartKey만 쓴다. */
-export type ReportPartKey = PartKey | "naming";
+export type ReportPartKey = PartKey | "naming" | ExtraKind;
 export const CHAPTER_KEYS: ChapterKey[] = ["part1", "part2", "part3", "part4", "part5"];
 
 export interface ChapterMeta {
@@ -156,4 +157,5 @@ export interface NamingResultData {
 export type PartResult =
   | { part: "intro"; intro: Intro }
   | { part: ChapterKey; chapter: Chapter }
-  | { part: "naming"; naming: NamingResultData };
+  | { part: "naming"; naming: NamingResultData }
+  | { part: ExtraKind; extra: ExtraResult };

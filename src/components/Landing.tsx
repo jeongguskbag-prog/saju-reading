@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import ExtraProducts from "./extras/ExtraProducts";
 import { BRAND, PRODUCT_ORDER, PRODUCTS, withProductYears, won } from "@/lib/product";
 import { CHAPTER_KEYS, withYears } from "@/lib/report-shared";
 import { chaptersFor } from "@/lib/report-shared";
@@ -204,6 +205,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
             );
           })}
         </div>
+        {site === "ko" && <ExtraProducts years={years} checkoutOpen={checkoutOpen && sales} />}
         {site === "ko" && (
           <div className="lp-sample">
             <SamplePreview />

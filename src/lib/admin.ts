@@ -1,4 +1,5 @@
 // 관리 화면(주문 내역) 로그인과 주문 표(서버 전용). ADMIN_PASSWORD가 있어야 열린다.
+import { extraRequestSummary } from "./extras/summary";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { REGION_LABEL } from "./admin-labels";
 import { won } from "./product";
@@ -53,6 +54,7 @@ export const ORDER_COLUMNS = [
   "결혼",
   "자녀",
   "작명 신청",
+  "추가 신청",
   "이메일",
   "휴대폰",
   "받을 곳",
@@ -97,6 +99,7 @@ export function orderRow(o: Order, origin: string): OrderRow {
           .filter(Boolean)
           .join(" / ")
       : "",
+    "추가 신청": o.extra ? extraRequestSummary(o.extra.kind, o.extra.request) : "",
     이메일: o.email ?? "",
     휴대폰: o.phone ?? "",
     "받을 곳": (o.notify ?? []).map((t) => ({ email: "이메일", kakao: "카카오톡", sms: "문자" })[t]).join("·"),

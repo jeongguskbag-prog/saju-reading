@@ -5,6 +5,8 @@ import type { SajuChart } from "@/lib/saju/calc";
 import type { ChapterKey, ReportPartKey as PartKey, PartResult } from "@/lib/report-shared";
 import ReportView, { type PartStates } from "./ReportView";
 import NamingReport from "./NamingReport";
+import ExtraReport from "./extras/ExtraReport";
+import { isExtraKind } from "@/lib/extras/kinds";
 import { josa } from "@/lib/josa";
 import { buildResultHtml } from "@/lib/export";
 import ReviewForm, { type MyReview } from "./ReviewForm";
@@ -302,9 +304,12 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
     );
   }
 
+  const extraKind = partKeys.find(isExtraKind);
   return (
     <div id="result">
-      {partKeys.includes("naming") ? (
+      {extraKind ? (
+        <ExtraReport kind={extraKind} chart={chart} parts={parts} onRetry={() => load(extraKind)} notice={notice} title={productName} />
+      ) : partKeys.includes("naming") ? (
         <NamingReport chart={chart} parts={parts} onRetry={() => load("naming")} notice={notice} title={productName} />
       ) : (
         <ReportView
@@ -313,7 +318,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
           parts={parts}
           onRetry={load}
           afterGrade={notice}
-          include={partKeys.filter((p): p is ChapterKey => p !== "intro" && p !== "naming")}
+          include={partKeys.filter((p): p is ChapterKey => p.startsWith("part"))}
           title={productName}
         />
       )}

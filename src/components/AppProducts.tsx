@@ -6,7 +6,7 @@ import { useT } from "./LocaleProvider";
 import type { Messages } from "@/lib/messages";
 
 /** 화면 언어의 상품 이름·소개(한국어는 product.ts). */
-export const productCopy = (t: Messages, id: ProductId) => t.productNames?.[id] ?? { name: PRODUCTS[id].name, summary: PRODUCTS[id].summary };
+export const productCopy = (t: Messages, id: ProductId) => (t.productNames as Partial<Record<ProductId, { name: string; summary: string }>> | null)?.[id] ?? { name: PRODUCTS[id].name, summary: PRODUCTS[id].summary };
 
 /**
  * 앱 전용 화면(한국어)의 감정서 고르기. 웹 랜딩의 상품 카드와 같은 모양이지만 결제 없이 무료로 받는다.

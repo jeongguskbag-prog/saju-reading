@@ -5,6 +5,7 @@ import { deliverReport } from "./delivery";
 import { getReport, getSavedPart, lockPart, savePart, unlockPart, type Report } from "./orders";
 import { generatePart, ReadingError } from "./reading";
 import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
+import { isExtraKind, type ExtraKind } from "./extras/kinds";
 
 export type EnsureResult = { status: "done"; result: PartResult } | { status: "pending" };
 
@@ -18,7 +19,8 @@ export async function ensurePart(report: Report, part: PartKey, origin?: string)
     // 잠금을 잡는 사이 다른 곳에서 막 저장했을 수 있다.
     const again = await getSavedPart(token, part);
     if (again) return { status: "done", result: again };
-    const result = part === "naming" ? await writeNaming(report) : await generatePart(report.chart, part);
+    const result =
+      part === "naming" ? await writeNaming(report) : isExtraKind(part) ? await writeExtra(report, part) : await generatePart(report.chart, part);
     await savePart(token, part, result, report.expiresAt);
     await sendCompletionIfReady(report, origin);
     return { status: "done", result };
@@ -32,6 +34,15 @@ async function writeNaming(report: Report): Promise<PartResult> {
   if (!report.order.naming) throw new ReadingError("작명 신청 내용이 없습니다. 고객센터로 문의해 주세요.", 400);
   const { generateNaming } = await import("./naming/generate");
   return { part: "naming", naming: await generateNaming(report.chart, report.order.naming) };
+}
+
+/** 추가 상품(궁합 등): 주문에 저장된 신청서로 계산하고 문장을 쓴다. */
+async function writeExtra(report: Report, kind: ExtraKind): Promise<PartResult> {
+  const extra = report.order.extra;
+  if (!extra || extra.kind !== kind) throw new ReadingError("신청 내용이 없습니다. 고객센터로 문의해 주세요.", 400);
+  const { generateExtra } = await import("./extras/generate");
+  const paidAt = new Date(report.order.paidAt ?? report.order.createdAt);
+  return { part: kind, extra: await generateExtra(report.chart, kind, extra.request, paidAt) };
 }
 
 /**

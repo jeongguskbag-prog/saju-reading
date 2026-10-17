@@ -11,7 +11,11 @@ export const SALES_OPEN = true;
 /** 결제 후 감정서 링크를 열 수 있는 기간(일). 메일·안내 문구에도 쓰인다. */
 export const REPORT_VALID_DAYS = 30;
 
-export type ProductId = "full" | "core" | "naming";
+import type { ExtraKind } from "./extras/kinds";
+
+/** 사주 감정서(core·full), 작명록(naming), 그리고 추가 상품(궁합·신년 운세·택일·주역 점·자미두수) */
+export type CoreProductId = "full" | "core" | "naming";
+export type ProductId = CoreProductId | ExtraKind;
 
 export interface Product {
   id: ProductId;
@@ -19,7 +23,7 @@ export interface Product {
   /** 결제 금액(원). 서버가 이 금액으로 주문을 만들고 승인 때 다시 대조한다. */
   price: number;
   /** 감정서에 담기는 파트. intro는 발간사. */
-  parts: ("intro" | "part1" | "part2" | "part3" | "part4" | "part5" | "naming")[];
+  parts: ("intro" | "part1" | "part2" | "part3" | "part4" | "part5" | "naming" | ExtraKind)[];
   /** 한 줄 소개. {Y1} {Y2}는 감정 연도. */
   summary: string;
   /** 판매 중인지(false면 "준비 중"으로만 보여 준다) */
@@ -51,12 +55,56 @@ export const PRODUCTS: Record<ProductId, Product> = {
     summary: "사주의 부족한 오행을 보완하는 수리·자원오행 맞춤 작명·개명 추천",
     available: true,
   },
+  gunghap: {
+    id: "gunghap",
+    name: "천기록 연분록(궁합)",
+    price: 39000,
+    parts: ["gunghap"],
+    summary: "두 사람의 명식으로 보는 일간·배우자 자리·오행 보완·대운 동행 궁합 감정서",
+    available: true,
+  },
+  newyear: {
+    id: "newyear",
+    name: "천기록 신년 운세록",
+    price: 29000,
+    parts: ["newyear"],
+    summary: "토정비결 괘와 {Y1}년 세운·열두 달 월운으로 보는 한 해의 흐름",
+    available: false,
+  },
+  taekil: {
+    id: "taekil",
+    name: "천기록 택일록",
+    price: 29000,
+    parts: ["taekil"],
+    summary: "결혼·이사·개업·계약 등 큰일에 맞는 길일을 내 사주와 날의 간지로 골라 드립니다",
+    available: false,
+  },
+  iching: {
+    id: "iching",
+    name: "천기록 주역 점",
+    price: 9900,
+    parts: ["iching"],
+    summary: "한 가지 물음에 대해 시초점 방식으로 괘를 얻고 본괘·변효·지괘로 풀어 드립니다",
+    available: false,
+  },
+  ziwei: {
+    id: "ziwei",
+    name: "천기록 자미두수 명반",
+    price: 39000,
+    parts: ["ziwei"],
+    summary: "열두 궁에 별을 배치한 자미두수 명반으로 보는 타고난 성향과 10년 대한",
+    available: false,
+  },
 };
 
-/** 화면에 보여 줄 순서 */
-export const PRODUCT_ORDER: ProductId[] = ["core", "full", "naming"];
+/** 화면에 보여 줄 순서(사주 감정서 줄) */
+export const PRODUCT_ORDER: CoreProductId[] = ["core", "full", "naming"];
+/** 추가 상품 줄 */
+export const EXTRA_ORDER: ExtraKind[] = ["gunghap", "newyear", "taekil", "iching", "ziwei"];
 export const DEFAULT_PRODUCT: ProductId = "full";
-export const sellableProducts = () => PRODUCT_ORDER.map((id) => PRODUCTS[id]).filter((p) => p.available);
+export const sellableProducts = () => [...PRODUCT_ORDER, ...EXTRA_ORDER].map((id) => PRODUCTS[id]).filter((p) => p.available);
+/** 사주 감정서 줄만(앱·외국어 화면처럼 추가 상품을 아직 열지 않은 곳) */
+export const sellableCoreProducts = () => PRODUCT_ORDER.map((id) => PRODUCTS[id]).filter((p) => p.available);
 
 export const withProductYears = (text: string, years: [number, number]) =>
   text.replace(/\{Y1\}/g, String(years[0])).replace(/\{Y2\}/g, String(years[1]));

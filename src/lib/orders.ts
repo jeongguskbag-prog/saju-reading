@@ -1,10 +1,11 @@
 // 주문 → 결제 승인 → 리포트 토큰 발급(서버 전용).
 import { randomBytes, randomUUID } from "node:crypto";
-import { calculateSaju, type BirthInput, type SajuChart } from "./saju/calc";
+import { calculateSaju, InputError, type BirthInput, type SajuChart } from "./saju/calc";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, SALES_OPEN, sellableProducts, type Product, type ProductId } from "./product";
 import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
 import { getStore, requireStore } from "./store";
 import type { NamingRequest } from "./naming/engine";
+import { isExtraKind, type ExtraKind } from "./extras/kinds";
 import { isKakaoEnabled, isSmsEnabled, normalizePhone, type PhoneChannel } from "./sms";
 export { phoneChannels, type PhoneChannel } from "./sms";
 
@@ -31,6 +32,8 @@ export interface Order {
   token?: string;
   /** 작명록 신청서(작명록 주문만) */
   naming?: NamingRequest;
+  /** 추가 상품 신청서(궁합의 상대 생년월일시 등) */
+  extra?: { kind: ExtraKind; request: unknown };
   /** 감정서 링크를 문자로 받을 휴대폰 번호(숫자만). 있으면 완성 때 문자를 보낸다. */
   phone?: string;
   /** 주문번호·결제 내역을 받을 곳(손님이 고른 곳 모두로 보낸다) */
@@ -116,6 +119,7 @@ export async function createOrder(
   naming?: NamingRequest,
   phone?: string,
   targets: NotifyTarget[] = [...(email ? (["email"] as const) : []), ...(phone ? (["sms"] as const) : [])],
+  extraRequest?: unknown,
 ): Promise<Order> {
   const product = sellableProducts().find((p) => p.id === productId);
   if (!product) throw new OrderError("지금은 신청할 수 없는 상품입니다.");
@@ -144,6 +148,21 @@ export async function createOrder(
       throw error;
     }
   }
+  let extra: Order["extra"];
+  if (isExtraKind(product.id)) {
+    const { parseExtraRequest } = await import("./extras/requests");
+    const parsedExtra = parseExtraRequest(product.id, extraRequest);
+    if (!parsedExtra.ok) throw new OrderError(parsedExtra.error);
+    const { checkExtra, ExtraError } = await import("./extras/generate");
+    try {
+      await checkExtra(chart, product.id, parsedExtra.value, now);
+    } catch (error) {
+      if (error instanceof ExtraError) throw new OrderError(error.message);
+      if (error instanceof InputError) throw new OrderError(`상대 분의 생년월일시를 확인해 주세요. (${error.message})`);
+      throw error;
+    }
+    extra = { kind: product.id, request: parsedExtra.value };
+  }
   const ymd = now.toISOString().slice(0, 10).replace(/-/g, "");
   const order: Order = {
     id: `CGR-${ymd}-${randomBytes(8).toString("hex")}`,
@@ -154,6 +173,7 @@ export async function createOrder(
     amount: product.price,
     orderName: product.name,
     ...(product.parts.includes("naming") && naming ? { naming } : {}),
+    ...(extra ? { extra } : {}),
     notify,
     ...(mobile ? { phone: mobile, channels: picked } : {}),
     status: "pending",

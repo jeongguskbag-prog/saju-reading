@@ -5,6 +5,8 @@ import type { BirthInput } from "@/lib/saju/calc";
 import { SupportBox } from "./SupportLinks";
 import SamplePreview from "./SamplePreview";
 import NamingFields, { emptyNamingForm, toNamingRequest, type NamingForm } from "./NamingFields";
+import GunghapFields, { emptyGunghapForm, toGunghapRequest, type GunghapForm } from "./extras/GunghapFields";
+import { isExtraKind } from "@/lib/extras/kinds";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withProductYears, won, type ProductId } from "@/lib/product";
 
 export interface CheckoutInfo {
@@ -66,6 +68,10 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [naming, setNaming] = useState<NamingForm>(emptyNamingForm);
   const product = PRODUCTS[productId];
   const isNaming = productId === "naming";
+  const [gunghap, setGunghap] = useState<GunghapForm>(() => emptyGunghapForm(input.gender));
+  const isExtra = isExtraKind(productId);
+  const coreProducts = products.filter((p) => !isExtraKind(p.id));
+  const extraProducts = products.filter((p) => isExtraKind(p.id));
 
   async function onBuy(e: React.FormEvent) {
     e.preventDefault();
@@ -75,6 +81,12 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       const r = toNamingRequest(naming);
       if (!r.ok) return setError(r.error);
       namingReq = r.value;
+    }
+    let extraReq: unknown;
+    if (productId === "gunghap") {
+      const r = toGunghapRequest(gunghap);
+      if (!r.ok) return setError(r.error);
+      extraReq = r.value;
     }
     // 작명록은 아기 이름이 아직 없으니 "김○○", 개명은 지금 이름으로 표지에 적는다.
     const reportName = isNaming
@@ -105,6 +117,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
           agree,
           productId,
           ...(isNaming ? { naming: namingReq } : {}),
+          ...(isExtra ? { extra: extraReq ?? {} } : {}),
         }),
       });
       const order = await res.json().catch(() => ({}));
@@ -142,7 +155,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         <form className="form-grid" onSubmit={onBuy} noValidate>
           <fieldset className="plan-pick">
             <legend className="label">감정서 고르기</legend>
-            {products.map((p) => (
+            {coreProducts.map((p) => (
               <label key={p.id} className={`plan-option${productId === p.id ? " on" : ""}`}>
                 <input type="radio" name="product" value={p.id} checked={productId === p.id} onChange={() => setProductId(p.id)} />
                 <span className="plan-name">{p.name}</span>
@@ -150,16 +163,30 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
                 <span className="plan-sum">{withProductYears(p.summary, years)}</span>
               </label>
             ))}
+            {extraProducts.length > 0 && (
+              <>
+                <p className="plan-group">함께 보는 감정서</p>
+                {extraProducts.map((p) => (
+                  <label key={p.id} className={`plan-option${productId === p.id ? " on" : ""}`}>
+                    <input type="radio" name="product" value={p.id} checked={productId === p.id} onChange={() => setProductId(p.id)} />
+                    <span className="plan-name">{p.name}</span>
+                    <span className="plan-price">{won(p.price)}</span>
+                    <span className="plan-sum">{withProductYears(p.summary, years)}</span>
+                  </label>
+                ))}
+              </>
+            )}
           </fieldset>
           <SamplePreview productId={productId} />
           {isNaming ? (
             <NamingFields value={naming} onChange={setNaming} />
           ) : (
             <div className="field">
-              <label htmlFor="buy-name">의뢰인 성함</label>
+              <label htmlFor="buy-name">{productId === "gunghap" ? "의뢰인(본인) 성함" : "의뢰인 성함"}</label>
               <input id="buy-name" type="text" autoComplete="name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="홍길동" />
             </div>
           )}
+          {productId === "gunghap" && <GunghapFields value={gunghap} onChange={setGunghap} />}
           <div className="field">
             <label htmlFor="buy-email">이메일 (선택)</label>
             <input id="buy-email" type="email" inputMode="email" autoComplete="email" value={email} maxLength={100} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />

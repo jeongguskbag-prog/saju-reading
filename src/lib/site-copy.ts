@@ -1,6 +1,6 @@
 // 웹사이트(첫 화면·하단·상담 안내)의 나라별 문구. 한국어는 루트(/), 대만은 /zh-tw, 홍콩은 /zh-hk.
 // 명식·등급·감정서 문구는 messages.ts(번체 zh-Hant)를 그대로 쓰고, 여기에는 사이트에만 있는 문구를 둔다.
-import { BRAND, PRODUCTS, REPORT_VALID_DAYS, type ProductId } from "./product";
+import { BRAND, PRODUCTS, REPORT_VALID_DAYS, type CoreProductId, type ProductId } from "./product";
 import type { Locale, Region } from "./saju/locale";
 
 export type SiteLocale = "ko" | "zh-TW" | "zh-HK";
@@ -221,9 +221,10 @@ const KO = {
     resultNotice: null as null | { title: string; text: string },
   },
   products: Object.fromEntries(Object.values(PRODUCTS).map((p) => [p.id, { name: p.name, summary: p.summary }])) as Record<
-    ProductId,
+    CoreProductId,
     { name: string; summary: string }
-  >,
+  > &
+    Partial<Record<ProductId, { name: string; summary: string }>>,
   support: {
     lead: (hasChat: boolean) =>
       `결제 방법, 생년월일 입력, 감정서 저장하는 법 등 무엇이든 편하게 물어 주세요. ${hasChat ? "카카오톡으로 1:1 상담해 드리며, 그 밖의 문의는 이메일로 받습니다." : "이메일로 문의해 주시면 도와 드립니다."}`,

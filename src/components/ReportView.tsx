@@ -56,7 +56,24 @@ function coverBirth(chart: SajuChart, t: Messages) {
 }
 
 /** PDF 표지(한 쪽 전체). 쪽빛 고서 표지에 이중 테두리, 天機錄 제목, 의뢰인 명식 카드, 낙관 직인. */
-export function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro | null; title?: string }) {
+export function Cover({
+  chart,
+  intro,
+  title,
+  years,
+  tagline,
+  extra,
+}: {
+  chart: SajuChart;
+  intro: Intro | null;
+  title?: string;
+  /** 표지 연도 줄(기본: 감정 두 해). null이면 숨긴다. */
+  years?: string | null;
+  /** 표지 소개 두 줄(기본: 100년 종합사주) */
+  tagline?: [string, string];
+  /** 이름 카드 아래 덧붙일 줄(궁합의 상대 등) */
+  extra?: ReactNode;
+}) {
   const t = useT();
   const [y1, y2] = chart.analysis.reportYears;
   const order = [chart.pillars.hour, chart.pillars.day, chart.pillars.month, chart.pillars.year];
@@ -83,13 +100,11 @@ export function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro 
           </g>
         </svg>
         <p className="cover-tagline">
-          {t.coverTagline[0]}
+          {(tagline ?? t.coverTagline)[0]}
           <br />
-          {t.coverTagline[1]}
+          {(tagline ?? t.coverTagline)[1]}
         </p>
-        <p className="cover-years">
-          {y1} – {y2}
-        </p>
+        {years !== null && <p className="cover-years">{years ?? `${y1} – ${y2}`}</p>}
       </div>
 
       <div className="cover-card">
@@ -104,6 +119,7 @@ export function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro 
             </div>
           ))}
         </div>
+        {extra}
         {intro && <p className="cover-keywords">{intro.coverKeywords.slice(0, 3).join(" · ")}</p>}
         <p className="cover-meta">
           {t.coverBirth} {coverBirth(chart, t)}

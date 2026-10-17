@@ -10,6 +10,7 @@ import { StoreError } from "@/lib/store";
 import { clientIp, takeFreeQuota } from "@/lib/rate-limit";
 import type { Locale } from "@/lib/saju/locale";
 import { parseNamingRequest } from "@/lib/naming/request";
+import { isExtraKind } from "@/lib/extras/kinds";
 import { generateNaming } from "@/lib/naming/generate";
 
 // 파트 하나 생성에 1~2분 걸릴 수 있다.
@@ -49,7 +50,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
   const askedPart = body?.part as ReportPartKey;
   // 작명록(naming)은 결제한 감정서에서만 쓴다(신청서가 주문에 저장되어 있어야 한다).
-  if (typeof body?.token === "string" && (PART_KEYS as readonly string[]).concat("naming").includes(askedPart)) {
+  if (typeof body?.token === "string" && ((PART_KEYS as readonly string[]).concat("naming").includes(askedPart) || isExtraKind(askedPart))) {
     return paidPart(request, body.token, askedPart);
   }
   // 앱(결제 없는 화면)의 작명록: 신청서를 요청에 함께 받아 바로 쓴다.
