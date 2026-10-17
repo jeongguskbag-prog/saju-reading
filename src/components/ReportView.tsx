@@ -1,3 +1,4 @@
+import { lifeLabel } from "@/lib/life";
 import type { ReactNode } from "react";
 import type { SajuChart } from "@/lib/saju/calc";
 import { chaptersFor, CHAPTER_KEYS, withYears, type Chapter, type ChapterKey, type Intro, type PartKey, type ReportPartKey, type PartResult } from "@/lib/report-shared";
@@ -107,6 +108,12 @@ export function Cover({ chart, intro, title }: { chart: SajuChart; intro: Intro 
         <p className="cover-meta">
           {t.coverBirth} {coverBirth(chart, t)}
           <br />
+          {lifeLabel(chart.input.life) && (
+            <>
+              결혼·자녀 {lifeLabel(chart.input.life)}
+              <br />
+            </>
+          )}
           {t.coverIssued(ISSUE_DATE(new Date(), t))}
         </p>
       </div>
@@ -268,6 +275,9 @@ export default function ReportView({ chart, aiEnabled, parts, onRetry, afterGrad
               <span>{meta.label}</span>
               <h2>{withYears(meta.title, years)}</h2>
               <p>{meta.lead}</p>
+              {key === "part3" && aiEnabled && lifeLabel(chart.input.life) && (
+                <p className="part-life">의뢰인께서 알려 주신 상황({lifeLabel(chart.input.life)})에 맞춰 관계 풀이를 썼습니다.</p>
+              )}
             </header>
             {visuals[key]}
             {aiEnabled && (chapter ? <ChapterText chapter={chapter} /> : <Pending state={parts[key]} onRetry={() => onRetry(key)} label={meta.label} />)}

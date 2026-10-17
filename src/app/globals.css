@@ -952,3 +952,5 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .sticky-cta a { display: block; max-width: 520px; margin: 0 auto; text-align: center; padding: 15px; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font-weight: 700; text-decoration: none; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); }
 @media (min-width: 900px) { .sticky-cta { display: none; } }
 @media (max-width: 899px) { .lp:has(.sticky-cta.on) .kakao-float { bottom: calc(84px + env(safe-area-inset-bottom)); transition: bottom 0.25s ease; } }
+
+.part-head .part-life { margin-top: 8px; font-size: 13px; color: var(--accent); }

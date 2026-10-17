@@ -81,3 +81,13 @@ describe("결혼·자녀(선택)", async () => {
     expect("생활상황" in chartForPrompt(calculateSaju(input, now))).toBe(false);
   });
 });
+
+describe("감정서에 적는 결혼·자녀", async () => {
+  const { lifeLabel } = await import("@/lib/life");
+  it("고른 것만 적고, 없으면 적지 않는다", () => {
+    expect(lifeLabel({ marital: "married", children: true })).toBe("기혼 · 자녀 있음");
+    expect(lifeLabel({ children: false })).toBe("자녀 없음");
+    expect(lifeLabel({})).toBeNull();
+    expect(lifeLabel(undefined)).toBeNull();
+  });
+});
