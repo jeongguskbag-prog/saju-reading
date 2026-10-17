@@ -797,3 +797,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .lp-trust-head { margin: 0 0 8px; font-family: var(--display); font-size: 19px; line-height: 1.4; word-break: keep-all; }
 .lp-trust-head b { color: #f2c46d; font-weight: 400; font-size: 24px; margin-right: 2px; }
 .lp-trust-grid li > p:last-child { margin: 0; font-size: 15px; line-height: 1.75; opacity: 0.85; word-break: keep-all; }
+.lp-pledge { margin-top: 18px; border-left: 3px solid #e8a49c; padding: 4px 0 4px 16px; }
+.lp-pledge-title { margin: 0 0 8px; font-family: var(--display); font-size: 19px; color: #f2c46d; }
+.lp-pledge ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.lp-pledge li { font-size: 15px; line-height: 1.7; opacity: 0.9; word-break: keep-all; }

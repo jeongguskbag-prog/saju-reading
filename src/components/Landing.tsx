@@ -95,6 +95,14 @@ export default function Landing({ form, checkoutOpen = false, site = "ko" }: { f
               </li>
             ))}
           </ul>
+          <div className="lp-pledge">
+            <p className="lp-pledge-title">{L.pledgeTitle}</p>
+            <ul>
+              {L.pledge.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
