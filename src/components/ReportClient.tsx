@@ -9,6 +9,7 @@ import ExtraReport from "./extras/ExtraReport";
 import { isExtraKind } from "@/lib/extras/kinds";
 import { josa } from "@/lib/josa";
 import { buildResultHtml } from "@/lib/export";
+import { externalOpenUrl, inAppBrowser, isMobile, type InAppKind } from "@/lib/inapp";
 import ReviewForm, { type MyReview } from "./ReviewForm";
 
 interface Props {
@@ -37,6 +38,12 @@ function FileButtons({ token, ready, productName, personName }: { token: string;
   const fileBase = `천기록_${personName.replace(/[\\/:*?"<>|\s]+/g, "") || "감정서"}_${productName.replace(/^천기록 /, "").replace(/\s+/g, "")}`;
   const [making, setMaking] = useState<"pdf" | "html" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 카카오톡 등 앱 안의 브라우저는 파일 저장을 막는 경우가 많아 바깥 브라우저로 여는 길을 안내한다.
+  const [env, setEnv] = useState<{ inApp: InAppKind; mobile: boolean }>({ inApp: null, mobile: false });
+  useEffect(() => {
+    setEnv({ inApp: inAppBrowser(navigator.userAgent), mobile: isMobile(navigator.userAgent) });
+  }, []);
+  const external = env.inApp ? externalOpenUrl(env.inApp, location.href.split("#")[0]) : null;
   /** 받은 내용을 파일로 내려받게 한다 */
   function download(blob: Blob, name: string) {
     const url = URL.createObjectURL(blob);
@@ -51,6 +58,15 @@ function FileButtons({ token, ready, productName, personName }: { token: string;
 
   async function save(ext: "pdf" | "html") {
     setError(null);
+    // 휴대폰: 파일 주소로 바로 이동해 내려받는다(앱 안 브라우저·휴대폰 브라우저에서 blob 저장이 안 되는 경우가 있다).
+    // 서버가 첨부파일로 돌려주므로 화면은 그대로 남는다.
+    if (env.mobile || env.inApp) {
+      setMaking(ext);
+      fetch(`/r/${token}/saved`, { method: "POST" }).catch(() => {});
+      location.href = `/r/${token}/${ext}?nav=1`;
+      setTimeout(() => setMaking(null), 15_000);
+      return;
+    }
     // HTML 문서는 지금 화면을 그대로 담아 브라우저에서 바로 만든다(서버를 거치지 않아 빠르고 실패하지 않는다).
     if (ext === "html") {
       const result = document.getElementById("result");
@@ -72,6 +88,19 @@ function FileButtons({ token, ready, productName, personName }: { token: string;
   }
   return (
     <div className="file-buttons no-print">
+      {env.inApp && (
+        <div className="inapp-note">
+          <p>
+            <b>지금 앱 안의 브라우저로 보고 계십니다.</b> 카카오톡·네이버·인스타그램 같은 앱 안에서는 파일 저장이 막혀 있을 수 있습니다.
+            {external ? " 아래 버튼으로 크롬·사파리에서 열어 저장해 주세요." : " 오른쪽 위 ··· 메뉴에서 'Safari로 열기'(또는 '다른 브라우저로 열기')를 눌러 저장해 주세요."}
+          </p>
+          {external && (
+            <a className="btn-secondary" href={external}>
+              크롬·사파리에서 열기
+            </a>
+          )}
+        </div>
+      )}
       <div className="action-buttons">
         <button type="button" className="btn-primary" disabled={!ready || making !== null} onClick={() => save("pdf")}>
           {making === "pdf" ? "PDF 파일을 만드는 중…" : "PDF 파일 저장"}

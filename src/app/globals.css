@@ -1064,3 +1064,6 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .basis-note { margin: 20px 0 8px; padding: 14px 16px; border-left: 3px solid var(--accent); background: var(--surface, rgba(0,0,0,.02)); line-height: 1.75; word-break: keep-all; }
 .purchase-basis { margin: -4px 0 14px; font-size: 14px; color: var(--text-2); font-weight: 600; word-break: keep-all; }
 .app-products-sub { font-family: var(--display); font-weight: 400; font-size: 19px; margin: 26px 0 12px; }
+.inapp-note { border: 1px solid #eda100; background: color-mix(in srgb, #eda100 10%, transparent); border-radius: 10px; padding: 12px 14px; margin: 0 0 12px; }
+.inapp-note p { margin: 0 0 8px; font-size: 14px; line-height: 1.65; word-break: keep-all; }
+.inapp-note .btn-secondary { display: inline-block; text-decoration: none; }

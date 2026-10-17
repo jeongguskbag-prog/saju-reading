@@ -4,10 +4,25 @@ import { attachmentHeader, renderReportFiles } from "./render";
 import { originFrom } from "./site";
 import { webRevealMinutes } from "./delivery";
 
-const text = (msg: string, status: number) =>
+const plain = (msg: string, status: number) =>
   new Response(msg, { status, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
 
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** 휴대폰에서 버튼으로 바로 열었을 때(?nav=1)는 글자만 덩그러니 보이지 않게, 돌아가기 버튼이 있는 안내 화면으로 보여 준다. */
+const page = (msg: string, status: number, token: string) =>
+  new Response(
+    `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>천기록</title>
+<style>body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:#f4f1ea;color:#2a2926;margin:0;padding:40px 20px;line-height:1.7}
+.box{max-width:480px;margin:0 auto;background:#fff;border:1px solid #e3e0d8;border-radius:14px;padding:24px}
+a{display:inline-block;margin-top:14px;background:#b0262c;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700}</style></head>
+<body><div class="box"><p>${esc(msg)}</p><a href="/r/${encodeURIComponent(token)}">감정서 화면으로 돌아가기</a></div></body></html>`,
+    { status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } },
+  );
+
 export async function fileResponse(request: Request, token: string, ext: "pdf" | "html"): Promise<Response> {
+  const nav = new URL(request.url).searchParams.get("nav") === "1";
+  const text = (msg: string, status: number) => (nav ? page(msg.replace(" 아래 '브라우저 인쇄로 PDF 저장'을 눌러 주세요.", " 잠시 뒤 다시 시도하시거나, 컴퓨터에서 받아 주세요."), status, token) : plain(msg, status));
   const report = await getReport(token);
   if (!report) return text("감정서를 찾을 수 없습니다.", 404);
   if (report.expired) return text("감정서 열람 기간이 지났습니다.", 410);
