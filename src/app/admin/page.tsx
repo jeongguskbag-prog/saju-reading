@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "관리 — 주문 내역", robots: {
 export default async function AdminPage() {
   if (!isAdminEnabled()) {
     return (
-      <SiteShell>
+      <SiteShell admin>
         <section className="card">
           <h2>관리 화면이 꺼져 있습니다</h2>
           <p className="muted">Vercel 환경 변수에 ADMIN_PASSWORD(8자 이상)를 넣으면 열립니다.</p>
@@ -25,7 +25,7 @@ export default async function AdminPage() {
   }
   if (!checkAdminSession((await cookies()).get(ADMIN_COOKIE)?.value)) {
     return (
-      <SiteShell>
+      <SiteShell admin>
         <AdminLogin />
       </SiteShell>
     );
@@ -36,7 +36,7 @@ export default async function AdminPage() {
   const total = orders.reduce((s, o) => s + o.amount, 0);
   const reviews = await listReviews({ limit: 100, includeHidden: true });
   return (
-    <SiteShell>
+    <SiteShell admin>
       <section className="card admin-orders">
         <h2>결제한 주문 ({rows.length}건, {total.toLocaleString("ko-KR")}원)</h2>
         <p className="muted">최근 200건입니다. 전체는 엑셀(CSV)로 내려받으세요.</p>

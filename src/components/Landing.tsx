@@ -12,6 +12,7 @@ import SamplePreview from "./SamplePreview";
 import BrandSeal from "./BrandSeal";
 import SiteFooter from "./SiteFooter";
 import LangSwitch from "./LangSwitch";
+import OwnerLinks from "./OwnerLinks";
 import ReviewsSection from "./ReviewsSection";
 import TopicCards from "./TopicCards";
 import { Basis, Compare, Excerpt, FlowBand, ForWhom, HowWeRead, PART_QUESTIONS, Receive } from "./LandingStory";
@@ -65,6 +66,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
       <header className="lp-hero">
         <Binding />
         <LangSwitch site={site} />
+        <OwnerLinks mode="home" />
         <div className="lp-hero-inner">
           <div className="lp-slip" aria-hidden>
             {/* 세로쓰기: 글꼴마다 세로 조판 지원이 달라 글자를 한 자씩 쌓는다 */}
