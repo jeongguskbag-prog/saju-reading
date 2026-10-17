@@ -8,6 +8,7 @@ import NamingFields, { emptyNamingForm, toNamingRequest, type NamingForm } from 
 import GunghapFields, { emptyGunghapForm, toGunghapRequest, type GunghapForm } from "./extras/GunghapFields";
 import { isExtraKind } from "@/lib/extras/kinds";
 import { newyearChoices } from "@/lib/extras/requests";
+import IchingFields, { emptyIchingForm, toIchingRequest, type IchingForm } from "./extras/IchingFields";
 import TaekilFields, { emptyTaekilForm, toTaekilRequest, type TaekilForm } from "./extras/TaekilFields";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withProductYears, won, type ProductId } from "@/lib/product";
 
@@ -74,6 +75,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const isExtra = isExtraKind(productId);
   const yearChoices = newyearChoices();
   const [taekil, setTaekil] = useState<TaekilForm>(emptyTaekilForm);
+  const [iching, setIching] = useState<IchingForm>(emptyIchingForm);
   // 10월부터는 내년을 먼저 고른다.
   const [newyearYear, setNewyearYear] = useState(() => (new Date().getMonth() >= 9 ? yearChoices[1] : yearChoices[0]));
   const coreProducts = products.filter((p) => !isExtraKind(p.id));
@@ -95,6 +97,11 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       extraReq = r.value;
     }
     if (productId === "newyear") extraReq = { year: newyearYear };
+    if (productId === "iching") {
+      const r = toIchingRequest(iching);
+      if (!r.ok) return setError(r.error);
+      extraReq = r.value;
+    }
     if (productId === "taekil") {
       const r = toTaekilRequest(taekil);
       if (!r.ok) return setError(r.error);
@@ -199,6 +206,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             </div>
           )}
           {productId === "gunghap" && <GunghapFields value={gunghap} onChange={setGunghap} />}
+          {productId === "iching" && <IchingFields value={iching} onChange={setIching} />}
           {productId === "taekil" && <TaekilFields value={taekil} onChange={setTaekil} />}
           {productId === "newyear" && (
             <div className="field">

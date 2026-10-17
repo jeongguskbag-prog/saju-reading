@@ -1016,3 +1016,19 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .tk-cal tr.ex td { color: var(--text-3); }
 .ny-month-head h3 .tk-rank { color: #fff; font-family: inherit; font-size: 12px; margin: 0 2px 0 0; }
 .tk-fit { color: #13865d; font-weight: 600; }
+.ic-hex-top { display: grid; grid-template-columns: 92px 1fr; gap: 18px; align-items: start; }
+.ic-hex-top h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 24px; }
+.ic-hex-top h3 small { font-family: inherit; font-size: 13px; color: var(--text-3); margin-left: 6px; }
+.ic-role { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--accent); }
+.ic-fig { display: grid; gap: 7px; padding-top: 4px; }
+.ic-line { display: flex; gap: 10px; align-items: center; height: 11px; position: relative; padding-right: 16px; }
+.ic-line i { flex: 1; height: 11px; background: var(--text); border-radius: 2px; }
+.ic-line.moving i { background: var(--accent); }
+.ic-line small { position: absolute; right: 0; font-size: 12px; color: var(--accent); line-height: 1; }
+.ic-text { font-family: var(--display); font-size: 17px; line-height: 1.7; margin: 8px 0 0; }
+.ic-moving { list-style: none; padding: 10px 0 0; margin: 12px 0 0; border-top: 1px solid var(--border); display: grid; gap: 6px; }
+.ic-moving b { color: var(--accent); margin-right: 6px; font-size: 13px; }
+.ic-q { font-family: var(--display); font-size: 20px; margin: 4px 0 0; }
+.ic-focus blockquote { margin: 12px 0 0; padding: 12px 16px; border-left: 3px solid var(--border); font-family: var(--display); font-size: 18px; line-height: 1.7; }
+.ic-focus blockquote.main { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.ic-focus blockquote small { display: block; font-family: var(--sans, inherit); font-size: 12px; color: var(--text-3); }

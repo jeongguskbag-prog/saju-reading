@@ -1,7 +1,7 @@
 // 추가 상품을 계산하고 문장을 쓴다(서버 전용). 상품마다 필요한 엔진만 불러온다.
 import type { SajuChart } from "../saju/calc";
 import type { ExtraKind, ExtraResult } from "./kinds";
-import type { GunghapRequest, NewyearRequest, TaekilRequest } from "./requests";
+import type { GunghapRequest, IchingRequest, NewyearRequest, TaekilRequest } from "./requests";
 
 export class ExtraError extends Error {}
 
@@ -27,6 +27,7 @@ export async function checkExtra(chart: SajuChart, kind: ExtraKind, request: unk
     if (!computeTaekil(chart, r).picks.length) throw new ExtraError("고르신 기간에는 맞는 날이 없습니다. 기간을 넓히거나 주말만 보기를 꺼 주세요.");
     return;
   }
+  if (kind === "iching") return;
   throw new ExtraError("아직 준비 중인 상품입니다.");
 }
 
@@ -38,6 +39,10 @@ export async function generateExtra(chart: SajuChart, kind: ExtraKind, request: 
   if (kind === "newyear") {
     const { generateNewyear } = await import("./newyear");
     return generateNewyear(chart, request as NewyearRequest);
+  }
+  if (kind === "iching") {
+    const { generateIching } = await import("./iching");
+    return generateIching(chart, request as IchingRequest);
   }
   if (kind === "taekil") {
     const { generateTaekil } = await import("./taekil");

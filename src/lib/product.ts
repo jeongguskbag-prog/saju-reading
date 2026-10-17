@@ -85,7 +85,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
     price: 9900,
     parts: ["iching"],
     summary: "한 가지 물음에 대해 시초점 방식으로 괘를 얻고 본괘·변효·지괘로 풀어 드립니다",
-    available: false,
+    available: true,
   },
   ziwei: {
     id: "ziwei",

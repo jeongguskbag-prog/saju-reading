@@ -50,7 +50,17 @@ export function checkTaekilRange(start: string, end: string, now = new Date()): 
   return null;
 }
 
+/** 주역 점 */
+export const ICHING_TOPICS = { general: "전반", love: "애정·인연", work: "일·진로", money: "재물·사업", relation: "사람 관계", move: "이동·변화" } as const;
+export type IchingTopic = keyof typeof ICHING_TOPICS;
+export const ichingRequestSchema = z.object({
+  topic: z.enum(["general", "love", "work", "money", "relation", "move"]),
+  question: z.string().trim().min(5, "물으실 내용을 5자 이상 적어 주세요.").max(200, "물으실 내용은 200자까지 적을 수 있습니다."),
+});
+export type IchingRequest = z.infer<typeof ichingRequestSchema>;
+
 const SCHEMAS: Partial<Record<ExtraKind, z.ZodType>> = {
+  iching: ichingRequestSchema,
   taekil: taekilRequestSchema,
   gunghap: gunghapRequestSchema,
   newyear: newyearRequestSchema,

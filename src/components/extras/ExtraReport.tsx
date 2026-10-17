@@ -8,6 +8,7 @@ import { useT } from "../LocaleProvider";
 import GunghapReport from "./GunghapReport";
 import NewyearReport from "./NewyearReport";
 import TaekilReport from "./TaekilReport";
+import IchingReport from "./IchingReport";
 
 const NUM = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
 
@@ -79,6 +80,7 @@ export default function ExtraReport({
   const state = parts[kind];
   const data: ExtraResult | null = state?.status === "done" && "extra" in state.result ? state.result.extra : null;
   const pending = <Pending state={state} onRetry={onRetry} label={title} />;
+  if (kind === "iching") return <IchingReport chart={chart} data={data as never} pending={pending} notice={notice} title={title} />;
   if (kind === "taekil") return <TaekilReport chart={chart} data={data as never} pending={pending} notice={notice} title={title} />;
   if (kind === "newyear") return <NewyearReport chart={chart} data={data as never} pending={pending} notice={notice} title={title} />;
   if (kind === "gunghap") return <GunghapReport chart={chart} data={data as never} pending={pending} notice={notice} title={title} />;

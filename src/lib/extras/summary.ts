@@ -1,6 +1,6 @@
 // 추가 상품 신청서를 한 줄로(관리 화면·감정서 표지 공용)
 import type { ExtraKind } from "./kinds";
-import { GUNGHAP_RELATIONS, TAEKIL_PURPOSES, type GunghapRequest, type TaekilRequest } from "./requests";
+import { GUNGHAP_RELATIONS, ICHING_TOPICS, TAEKIL_PURPOSES, type GunghapRequest, type TaekilRequest } from "./requests";
 
 const p2 = (n: number) => String(n).padStart(2, "0");
 
@@ -18,6 +18,10 @@ export function extraRequestSummary(kind: ExtraKind, request: unknown): string {
   if (kind === "taekil") {
     const r = request as TaekilRequest;
     return `${TAEKIL_PURPOSES[r.purpose]} · ${r.start}~${r.end}${r.weekendsOnly ? " · 주말만" : ""}`;
+  }
+  if (kind === "iching") {
+    const r = request as { topic: keyof typeof ICHING_TOPICS; question: string };
+    return `${ICHING_TOPICS[r.topic]} · ${r.question}`;
   }
   if (kind === "newyear") return `${(request as { year: number }).year}년`;
   return "";
