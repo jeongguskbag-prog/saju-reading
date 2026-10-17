@@ -4,7 +4,7 @@ import { Solar } from "lunar-javascript";
 import { CONTROLS, ELEMENTS, GENERATES, HIDDEN_STEMS, STEM_ELEMENT, type Element, type TenGod } from "./constants";
 import { branchTenGod, splitGanZhi, tenGod, yearGanZhi } from "./gods";
 import type { DaeunPeriod, Pillar } from "./calc";
-import { engineText, gyeokgukLabel, isZh, zhTables, type Locale } from "./locale";
+import { engineText, foreignTables, gyeokgukLabel, type Locale } from "./locale";
 
 /** 십신을 현대적·심리학적 언어로 옮긴 표현. 화면, PDF, AI 지시문이 함께 쓴다. */
 export const TEN_GOD_MODERN: Record<TenGod, string> = {
@@ -157,7 +157,7 @@ export function analyze(params: {
   locale?: Locale;
 }): Analysis {
   const { pillars, weighted, tenGodCounts, strengthScore, daeun, now, skipMonthly, locale = "ko" } = params;
-  const zh = isZh(locale) ? zhTables(locale) : null;
+  const zh = locale !== "ko" ? foreignTables(locale) : null;
   const dayElement = STEM_ELEMENT[pillars.day.stem];
   const others = [pillars.year, pillars.day, pillars.hour].filter((p): p is Pillar => p !== null);
   const usefulness = determineUsefulness(dayElement, strengthScore, weighted, locale);

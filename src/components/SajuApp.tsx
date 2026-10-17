@@ -224,7 +224,7 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
             <label htmlFor="birth-city">{t.birthCity}</label>
             <select id="birth-city" value={cityIndex} onChange={(e) => setCityIndex(Number(e.target.value))}>
               {CN_CITIES.map((c, i) => (
-                <option key={c.name} value={i}>{c.name}</option>
+                <option key={c.name} value={i}>{locale === "en" ? `${c.en} ${c.name}` : c.name}</option>
               ))}
             </select>
           </div>

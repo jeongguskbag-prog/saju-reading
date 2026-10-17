@@ -5,17 +5,19 @@ import { LocaleProvider } from "./LocaleProvider";
 import { languageAlternates, siteCopy, SITES, type SiteLocale } from "@/lib/site-copy";
 
 /**
- * 해외(대만·홍콩) 웹 첫 화면. 명식·등급은 번체(zh-Hant) 문구로 무료로 보여 주고,
+ * 해외(대만·홍콩·영어) 웹 첫 화면. 명식·등급은 그 나라 문구로 무료로 보여 주고,
  * 감정서 결제는 해외 결제가 붙으면 연다.
  */
 export default function SiteHome({ site }: { site: Exclude<SiteLocale, "ko"> }) {
   const cfg = SITES[site];
   const notice = siteCopy(site).landing.resultNotice;
   return (
-    <div className="zh" lang={cfg.htmlLang}>
+    <div className={cfg.locale === "en" ? "en" : "zh"} lang={cfg.htmlLang}>
       {/* 번체 한자 명조. 한국어 화면의 Song Myung에는 번체 글자가 빠져 있다. */}
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link rel="stylesheet" precedence="default" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" />
+      {cfg.locale !== "en" && (
+        // eslint-disable-next-line @next/next/no-page-custom-font
+        <link rel="stylesheet" precedence="default" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" />
+      )}
       <Landing
         site={site}
         checkoutOpen={false}
@@ -43,7 +45,8 @@ export default function SiteHome({ site }: { site: Exclude<SiteLocale, "ko"> }) 
 export function siteMetadata(site: Exclude<SiteLocale, "ko">): Metadata {
   const t = siteCopy(site);
   const cfg = SITES[site];
-  const og = { url: "/brand/og-zh.png", width: 1200, height: 630, alt: `${t.brand.name} ${t.brand.tagline}` };
+  // 영어판은 번체 글자가 들어간 공유 이미지 대신 기본(한국어) 이미지를 쓴다.
+  const og = { url: cfg.locale === "en" ? "/opengraph-image.png" : "/brand/og-zh.png", width: 1200, height: 630, alt: `${t.brand.name} ${t.brand.tagline}` };
   return {
     title: t.meta.title,
     description: t.meta.description,

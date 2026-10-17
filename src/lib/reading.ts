@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { TEN_GOD_MODERN } from "./saju/analysis";
 import { gradeTiers } from "./saju/grade";
 import { ELEMENT_KO } from "./saju/constants";
-import { ELEMENT_ZH, TEN_GOD_HANS, TEN_GOD_MODERN_HANS, TEN_GOD_MODERN_ZH, TEN_GOD_ZH, type Locale } from "./saju/locale";
+import { ELEMENT_EN, ELEMENT_ZH, TEN_GOD_EN, TEN_GOD_MODERN_EN, TEN_GOD_HANS, TEN_GOD_MODERN_HANS, TEN_GOD_MODERN_ZH, TEN_GOD_ZH, type Locale } from "./saju/locale";
 import type { LuckPillar, Pillar, SajuChart } from "./saju/calc";
 import {
   chaptersFor,
@@ -314,6 +314,80 @@ export function isAppRequest(key: string | null): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+
+// ── 영어 감정서 ──
+const SYSTEM_PROMPT_EN = `You are a refined, experienced Four Pillars (BaZi / Saju) consultant who knows classical ziping theory well and explains it in the language of modern psychology, business and everyday life. You are writing one part of a paid personal report (an A4 booklet).
+
+Principles:
+- Write entirely in clear, warm, natural English. Do not use Korean or Chinese sentences; Chinese characters may appear only inside brackets after a term, e.g. "Direct Wealth (正財)".
+- Base everything only on the [Chart JSON]. Do not invent stems, branches, ten gods, luck pillars, structures or useful elements that are not in the JSON; any value you mention must match the JSON. Use the structure and reference useful element exactly as given.
+- Avoid piling up classical jargon. Prefer the phrases in the [Ten gods in modern terms] table, adding the classical term in brackets when helpful, e.g. "project-based earning power (Indirect Wealth)".
+- Write in an elegant, trustworthy and gentle tone, addressing the reader as "you". Describe tendencies ("you tend to...") rather than certainties.
+- Never use fear-inducing language (ruin from inauspicious stars, early death, major accidents, predicted divorce and so on). Whenever you mention a weakness, pair it with a concrete, practical action plan.
+- For health, give lifestyle suggestions based on five-element balance only; do not predict or diagnose any illness. Give no specific financial advice such as which investments to buy or when.
+- Do not invent specific experiences or events in the client's life.
+- Stay within the given sub-headings so this part does not overlap with the others.
+- The saju type describes the rhythm of a life, not its rank. Never write "grade n", "top n%" or "below average"; describe the type by its name (e.g. "Late Bloomer type") and its strengths.`;
+
+/** 영어 감정서용 명식 데이터. 키와 값을 모두 영어로 바꿔 한국어가 풀이에 섞이지 않게 한다. */
+export function chartForPromptEn(chart: SajuChart) {
+  const { pillars, analysis: a } = chart;
+  const u = a.usefulness;
+  const g = (x: keyof typeof TEN_GOD_EN) => TEN_GOD_EN[x];
+  const pillar = (p: Pillar | null) =>
+    p && {
+      stemBranch: `${p.stem}${p.branch}`,
+      heavenlyStem: { char: p.stem, element: ELEMENT_EN[p.stemElement], tenGod: p.stemTenGod ? g(p.stemTenGod) : "Day Master (self)" },
+      earthlyBranch: { char: p.branch, element: ELEMENT_EN[p.branchElement], tenGod: g(p.branchTenGod) },
+      hiddenStems: p.hiddenStems.map((h) => `${h.stem} (${g(h.tenGod)})`).join(", "),
+    };
+  const luckEn = (l: LuckPillar) => `${l.stem}${l.branch} stem ${g(l.stemTenGod)} / branch ${g(l.branchTenGod)}`;
+  const mark = { 좋음: "favourable", 보통: "neutral", 주의: "take care" } as const;
+  const tier = tierOf(chart, "en");
+  return {
+    gender: chart.input.gender === "male" ? "male" : "female",
+    birthYear: Number(chart.solarDate.slice(0, 4)),
+    birthTime: pillars.hour ? "known" : "unknown (no hour pillar)",
+    chart: { yearPillar: pillar(pillars.year), monthPillar: pillar(pillars.month), dayPillar: pillar(pillars.day), hourPillar: pillar(pillars.hour) },
+    dayMaster: `${chart.dayMaster.stem} ${chart.dayMaster.polarity === "yang" ? "Yang" : "Yin"} ${ELEMENT_EN[chart.dayMaster.element]}`,
+    elementCounts: Object.fromEntries(Object.entries(chart.elements.counts).map(([k, v]) => [ELEMENT_EN[k as keyof typeof ELEMENT_EN], v])),
+    tenGodCounts: Object.fromEntries(Object.entries(chart.tenGodCounts).map(([k, v]) => [g(k as keyof typeof TEN_GOD_EN), v])),
+    dayMasterStrength: `${chart.strength.label} (${chart.strength.score}/100, reference value)`,
+    structure: `${a.gyeokguk.label} (${a.gyeokguk.basis})`,
+    usefulElement: `${ELEMENT_EN[u.yongsin]} / favourable ${ELEMENT_EN[u.huisin]} / unfavourable ${ELEMENT_EN[u.gisin]} (${u.method})`,
+    luckPillars: {
+      direction: chart.daeun.forward ? "forward" : "backward",
+      list: chart.daeun.periods.map(
+        (p, i) => `from age ${p.startAge} (${p.startYear}-${p.endYear}) ${luckEn(p)} · fit with useful element ${a.daeunScores[i]?.score ?? "-"}/100`,
+      ),
+      current: chart.daeun.current ? luckEn(chart.daeun.current) : "luck pillars have not started yet",
+    },
+    annualLuck: a.yearScores.map((y) => `${y.year} ${y.ganzhi} · fit ${y.score}/100`),
+    monthlyFlow: a.monthly.map((m) => `${m.year} from ${m.startDate.slice(5)} ${m.stem}${m.branch} (${g(m.stemTenGod)} / ${g(m.branchTenGod)}) ${mark[m.mark]}`),
+    sajuType: `${tier.type} — ${tier.name} (${chart.grade.topPercent <= 15 ? `top ${chart.grade.topPercent}%, ` : ""}score ${chart.grade.score}/100) · peak luck ${chart.grade.peak ? `ages ${chart.grade.peak.startAge}-${chart.grade.peak.endAge}` : "-"} · noble helpers ${chart.grade.nobles.filter((n) => n.has).map((n) => (n.name === "천을귀인" ? "Heavenly Noble (天乙貴人)" : "Literary Star (文昌貴人)")).join(", ") || "none"}`,
+    luckyItems: { element: ELEMENT_EN[a.lucky.element], colours: a.lucky.colors, numbers: a.lucky.numbers, direction: a.lucky.direction, habits: a.lucky.habits },
+  };
+}
+
+const TEN_GOD_TABLE_EN = (Object.keys(TEN_GOD_MODERN_EN) as (keyof typeof TEN_GOD_EN)[])
+  .map((g) => `- ${TEN_GOD_EN[g]}: ${TEN_GOD_MODERN_EN[g]}`)
+  .join("\n");
+
+function partInstructionEn(part: PartKey, years: [number, number]): string {
+  if (part === "intro") {
+    return `Write the opening of the report.
+- coverKeywords: three core keywords for the cover that capture this person (e.g. "Warm leader", "Deep intuition"), each 1-3 words.
+- summary: one or two sentences summing up the whole chart.
+- preface: a preface to the client in 3-4 paragraphs (about 300-450 words in total). Explain how to read and use this report and give the broad impression of the chart, without previewing the details of each part.`;
+  }
+  const meta = chaptersFor("en")[part];
+  const headings = meta.sections.map((s, i) => `${i + 1}. ${withYears(s, years)}`).join("\n");
+  return `Write ${meta.label}: "${withYears(meta.title, years)}". (${meta.lead})
+Use the sub-headings below as the headings, in this order and with exactly this wording, and write 3-5 paragraphs (about 80-150 words each) under each. The whole part should be about 1,800-2,600 words.
+${headings}
+actionPlan: 3-5 practical action points that fit this part.`;
+}
+
 const ERRORS = {
   ko: {
     noKey: "ANTHROPIC_API_KEY가 설정되지 않았습니다.",
@@ -348,6 +422,17 @@ const ERRORS = {
     parse: "无法解析 AI 的回应。",
     shape: "AI 回应的格式不正确。",
   },
+  en: {
+    noKey: "ANTHROPIC_API_KEY is not set.",
+    auth: "The API key is not valid.",
+    rate: "There are many requests right now. Please try again shortly.",
+    api: (s: string) => `AI request error (${s}).`,
+    network: "network",
+    refusal: "The AI could not write this part.",
+    maxTokens: "The reading was too long and got cut off. Please try again.",
+    parse: "Could not read the AI response.",
+    shape: "The AI response was not in the expected format.",
+  },
 } satisfies Record<Locale, unknown>;
 
 export async function generatePart(chart: SajuChart, part: PartKey): Promise<PartResult> {
@@ -366,6 +451,14 @@ ${TEN_GOD_TABLE_ZH}
 
 【命盤 JSON】
 ${JSON.stringify(chartForPromptZh(chart), null, 2)}`
+      : locale === "en"
+        ? `${partInstructionEn(part, years)}
+
+[Ten gods in modern terms]
+${TEN_GOD_TABLE_EN}
+
+[Chart JSON]
+${JSON.stringify(chartForPromptEn(chart), null, 2)}`
       : locale === "zh-Hans"
         ? `${partInstructionHans(part, years)}
 
@@ -395,7 +488,8 @@ ${JSON.stringify(chartForPrompt(chart), null, 2)}`;
         effort: "medium",
         format: { type: "json_schema", schema: part === "intro" ? introJsonSchema : chapterJsonSchema },
       },
-      system: locale === "zh-Hant" ? SYSTEM_PROMPT_ZH : locale === "zh-Hans" ? SYSTEM_PROMPT_HANS : SYSTEM_PROMPT,
+      system:
+        locale === "zh-Hant" ? SYSTEM_PROMPT_ZH : locale === "zh-Hans" ? SYSTEM_PROMPT_HANS : locale === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT,
       messages: [{ role: "user", content: userContent }],
     });
   } catch (error) {

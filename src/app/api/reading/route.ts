@@ -39,12 +39,19 @@ const ROUTE_ERRORS = {
     store: "无法连接存储服务，请稍后再试。",
     unknown: "生成解读时出错。",
   },
+  en: {
+    noAi: "AI readings are not set up.",
+    badPart: "The requested chapter is not valid.",
+    paywall: "This reading is available in the app.",
+    store: "Could not reach the report storage. Please try again shortly.",
+    unknown: "Something went wrong while writing the reading.",
+  },
 } satisfies Record<Locale, unknown>;
 
 export async function POST(request: Request): Promise<NextResponse> {
   const body = await request.json().catch(() => null);
   const asked = body?.locale ?? body?.input?.locale;
-  const locale: Locale = asked === "zh-Hant" || asked === "zh-Hans" ? asked : "ko";
+  const locale: Locale = asked === "zh-Hant" || asked === "zh-Hans" || asked === "en" ? asked : "ko";
   const E = ROUTE_ERRORS[locale];
   if (!isAiEnabled()) {
     return NextResponse.json({ error: E.noAi }, { status: 503 });

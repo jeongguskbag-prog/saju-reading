@@ -5,8 +5,8 @@ const YEAR = 60 * 60 * 24 * 365;
 
 /**
  * 1) 언어 선택 링크(?lang=…)를 누르면 그 언어를 쿠키에 기억하고 깨끗한 주소로 보낸다.
- * 2) 첫 화면(/)에 처음 온 손님은 브라우저·기기 언어를 보고 대만·홍콩 화면으로 보낸다(고른 언어가 있으면 그것을 따른다).
- * 3) 대만·홍콩 주소는 화면 언어를 요청 머리글(x-site-locale)에 적어, 최상위 레이아웃이 <html lang>을 맞추게 한다.
+ * 2) 첫 화면(/)에 처음 온 손님은 브라우저·기기 언어를 보고 대만·홍콩·영어 화면으로 보낸다(고른 언어가 있으면 그것을 따른다).
+ * 3) 대만·홍콩·영어 주소는 화면 언어를 요청 머리글(x-site-locale)에 적어, 최상위 레이아웃이 <html lang>을 맞추게 한다.
  */
 export function proxy(request: NextRequest) {
   const url = request.nextUrl;
@@ -39,5 +39,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/zh-tw", "/zh-tw/:path*", "/zh-hk", "/zh-hk/:path*"],
+  matcher: ["/", "/zh-tw", "/zh-tw/:path*", "/zh-hk", "/zh-hk/:path*", "/en", "/en/:path*"],
 };

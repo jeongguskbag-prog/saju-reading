@@ -4,27 +4,29 @@ import { useEffect } from "react";
 import type { Locale } from "@/lib/saju/locale";
 
 /** 앱 화면의 언어별 주소. 앱(APK)은 한국어 주소(/app)로 시작한다. */
-const APP_PATHS: Record<Locale, string> = { ko: "/app", "zh-Hant": "/app/zh", "zh-Hans": "/app/zh-hans" };
+const APP_PATHS: Record<Locale, string> = { ko: "/app", "zh-Hant": "/app/zh", "zh-Hans": "/app/zh-hans", en: "/app/en" };
 const OPTIONS: { locale: Locale; label: string; sub: string }[] = [
   { locale: "ko", label: "한국어", sub: "한국" },
   { locale: "zh-Hant", label: "繁體中文", sub: "台灣・香港" },
   { locale: "zh-Hans", label: "简体中文", sub: "中国大陆" },
+  { locale: "en", label: "English", sub: "Global" },
 ];
 const STORAGE_KEY = "saju-app-locale";
 
 function saved(): Locale | null {
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    return v === "ko" || v === "zh-Hant" || v === "zh-Hans" ? v : null;
+    return v === "ko" || v === "zh-Hant" || v === "zh-Hans" || v === "en" ? v : null;
   } catch {
     return null; // 저장소를 못 쓰는 환경(비공개 창 등)
   }
 }
 
-/** 휴대폰 언어에 맞는 앱 언어. 중국어가 아니면 null. */
+/** 휴대폰 언어에 맞는 앱 언어. 한국어면 null. 중국어·한국어가 아닌 언어는 영어로 연다. */
 function deviceLocale(): Locale | null {
   const lang = (navigator.languages?.[0] ?? navigator.language ?? "").toLowerCase();
-  if (!lang.startsWith("zh")) return null;
+  if (!lang || lang.startsWith("ko")) return null;
+  if (!lang.startsWith("zh")) return "en";
   return /hant|tw|hk|mo/.test(lang) ? "zh-Hant" : "zh-Hans";
 }
 

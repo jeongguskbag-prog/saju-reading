@@ -131,7 +131,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
                   <b>{(tiers.find((x) => x.level === tier.level) ?? tier).type}</b>
                   <p>
                     {(tiers.find((x) => x.level === tier.level) ?? tier).name}
-                    {cfg.locale === "ko" ? ". " : "。"}
+                    {cfg.locale === "zh-Hant" ? "。" : ". "}
                     {(tiers.find((x) => x.level === tier.level) ?? tier).desc}
                   </p>
                 </div>

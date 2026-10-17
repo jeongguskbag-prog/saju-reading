@@ -6,7 +6,7 @@ import BrandSeal from "./BrandSeal";
 export default function AppShell({ children, locale = "ko" }: { children: ReactNode; locale?: Locale }) {
   const t = messages(locale);
   return (
-    <main className={`container${locale === "zh-Hant" ? " zh" : locale === "zh-Hans" ? " zh-hans" : ""}`} lang={t.htmlLang}>
+    <main className={`container${locale === "zh-Hant" ? " zh" : locale === "zh-Hans" ? " zh-hans" : locale === "en" ? " en" : ""}`} lang={t.htmlLang}>
       <header className="site app-head">
         {/* 오른쪽 위 바로가기: 천기록 홈페이지와 관리자 화면. 같은 사이트라 앱 안에서 열리고, 뒤로 가기로 돌아온다. */}
         <nav className="app-links no-print" aria-label={t.shellLinksAria}>

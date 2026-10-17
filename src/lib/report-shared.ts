@@ -119,8 +119,42 @@ export const CHAPTERS_HANS: Record<ChapterKey, ChapterMeta> = {
   },
 };
 
-export const chaptersFor = (locale: "ko" | "zh-Hant" | "zh-Hans" = "ko") =>
-  locale === "zh-Hant" ? CHAPTERS_ZH : locale === "zh-Hans" ? CHAPTERS_HANS : CHAPTERS;
+/** 영어 앱의 감정서 구조. 소제목 순서는 한국어판과 같다. */
+export const CHAPTERS_EN: Record<ChapterKey, ChapterMeta> = {
+  part1: {
+    label: "Part 1",
+    title: "Your Heaven-given Nature",
+    lead: "Your inborn temperament and capacity, and the balance of the five elements.",
+    sections: ["Your nature as seen through the Day Master", "Structure and useful element: the axis of your life", "Five-element balance and how to strengthen it"],
+  },
+  part2: {
+    label: "Part 2",
+    title: "Wealth and Career",
+    lead: "How money comes to you and stays, and the kind of work that suits you.",
+    sections: ["Cash-flow pattern and your capacity for wealth", "Employee or entrepreneur: which suits you", "Managing risk and practices for wealth"],
+  },
+  part3: {
+    label: "Part 3",
+    title: "Love and Relationships",
+    lead: "The way you love and the texture of your relationships.",
+    sections: ["How you love, and the spouse palace (day branch)", "The kind of people who help you", "Practical ways to improve your relationships"],
+  },
+  part4: {
+    label: "Part 4",
+    title: "The Ten-year Luck Pillars",
+    lead: "Your life in ten-year spans: the broad currents and the turning points.",
+    sections: ["The luck pillars at a glance", "The task of your current luck pillar", "Your peak years and a guide to the turning points"],
+  },
+  part5: {
+    label: "Part 5",
+    title: "{Y1}-{Y2} Annual Luck and Practices",
+    lead: "The coming two years, and practices for everyday life.",
+    sections: ["The year {Y1}", "The year {Y2}", "Using the monthly flow", "Points for looking after your health", "Using your lucky colours, numbers and directions"],
+  },
+};
+
+export const chaptersFor = (locale: "ko" | "zh-Hant" | "zh-Hans" | "en" = "ko") =>
+  locale === "zh-Hant" ? CHAPTERS_ZH : locale === "zh-Hans" ? CHAPTERS_HANS : locale === "en" ? CHAPTERS_EN : CHAPTERS;
 
 export const withYears = (text: string, years: [number, number]) =>
   text.replace(/\{Y1\}/g, String(years[0])).replace(/\{Y2\}/g, String(years[1]));

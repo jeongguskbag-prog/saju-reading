@@ -18,10 +18,12 @@ describe("사이트 언어", () => {
     expect(siteFromPath("/zh-tw")).toBe("zh-TW");
     expect(siteFromPath("/zh-hk/")).toBe("zh-HK");
     expect(siteFromPath("/zh-twx")).toBe("ko");
-    expect(languageAlternates()).toMatchObject({ "ko-KR": "/", "zh-TW": "/zh-tw", "zh-HK": "/zh-hk", "x-default": "/" });
+    expect(siteFromPath("/en")).toBe("en");
+    expect(siteFromPath("/enx")).toBe("ko");
+    expect(languageAlternates()).toMatchObject({ "ko-KR": "/", "zh-TW": "/zh-tw", "zh-HK": "/zh-hk", en: "/en", "x-default": "/" });
   });
 
-  for (const site of ["zh-TW", "zh-HK"] as const) {
+  for (const site of ["zh-TW", "zh-HK", "en"] as const) {
     it(`${site} 문구에 한국어가 섞이지 않는다`, () => {
       expect(strings(siteCopy(site)).filter((s) => HANGUL.test(s))).toEqual([]);
     });
@@ -33,6 +35,10 @@ describe("사이트 언어", () => {
     expect(hk.landing.faq.some((f) => f.q.includes("在香港以外出生"))).toBe(true);
     expect(hk.meta.description).toContain("香港時區");
     expect(siteCopy("zh-TW").meta.description).toContain("台灣時區");
+  });
+
+  it("영어판에는 한자 문장이 섞이지 않는다", () => {
+    expect(strings(siteCopy("en")).filter((s) => /[\u3400-\u9FFF]/.test(s))).toEqual([]);
   });
 });
 

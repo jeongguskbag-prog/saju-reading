@@ -1,12 +1,14 @@
-// 언어(ko, zh-Hant 번체, zh-Hans 간체)와 출생 지역(KR, TW, HK, CN). 엔진 내부 값(십신·격국 이름 등)은 한국어 키를 그대로 쓰고,
+// 언어(ko, zh-Hant 번체, zh-Hans 간체, en 영어)와 출생 지역(KR, TW, HK, CN). 엔진 내부 값(십신·격국 이름 등)은 한국어 키를 그대로 쓰고,
 // 화면과 감정서에 나가는 문장만 언어별로 만든다.
 import type { Element, TenGod } from "./constants";
 
-export type Locale = "ko" | "zh-Hant" | "zh-Hans";
-export type ZhLocale = Exclude<Locale, "ko">;
+export type Locale = "ko" | "zh-Hant" | "zh-Hans" | "en";
+export type ZhLocale = "zh-Hant" | "zh-Hans";
+/** 한국어가 아닌 언어(엔진 문장을 표로 바꿔 쓰는 언어) */
+export type ForeignLocale = Exclude<Locale, "ko">;
 export type Region = "KR" | "TW" | "HK" | "CN";
 
-export const LOCALES: Locale[] = ["ko", "zh-Hant", "zh-Hans"];
+export const LOCALES: Locale[] = ["ko", "zh-Hant", "zh-Hans", "en"];
 export const REGIONS: Region[] = ["KR", "TW", "HK", "CN"];
 
 export const isZh = (locale: Locale | undefined): locale is ZhLocale => locale === "zh-Hant" || locale === "zh-Hans";
@@ -26,11 +28,17 @@ export const TEN_GOD_ZH: Record<TenGod, string> = {
 
 export const ELEMENT_ZH: Record<Element, string> = { wood: "木", fire: "火", earth: "土", metal: "金", water: "水" };
 
-export const tenGodName = (g: TenGod, locale: Locale) => (isZh(locale) ? zhTables(locale).tenGod[g] : g);
+export const tenGodName = (g: TenGod, locale: Locale) => (locale === "ko" ? g : foreignTables(locale).tenGod[g]);
 
 /** 격국 이름(내부 키는 한국어 "정관격", "건록격" 등)을 언어에 맞게. */
 export function gyeokgukLabel(name: string, locale: Locale): string {
-  if (!isZh(locale)) return name;
+  if (locale === "ko") return name;
+  if (locale === "en") {
+    if (name === "건록격") return "Prosperous Root structure (建祿格)";
+    if (name === "양인격") return "Yang Blade structure (羊刃格)";
+    const g = name.replace(/격$/, "") as TenGod;
+    return `${TEN_GOD_EN[g] ?? g} structure (${TEN_GOD_ZH[g] ?? g}格)`;
+  }
   if (name === "건록격") return locale === "zh-Hans" ? "建禄格" : "建祿格";
   if (name === "양인격") return "羊刃格";
   const god = name.replace(/격$/, "") as TenGod;
@@ -101,12 +109,52 @@ export const ZODIAC_HANS: Record<string, string> = {
 
 const STRENGTH_HANS: Record<string, string> = { 극신약: "极身弱", 신약: "身弱", 중화: "中和", 신강: "身强", 극신강: "极身强" };
 
-/** 중국어 표기 표(번체·간체). */
-export function zhTables(locale: ZhLocale) {
+/** 영어 표기. 십신은 영어권 명리서에서 흔히 쓰는 이름. */
+export const TEN_GOD_EN: Record<TenGod, string> = {
+  비견: "Friend", 겁재: "Rob Wealth", 식신: "Eating God", 상관: "Hurting Officer", 편재: "Indirect Wealth",
+  정재: "Direct Wealth", 편관: "Seven Killings", 정관: "Direct Officer", 편인: "Indirect Resource", 정인: "Direct Resource",
+};
+
+export const ELEMENT_EN: Record<Element, string> = { wood: "Wood", fire: "Fire", earth: "Earth", metal: "Metal", water: "Water" };
+
+export const TEN_GOD_MODERN_EN: Record<TenGod, string> = {
+  비견: "Independence and self-direction",
+  겁재: "Competitive drive and strong momentum",
+  식신: "Expertise and steady productivity",
+  상관: "Creative expression and a gift for personal branding",
+  편재: "Project-based earning power and an eye for investment",
+  정재: "Steady asset management and diligent saving",
+  편관: "Crisis response and breakthrough leadership",
+  정관: "Principles, responsibility and fitting into organisations",
+  편인: "Specialist planning and unusual intuition",
+  정인: "Learning, receptiveness and the ability to earn trust",
+};
+
+export const LUCKY_BY_ELEMENT_EN: Record<Element, { colors: string; numbers: string; direction: string; habits: string }> = {
+  wood: { colors: "Green, teal", numbers: "3, 8", direction: "East", habits: "Morning walks, tending plants, starting something new to learn" },
+  fire: { colors: "Red, orange, purple", numbers: "2, 7", direction: "South", habits: "Getting sunlight, meeting people, presenting and expressing yourself" },
+  earth: { colors: "Yellow, ochre, beige", numbers: "5, 10", direction: "Centre (the middle of your home or office)", habits: "Regular meals, organising your schedule, a saving habit" },
+  metal: { colors: "White, silver, gold", numbers: "4, 9", direction: "West", habits: "Tidying up, breathing exercises, setting clear rules for yourself" },
+  water: { colors: "Black, navy", numbers: "1, 6", direction: "North", habits: "Enough sleep, reading and meditation, drinking water often" },
+};
+
+export const ZODIAC_EN: Record<string, string> = {
+  쥐: "Rat", 소: "Ox", 호랑이: "Tiger", 토끼: "Rabbit", 용: "Dragon", 뱀: "Snake",
+  말: "Horse", 양: "Goat", 원숭이: "Monkey", 닭: "Rooster", 개: "Dog", 돼지: "Pig",
+};
+
+const STRENGTH_EN: Record<string, string> = { 극신약: "Very weak", 신약: "Weak", 중화: "Balanced", 신강: "Strong", 극신강: "Very strong" };
+
+/** 한국어가 아닌 언어의 표기 표(번체·간체·영어). */
+export function foreignTables(locale: ForeignLocale) {
+  if (locale === "en") return { tenGod: TEN_GOD_EN, modern: TEN_GOD_MODERN_EN, lucky: LUCKY_BY_ELEMENT_EN, zodiac: ZODIAC_EN, strength: STRENGTH_EN };
   return locale === "zh-Hans"
     ? { tenGod: TEN_GOD_HANS, modern: TEN_GOD_MODERN_HANS, lucky: LUCKY_BY_ELEMENT_HANS, zodiac: ZODIAC_HANS, strength: STRENGTH_HANS }
     : { tenGod: TEN_GOD_ZH, modern: TEN_GOD_MODERN_ZH, lucky: LUCKY_BY_ELEMENT_ZH, zodiac: ZODIAC_ZH, strength: STRENGTH_ZH };
 }
+
+/** 중국어 표기 표(번체·간체). */
+export const zhTables = (locale: ZhLocale) => foreignTables(locale);
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -253,7 +301,50 @@ const ZH_HANS: EngineText = {
   inputError: "请确认输入内容。",
 };
 
-export const engineText = (locale: Locale = "ko"): EngineText => (locale === "zh-Hant" ? ZH : locale === "zh-Hans" ? ZH_HANS : KO);
+const REGION_EN: Record<Region, string> = { KR: "Korea", TW: "Taiwan", HK: "Hong Kong", CN: "mainland China" };
+
+const EN: EngineText = {
+  yearRange: "Please enter a year between 1900 and 2100.",
+  badSolarDate: "That date does not exist in the solar calendar.",
+  noLeapMonth: (y, m) => `The lunar year ${y} has no leap month ${m}.`,
+  badLunarDate: "That date does not exist in the lunar calendar.",
+  badHour: "Please enter an hour between 0 and 23.",
+  badMinute: "Please enter minutes between 0 and 59.",
+  futureDate: "The date of birth is after today. Please check the date.",
+  offsetNote: (region, offset) => {
+    const std = REGION_INFO[region].standardOffset;
+    if (offset === std) return null;
+    return offset === std + 60
+      ? `Daylight saving time in force at birth was taken into account (${utcLabel(offset)}).`
+      : `The local standard time in force at birth in ${REGION_EN[region]} was used (${utcLabel(offset)}).`;
+  },
+  timeNoteCorrected: (f, lon) => `True solar time applied: ${f.y}-${pad(f.m)}-${pad(f.d)} ${pad(f.h)}:${pad(f.mi)} (longitude ${lon}° E)`,
+  timeNoteClock: (offset, h, mi) => `Standard time (${utcLabel(offset)}): ${pad(h)}:${pad(mi)}`,
+  noHour: "The birth time is unknown, so the chart was read from six characters without the hour pillar.",
+  jieBoundary: "The birth date is close to a solar-term change, so the month (or year) pillar may differ depending on the exact birth time.",
+  lunarLibrary: (region) =>
+    region === "KR"
+      ? "Lunar dates are converted with the Chinese lunar calendar; rarely, the Korean lunar calendar differs by one day."
+      : "Lunar dates are converted with the Chinese lunar calendar.",
+  lunarDate: (y, m, d, leap) => `${y}, ${leap ? "leap " : ""}month ${m}, day ${d}`,
+  zodiac: (a) => ZODIAC_EN[a] ?? a,
+  strength: (l) => STRENGTH_EN[l] ?? l,
+  gyeokgukBasis: (mb, base, revealed) =>
+    revealed ? `The hidden stem ${base} of the month branch ${mb} appears among the heavenly stems` : `Based on ${base}, the main qi of the month branch ${mb}`,
+  usefulnessMethod: (kind) =>
+    `Support-and-restrain and balance method: ${
+      kind === "weak"
+        ? "the Day Master is weak, so the scarcer of the elements that support it (Resource, Friend)"
+        : kind === "strong"
+          ? "the Day Master is strong, so the scarcer of the elements that drain it (Output, Wealth, Officer)"
+          : "the chart is close to balanced, so the element it lacks most"
+    }`,
+  rarityLabel: (gz, gk, y) => `${gz} day pillar · ${gyeokgukLabel(gk, "en")} · useful element ${ELEMENT_EN[y]}`,
+  inputError: "Please check what you entered.",
+};
+
+export const engineText = (locale: Locale = "ko"): EngineText =>
+  locale === "zh-Hant" ? ZH : locale === "zh-Hans" ? ZH_HANS : locale === "en" ? EN : KO;
 
 /**
  * 지역 시간대의 그 시각 UTC 오프셋(분). 시간대 데이터(tzdata)의 과거 서머타임·표준시 변경을 따른다.

@@ -59,6 +59,11 @@ const MESSAGES = {
     day: (n: number) => `免费解读每天最多可使用 ${n} 次，请明天再来。`,
     hour: (n: number) => `免费解读每小时最多可使用 ${n} 次，请稍后再试。`,
   },
+  en: {
+    global: "Today's free readings have all been used. Please come back tomorrow.",
+    day: (n: number) => `Free readings are limited to ${n} per day. Please come back tomorrow.`,
+    hour: (n: number) => `Free readings are limited to ${n} per hour. Please try again a little later.`,
+  },
 } satisfies Record<Locale, unknown>;
 
 export async function takeFreeQuota(ip: string, now = new Date(), locale: Locale = "ko"): Promise<QuotaResult> {

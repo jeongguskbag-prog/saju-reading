@@ -58,7 +58,16 @@ export const GRADE_TIERS_HANS: GradeTier[] = [
   { level: 5, type: "开拓型", seal: "開拓", name: "自辟蹊径之命", desc: "气势偏向鲜明，懂得驾驭这股能量时，反而成为独特个性的组合。", share: 15 },
 ];
 
-export const gradeTiers = (locale: Locale = "ko") => (locale === "zh-Hant" ? GRADE_TIERS_ZH : locale === "zh-Hans" ? GRADE_TIERS_HANS : GRADE_TIERS);
+export const GRADE_TIERS_EN: GradeTier[] = [
+  { level: 1, type: "Blessed Abundance type", seal: "天福", name: "A chart born holding good fortune", desc: "A rare make-up in which chart balance, a strong useful element and supportive luck pillars all come together.", share: 3 },
+  { level: 2, type: "Rising Momentum type", seal: "氣勢", name: "A chart with clear momentum", desc: "Clear strengths, with luck pillars that push those strengths forward.", share: 12 },
+  { level: 3, type: "Balanced Harmony type", seal: "中和", name: "A well-balanced chart", desc: "Little imbalance, with a strong capacity to build steadily over time.", share: 35 },
+  { level: 4, type: "Late Bloomer type", seal: "大器", name: "A chart that grows when its time comes", desc: "Grows explosively when the luck pillars fill in what the natal chart lacks.", share: 35 },
+  { level: 5, type: "Trailblazer type", seal: "開拓", name: "A chart that makes its own way", desc: "A distinct lean in energy that becomes a real asset once you learn how to work with it.", share: 15 },
+];
+
+export const gradeTiers = (locale: Locale = "ko") =>
+  locale === "zh-Hant" ? GRADE_TIERS_ZH : locale === "zh-Hans" ? GRADE_TIERS_HANS : locale === "en" ? GRADE_TIERS_EN : GRADE_TIERS;
 
 export interface GradeParts {
   /** 오행 균형 0~30 */

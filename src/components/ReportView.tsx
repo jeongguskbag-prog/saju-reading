@@ -189,12 +189,12 @@ export function Pending({ state, onRetry, label }: { state: PartState | undefine
 
 /**
  * 한국어 풀이 문장 속 한자를 <span class="hz">로 감싼다. 휴대폰 기본 글꼴로 PDF를 만들면 한자가 다른 글꼴로 바뀌며
- * 일부 PDF 뷰어에서 빠져 보이는 일이 있어, 한자만 웹 글꼴(Noto Serif KR)로 고정한다. 중국어 화면은 그대로 둔다.
+ * 일부 PDF 뷰어에서 빠져 보이는 일이 있어, 한자만 웹 글꼴(Noto Serif KR)로 고정한다. 영어 화면도 같다. 중국어 화면은 그대로 둔다.
  */
 function useHanja() {
   const locale = useLocale();
   return (text: string): ReactNode =>
-    locale !== "ko"
+    locale !== "ko" && locale !== "en"
       ? text
       : text.split(/([\u3400-\u9FFF\uF900-\uFAFF]+)/).map((part, i) => (i % 2 ? <span key={i} className="hz">{part}</span> : part));
 }

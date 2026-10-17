@@ -13,7 +13,7 @@ export const birthInputSchema = z.object({
   hour: z.number().int().min(0).max(23).nullable(),
   minute: z.number().int().min(0).max(59).nullable().optional(),
   region: z.enum(["KR", "TW", "HK", "CN"]).optional(),
-  locale: z.enum(["ko", "zh-Hant", "zh-Hans"]).optional(),
+  locale: z.enum(["ko", "zh-Hant", "zh-Hans", "en"]).optional(),
   life: z
     .object({
       marital: z.enum(["married", "dating", "single"]).optional(),
@@ -33,7 +33,7 @@ export function parseBirthInput(body: unknown): { ok: true; value: BirthInput } 
   const r = birthInputSchema.safeParse(body);
   if (!r.success) {
     const asked = (body as { locale?: unknown } | null)?.locale;
-    const locale = asked === "zh-Hant" || asked === "zh-Hans" ? asked : "ko";
+    const locale = asked === "zh-Hant" || asked === "zh-Hans" || asked === "en" ? asked : "ko";
     return { ok: false, error: engineText(locale).inputError };
   }
   return { ok: true, value: r.data };

@@ -1,14 +1,14 @@
-// 웹사이트(첫 화면·하단·상담 안내)의 나라별 문구. 한국어는 루트(/), 대만은 /zh-tw, 홍콩은 /zh-hk.
+// 웹사이트(첫 화면·하단·상담 안내)의 나라별 문구. 한국어는 루트(/), 대만은 /zh-tw, 홍콩은 /zh-hk, 영어는 /en.
 // 명식·등급·감정서 문구는 messages.ts(번체 zh-Hant)를 그대로 쓰고, 여기에는 사이트에만 있는 문구를 둔다.
 import { BRAND, PRODUCTS, REPORT_VALID_DAYS, type CoreProductId, type ProductId } from "./product";
 import type { Locale, Region } from "./saju/locale";
 
-export type SiteLocale = "ko" | "zh-TW" | "zh-HK";
+export type SiteLocale = "ko" | "zh-TW" | "zh-HK" | "en";
 
 export interface SiteConfig {
   site: SiteLocale;
   /** 주소 앞부분. 한국어는 "" */
-  path: "" | "/zh-tw" | "/zh-hk";
+  path: "" | "/zh-tw" | "/zh-hk" | "/en";
   /** 명식·감정서 문구의 언어(messages.ts) */
   locale: Locale;
   htmlLang: string;
@@ -46,25 +46,38 @@ export const SITES: Record<SiteLocale, SiteConfig> = {
     label: "繁體中文（香港）",
     sales: false,
   },
+  en: {
+    site: "en",
+    path: "/en",
+    locale: "en",
+    htmlLang: "en",
+    hreflang: "en",
+    ogLocale: "en_US",
+    regions: ["KR", "TW", "HK", "CN"],
+    label: "English",
+    sales: false,
+  },
 };
 
-export const SITE_ORDER: SiteLocale[] = ["ko", "zh-TW", "zh-HK"];
+export const SITE_ORDER: SiteLocale[] = ["ko", "zh-TW", "zh-HK", "en"];
 
 /** 주소(pathname)로 사이트 언어를 고른다. */
 export function siteFromPath(pathname: string): SiteLocale {
   if (pathname === "/zh-tw" || pathname.startsWith("/zh-tw/")) return "zh-TW";
   if (pathname === "/zh-hk" || pathname.startsWith("/zh-hk/")) return "zh-HK";
+  if (pathname === "/en" || pathname.startsWith("/en/")) return "en";
   return "ko";
 }
 
 /** 손님이 고른 언어를 기억하는 쿠키(1년). 있으면 브라우저 언어보다 먼저 따른다. */
 export const SITE_LANG_COOKIE = "site_lang";
 
-export const isSiteLocale = (v: unknown): v is SiteLocale => v === "ko" || v === "zh-TW" || v === "zh-HK";
+export const isSiteLocale = (v: unknown): v is SiteLocale => v === "ko" || v === "zh-TW" || v === "zh-HK" || v === "en";
 
 /**
  * 브라우저·기기 언어(Accept-Language)로 첫 화면 언어를 고른다. 우선순위가 높은 언어부터 보고,
  * 한국어 → 한국어, 홍콩·마카오 중국어 → 홍콩, 그 밖의 중국어(대만·번체·간체) → 대만. 해당이 없으면 null(한국어 그대로).
+ * 영어 브라우저는 옮기지 않는다(검색 로봇이 영어로 와도 한국어 첫 화면을 읽게). 영어판(/en)은 언어 링크로 고른다.
  */
 export function siteFromAcceptLanguage(header: string | null | undefined): SiteLocale | null {
   if (!header) return null;
@@ -386,6 +399,151 @@ function toHK<T>(v: T): T {
 
 const ZH_HK: SiteCopy = { ...toHK(ZH_TW), numberLocale: "zh-HK" };
 
-const ALL: Record<SiteLocale, SiteCopy> = { ko: KO, "zh-TW": ZH_TW, "zh-HK": ZH_HK };
+const EN: SiteCopy = {
+  numberLocale: "en-US",
+  brand: { name: "Cheongirok", tagline: "Korean Four Pillars Reading" },
+  landing: {
+    slipSub: "Korean Four Pillars Reading",
+    h1: "Eight characters from the moment you were born, read across a lifetime",
+    heroSub:
+      "Cheongirok calculates your Four Pillars (Saju, also known as BaZi) and your ten-year luck pillars precisely, and prepares a personal reading for each client. See your chart type for free first.",
+    ctaGrade: "See my chart type",
+    ctaPrice: "About the readings",
+    trustEyebrow: "How Cheongirok works",
+    trustTitle: "Not a one-size-fits-all horoscope",
+    trustLead:
+      "We don't write pleasant lines that fit everyone. Every reading starts from your own eight characters and is worked out step by step from classical Saju principles, backed by large-scale calculation and orthodox theory.",
+    pledgeTitle: "Because this is a paid service, we promise",
+    pledge: [
+      "No exaggerated promises such as “guaranteed fortune” or “this will surely happen”.",
+      "No unverifiable credentials, statistics or made-up reviews.",
+      "Type shares, luck pillar scores, stroke counts and solar-term times in the reading are all real calculated values.",
+      "We are clear that Saju is a reference for reflecting on your life, not a guarantee of the future.",
+    ],
+    trust: (from, to, total) => [
+      {
+        n: total,
+        t: " charts calculated by the same rules",
+        d: `Every chart that could be born between ${from} and ${to} (dates × 12 double-hours × gender) is calculated so we can show where yours stands.`,
+      },
+      {
+        n: "To the minute",
+        t: " solar terms and true solar time",
+        d: "Solar-term changes such as Lichun are timed to the minute, true solar time is corrected for the longitude of your birthplace, and historical standard and daylight saving time are restored.",
+      },
+      {
+        n: "Classical Ziping",
+        t: " order of analysis",
+        d: "Five Elements, Ten Gods, hidden stems, structure and favourable element, ten-year and annual luck, and months divided by solar terms form the backbone of every reading.",
+      },
+      {
+        n: "Nothing without a basis",
+        t: "",
+        d: "The reading comes only from your calculated chart. No empty flattery or frightening predictions: we name the stems, branches and elements behind each point and pair weaknesses with practical remedies.",
+      },
+    ],
+    gradeTitle: "Five types, one measure",
+    gradeLead: (from, to, total) =>
+      `We calculated all ${total} charts possible between ${from} and ${to} with the same rules. Element balance, luck pillar support, favourable element strength and noble stars are scored to show where you stand.`,
+    gradeNote:
+      "The number on the right is the share of all charts with that type. You also see how rare your day pillar, structure and favourable element combination is, whether you have the Heavenly Noble and Literary stars, and the age your peak luck pillar begins.",
+    contentsTitle: "Five chapters in one booklet",
+    contentsLead: "The type card, luck pillar curve, monthly luck table and the reading are bound together and saved as a PDF.",
+    priceTitle: "Cheongirok readings",
+    priceLead: "The full English reading is in preparation and will be announced on this page. For now you can see your Four Pillars chart and chart type for free.",
+    pick: "Best",
+    partsAll: "All chapters 1-5",
+    partsCore: "Chapter 1 Nature · Chapter 5 Annual luck and practices",
+    partsExtra: "Type card · luck curve · monthly table · booklet PDF",
+    partsNaming: "5 suggested names · stroke numerology · element analysis · booklet PDF",
+    productSoon: "Coming soon",
+    applyCta: "Enter birth details to order",
+    payPending: "Opening soon",
+    steps: [
+      { b: "Free chart", t: "Enter your date and time of birth to see your Four Pillars chart, chart type and rarity right away." },
+      { b: "Order a reading", t: "Choose a reading, enter your name and email, and pay (the English edition is in preparation)." },
+      {
+        b: "Delivery",
+        t: `Writing starts as soon as you pay. In about 3 minutes you can read it on screen and download it as PDF and HTML. The link stays open for ${REPORT_VALID_DAYS} days.`,
+      },
+    ],
+    methodTitle: "How we calculate",
+    method: [
+      {
+        dt: "Solar-term timing",
+        dd: "The year and month pillars change at the exact minute of solar terms such as Lichun and Jingzhe, not at Lunar New Year or 1 January.",
+      },
+      {
+        dt: "Your birthplace's clock history",
+        dd: "The clock time on your birth record is corrected for the standard time and daylight saving time in force at the time in Korea, Taiwan, Hong Kong or mainland China.",
+      },
+      {
+        dt: "The sun's actual position",
+        dd: "The hour pillar uses true solar time from your birthplace's longitude (Seoul about -32 min, Taipei about +6 min, Hong Kong about -23 min). You can also choose how births in the Zi hour change the day.",
+      },
+    ],
+    formTitle: "See your Four Pillars chart for free",
+    formLead: "Enter your date and time of birth to see your chart and chart type. If you don't know the time, tick “Unknown” and the six characters without the hour pillar are used.",
+    helpTitle: "Need help?",
+    faqTitle: "Frequently asked questions",
+    faq: [
+      {
+        q: "What if I don't know my birth time?",
+        a: "We calculate with the six characters without the hour pillar. You still see your chart and type, but readings tied to the hour pillar are left out and the type is marked as based on six characters.",
+      },
+      {
+        q: "How is the type decided?",
+        a: "Element balance (30), luck pillar support (30), strength balance (15), favourable element strength (15) and the Heavenly Noble and Literary stars (10) are added up and compared with every chart possible in the same period. Schools differ, so treat it as a reference.",
+      },
+      { q: "Can I use my lunar birthday?", a: "Yes. You can choose the lunar calendar and leap months. If you know your solar (Gregorian) birthday, that is the most accurate." },
+      {
+        q: "I was born outside East Asia. Can I use it?",
+        a: "The calculation currently supports births in Korea, Taiwan, Hong Kong and mainland China, using each place's historical time zone and daylight saving time.",
+      },
+      { q: "When can I buy the full reading?", a: "The full English reading is in preparation and will be announced on this page. Feel free to email us with any questions." },
+      {
+        q: "How is my information used?",
+        a: "Only for the chart calculation. The AI that writes readings never receives your name, only calculated results such as stems, branches, elements and luck pillars.",
+      },
+    ],
+    resultNotice: {
+      title: "Full reading",
+      text: "The full English reading (detailed chapter-by-chapter interpretation) is in preparation and will be announced on this page. Below is your calculated chart.",
+    },
+  },
+  products: {
+    core: { name: "Cheongirok Core Chart Reading", summary: "Your innate nature and element balance, with key annual and monthly luck for {Y1}-{Y2}" },
+    full: { name: "Cheongirok Complete Reading", summary: "Lifetime luck pillars, wealth structure, career, love and personal luck practices" },
+    naming: { name: "Lucky Name Reading", summary: "Names chosen to supply the elements missing from your chart" },
+  },
+  support: {
+    lead: () => "For any question about entering your details or reading your results, email us and we'll reply as soon as we can.",
+    kakao: "",
+    kakaoFloat: "",
+    kakaoFloatAria: "",
+    showKakao: false,
+    mail: (email) => `Email us at ${email}`,
+    mailSubject: "[Cheongirok] Question",
+  },
+  footer: {
+    linksAria: "Terms and policies",
+    terms: "Terms of service (Korean)",
+    lookup: "Order lookup (Korean)",
+    privacy: "Privacy policy (Korean)",
+    refund: "Refund policy (Korean)",
+    biz: { companyName: "Company", ceo: "Representative", bizNumber: "Business registration no.", mailOrderNumber: "Mail-order business no.", address: "Address", contact: "Contact" },
+    pending: "Pending",
+    note: () =>
+      "Charts are calculated by a calendar engine and readings are written with AI technology. This service is reference material based on Saju theory and does not guarantee the future. Operated by Cheongirok in Korea.",
+    languages: "Language",
+  },
+  meta: {
+    title: "Cheongirok — Korean Four Pillars (Saju) Reading | What is your chart type?",
+    description:
+      "Your Four Pillars (Saju / BaZi) calculated with minute-accurate solar terms, showing where you stand among five chart types and your lifetime luck pillars. Free to try.",
+  },
+};
+
+const ALL: Record<SiteLocale, SiteCopy> = { ko: KO, "zh-TW": ZH_TW, "zh-HK": ZH_HK, en: EN };
 
 export const siteCopy = (site: SiteLocale = "ko"): SiteCopy => ALL[site] ?? KO;
