@@ -32,6 +32,8 @@ export async function fileResponse(request: Request, token: string, ext: "pdf" |
     });
   } catch (error) {
     console.error("감정서 파일 만들기 실패", report.order.id, error);
-    return text("파일을 만들지 못했습니다. 잠시 뒤 다시 시도하시거나 감정서 화면에서 'PDF로 저장'을 눌러 주세요.", 500);
+    // 원인을 짧게 붙여 둔다(화면 캡처로 원인을 알 수 있게). 개인정보는 들어가지 않는다.
+    const reason = (error as Error)?.message?.split("\n")[0]?.slice(0, 120) ?? "";
+    return text(`PDF 파일을 만들지 못했습니다. 아래 '브라우저 인쇄로 PDF 저장'을 눌러 주세요.${reason ? ` (${reason})` : ""}`, 500);
   }
 }

@@ -28,24 +28,37 @@ interface Props {
 }
 
 /** 서버가 만든 감정서 파일(PDF·HTML)을 내려받는 버튼. 만드는 데 몇 초 걸려 그동안 버튼에 표시한다. */
-function FileButtons({ token, ready }: { token: string; ready: boolean }) {
+function FileButtons({ token, ready, productName, personName }: { token: string; ready: boolean; productName: string; personName: string }) {
+  const fileBase = `천기록_${personName.replace(/[\\/:*?"<>|\s]+/g, "") || "감정서"}_${productName.replace(/^천기록 /, "").replace(/\s+/g, "")}`;
   const [making, setMaking] = useState<"pdf" | "html" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** 받은 내용을 파일로 내려받게 한다 */
+  function download(blob: Blob, name: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  }
+
   async function save(ext: "pdf" | "html") {
     setError(null);
+    // HTML 문서는 지금 화면을 그대로 담아 브라우저에서 바로 만든다(서버를 거치지 않아 빠르고 실패하지 않는다).
+    if (ext === "html") {
+      const result = document.getElementById("result");
+      if (!result) return;
+      download(new Blob([buildResultHtml(result, productName, "ko")], { type: "text/html;charset=utf-8" }), `${fileBase}.html`);
+      fetch(`/r/${token}/saved`, { method: "POST" }).catch(() => {});
+      return;
+    }
     setMaking(ext);
     try {
-      const res = await fetch(`/r/${token}/${ext}`);
+      const res = await fetch(`/r/${token}/pdf`);
       if (!res.ok) throw new Error((await res.text().catch(() => "")) || "파일을 만들지 못했습니다.");
-      const name = /filename\*=UTF-8''([^;]+)/.exec(res.headers.get("Content-Disposition") ?? "")?.[1];
-      const url = URL.createObjectURL(await res.blob());
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = name ? decodeURIComponent(name) : `chungirok-report.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      download(await res.blob(), `${fileBase}.pdf`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -233,7 +246,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
         감정서는 {untilText}까지 열 수 있으니 기간 안에 PDF로 저장해 두세요. 링크를 아는 사람은 누구나 볼 수 있으니 공유에
         주의해 주세요. 주문번호 {orderId}
       </p>
-      <FileButtons token={token} ready={!busy && doneCount === partKeys.length} />
+      <FileButtons token={token} ready={!busy && doneCount === partKeys.length} productName={productName} personName={chart.input.name ?? ""} />
       <button type="button" className="btn-link" onClick={copyLink}>
         {copied ? "감정서 주소를 복사했습니다" : "감정서 주소 복사"}
       </button>
@@ -303,7 +316,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
       )}
       <section className="card report-files no-print">
         <h2>감정서 저장</h2>
-        <FileButtons token={token} ready={!busy && doneCount === partKeys.length} />
+        <FileButtons token={token} ready={!busy && doneCount === partKeys.length} productName={productName} personName={chart.input.name ?? ""} />
       </section>
     </div>
   );

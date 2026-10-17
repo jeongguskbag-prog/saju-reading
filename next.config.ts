@@ -8,8 +8,9 @@ const nextConfig: NextConfig = {
     "/api/deliver": ["./node_modules/@sparticuz/chromium/bin/**"],
     "/api/reading": ["./node_modules/@sparticuz/chromium/bin/**"],
     "/pay/success": ["./node_modules/@sparticuz/chromium/bin/**"],
-    "/r/[token]/pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
-    "/r/[token]/html": ["./node_modules/@sparticuz/chromium/bin/**"],
+    // 키는 경로 패턴(glob)이라 [token]을 그대로 쓰면 맞지 않는다. *로 한 단계를 맞춘다.
+    "/r/*/pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/r/*/html": ["./node_modules/@sparticuz/chromium/bin/**"],
   },
 };
 
