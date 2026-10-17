@@ -10,7 +10,8 @@ import { StoreError } from "@/lib/store";
 import { clientIp, takeFreeQuota } from "@/lib/rate-limit";
 import type { Locale } from "@/lib/saju/locale";
 import { parseNamingRequest } from "@/lib/naming/request";
-import { isExtraKind } from "@/lib/extras/kinds";
+import { isExtraKind, type ExtraKind } from "@/lib/extras/kinds";
+import { parseExtraRequest } from "@/lib/extras/requests";
 import { generateNaming } from "@/lib/naming/generate";
 
 // 파트 하나 생성에 1~2분 걸릴 수 있다.
@@ -55,6 +56,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
   // 앱(결제 없는 화면)의 작명록: 신청서를 요청에 함께 받아 바로 쓴다.
   if (askedPart === "naming") return appNaming(request, body, locale);
+  if (isExtraKind(askedPart)) return appExtra(request, body, askedPart, locale);
   const part = askedPart as PartKey;
   if (!PART_KEYS.includes(part)) return NextResponse.json({ error: E.badPart }, { status: 400 });
   if (!isFreeReading() && !isAppRequest(request.headers.get("x-app-key"))) return NextResponse.json({ error: E.paywall }, { status: 402 });
@@ -69,6 +71,33 @@ export async function POST(request: Request): Promise<NextResponse> {
     const quota = await takeFreeQuota(clientIp(request.headers), new Date(), locale);
     if (!quota.ok) return NextResponse.json({ error: quota.message }, { status: 429 });
     return NextResponse.json(await generatePart(chart, part));
+  } catch (error) {
+    return errorResponse(error, locale);
+  }
+}
+
+/** 앱에서 신청한 추가 상품(궁합·신년 운세·택일·주역 점·자미두수). 작명록과 같이 저장하지 않고 바로 쓴다. */
+async function appExtra(request: Request, body: { input?: unknown; extra?: unknown } | null, kind: ExtraKind, locale: Locale): Promise<NextResponse> {
+  const E = ROUTE_ERRORS[locale];
+  if (!isFreeReading() && !isAppRequest(request.headers.get("x-app-key"))) return NextResponse.json({ error: E.paywall }, { status: 402 });
+  const parsed = parseBirthInput(body?.input);
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const extra = parseExtraRequest(kind, body?.extra);
+  if (!extra.ok) return NextResponse.json({ error: extra.error }, { status: 400 });
+  try {
+    const now = new Date();
+    const chart = calculateSaju(parsed.value, now);
+    // 계산이 안 되는 신청(기간에 맞는 날 없음, 시각 없음 등)은 AI를 부르기 전에 알린다.
+    const { checkExtra, generateExtra, ExtraError } = await import("@/lib/extras/generate");
+    try {
+      await checkExtra(chart, kind, extra.value, now);
+    } catch (error) {
+      if (error instanceof ExtraError || error instanceof InputError) return NextResponse.json({ error: error.message }, { status: 400 });
+      throw error;
+    }
+    const quota = await takeFreeQuota(clientIp(request.headers), now, locale);
+    if (!quota.ok) return NextResponse.json({ error: quota.message }, { status: 429 });
+    return NextResponse.json({ part: kind, extra: await generateExtra(chart, kind, extra.value, now) });
   } catch (error) {
     return errorResponse(error, locale);
   }

@@ -7,6 +7,9 @@ import { DEFAULT_PRODUCT, PRODUCTS, type ProductId } from "@/lib/product";
 import AppProducts, { productCopy } from "./AppProducts";
 import NamingFields, { emptyNamingForm, toNamingRequest, type NamingForm } from "./NamingFields";
 import NamingReport from "./NamingReport";
+import AppExtraFields, { emptyExtraForms, toExtraRequest, type ExtraForms } from "./extras/AppExtraFields";
+import ExtraReport from "./extras/ExtraReport";
+import { isExtraKind, type ExtraKind } from "@/lib/extras/kinds";
 import ReportView, { type PartStates } from "./ReportView";
 import YearField from "./YearField";
 import ResultActions from "./ResultActions";
@@ -64,6 +67,10 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
   const [namingForm, setNamingForm] = useState<NamingForm>(emptyNamingForm);
   const lastNaming = useRef<unknown>(null);
   const isNaming = productChoice && productId === "naming";
+  // 추가 상품(궁합·신년 운세·택일·주역 점·자미두수) 신청서. 웹 결제 칸과 같은 입력 부품을 쓴다.
+  const [extraForms, setExtraForms] = useState<ExtraForms>(() => emptyExtraForms("female"));
+  const lastExtra = useRef<unknown>(null);
+  const extraKind: ExtraKind | null = productChoice && isExtraKind(productId) ? productId : null;
   // 중국 대륙은 전국이 한 표준시라 출생 도시 경도로 진태양시를 맞춘다.
   const [cityIndex, setCityIndex] = useState(0);
   const [name, setName] = useState("");
@@ -104,6 +111,14 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
       .catch((err: Error) => run.current === runId && setParts((prev) => ({ ...prev, naming: { status: "error", message: err.message } })));
   }
 
+  /** 앱 화면의 추가 상품. 신청서를 함께 보낸다. */
+  function loadExtra(input: BirthInput, kind: ExtraKind, extra: unknown, runId: number) {
+    setParts((prev) => ({ ...prev, [kind]: { status: "loading" } }));
+    postJson<PartResult>("/api/reading", { input, part: kind, extra, locale: input.locale }, t)
+      .then((result) => run.current === runId && setParts((prev) => ({ ...prev, [kind]: { status: "done", result } })))
+      .catch((err: Error) => run.current === runId && setParts((prev) => ({ ...prev, [kind]: { status: "error", message: err.message } })));
+  }
+
   const anyLoading = Object.values(parts).some((p) => p?.status === "loading");
 
   async function onSubmit(e: React.FormEvent) {
@@ -125,6 +140,15 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
         return;
       }
       namingReq = r.value;
+    }
+    let extraReq: unknown = null;
+    if (extraKind) {
+      const r = toExtraRequest(extraKind, extraForms, !timeUnknown);
+      if (!r.ok) {
+        setError(r.error);
+        return;
+      }
+      extraReq = r.value;
     }
     const input: BirthInput = {
       name: name.trim() || undefined,
@@ -155,6 +179,10 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
         lastNaming.current = namingReq;
         if (aiEnabled) loadNaming(input, namingReq, runId);
         else setParts({ naming: { status: "error", message: t.noAi } });
+      } else if (extraKind) {
+        lastExtra.current = extraReq;
+        if (aiEnabled) loadExtra(input, extraKind, extraReq, runId);
+        else setParts({ [extraKind]: { status: "error", message: t.noAi } });
       } else {
         const partKeys = productChoice ? PRODUCTS[productId].parts.filter((p): p is PartKey => p !== "naming") : PART_KEYS;
         if (aiEnabled) partKeys.forEach((part) => loadPart(input, part, runId));
@@ -296,6 +324,7 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
         </details>
 
         {isNaming && <NamingFields value={namingForm} onChange={setNamingForm} />}
+        {extraKind && <AppExtraFields kind={extraKind} value={extraForms} onChange={setExtraForms} hourKnown={!timeUnknown} />}
 
         <button className="btn-primary" type="submit" disabled={submitting}>
           {submitting ? t.submitting : t.submit}
@@ -315,7 +344,20 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
         </div>
       )}
 
-      {chart && shownProduct !== "naming" && (
+      {chart && shownProduct && isExtraKind(shownProduct) && (
+        <div id="result">
+          <ExtraReport
+            kind={shownProduct}
+            chart={chart}
+            parts={parts}
+            onRetry={() => lastInput.current && loadExtra(lastInput.current, shownProduct, lastExtra.current, run.current)}
+            title={productCopy(t, shownProduct).name}
+          />
+          <ResultActions chart={chart} busy={anyLoading} />
+        </div>
+      )}
+
+      {chart && shownProduct !== "naming" && !(shownProduct && isExtraKind(shownProduct)) && (
         <div id="result">
           <ReportView
             chart={chart}
