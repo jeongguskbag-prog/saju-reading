@@ -5,7 +5,7 @@
 // QStash 설정이 없으면 예전처럼 감정서가 완성되는 즉시 링크를 보낸다.
 import { sendReportEmail } from "./mail";
 import { sendReportSms } from "./sms";
-import { getSavedParts, markMailed, savedBoth, setDeliverAt, unmarkMailed, type Order, type Report } from "./orders";
+import { getSavedParts, markMailed, setDeliverAt, unmarkMailed, type Order, type Report } from "./orders";
 import { renderReportFiles, type ReportFiles } from "./render";
 
 export function isDeliveryScheduleEnabled(): boolean {
@@ -78,7 +78,7 @@ export async function verifyQstash(signature: string | null, body: string, url: 
   }
 }
 
-export type DeliverOutcome = "sent" | "already" | "incomplete" | "failed" | "none" | "saved";
+export type DeliverOutcome = "sent" | "already" | "incomplete" | "failed" | "none";
 
 /**
  * 감정서가 다 됐으면 PDF·HTML을 만들어 이메일(첨부)과 문자·카카오톡(받기 링크)으로 보낸다. 주문당 한 번.
@@ -88,8 +88,6 @@ export async function deliverReport(report: Report, origin: string, render = ren
   if (!hasDestination(report.order)) return "none";
   const saved = await getSavedParts(report.order.token!, report.product.parts);
   if (report.product.parts.some((p) => !saved[p])) return "incomplete";
-  // 손님이 화면에서 두 파일을 모두 저장했으면 보내지 않는다.
-  if (await savedBoth(report.order.id)) return "saved";
   if (!(await markMailed(report.order.id))) return "already";
   let files: ReportFiles | null = null;
   try {

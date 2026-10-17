@@ -20,7 +20,7 @@ export async function fileResponse(request: Request, token: string, ext: "pdf" |
   try {
     const files = await renderReportFiles(originFrom(request.headers), report);
     const body = ext === "pdf" ? new Uint8Array(files.pdf) : files.html;
-    // 저장한 파일은 나중에 다시 보내지 않는다(10분 뒤 발송은 저장하지 않은 손님에게만).
+    // 손님이 화면에서 내려받은 기록(관리 화면에서 본다)
     await markSaved(report.order.id, ext).catch(() => {});
     return new Response(body, {
       headers: {

@@ -90,3 +90,42 @@ describe("주문 조회", () => {
     expect(r).toMatchObject({ ok: false, status: 429 });
   });
 });
+
+describe("주문 기록(관리)", async () => {
+  const { listPaidOrders } = await import("@/lib/orders");
+  const { orderRow, ordersCsv, checkAdminPassword, checkAdminSession, adminSessionValue } = await import("@/lib/admin");
+
+  it("결제한 주문은 목록에 남고, 결제 정보·사주 입력·연락처가 표 한 줄로 나온다", async () => {
+    const a = await paid(["email"]);
+    const b = await paid(["sms"], "", "010-5555-6666");
+    const list = await listPaidOrders();
+    expect(list.map((o) => o.id)).toEqual([b.id, a.id]);
+    const row = orderRow(list[1], "https://x.test");
+    expect(row).toMatchObject({
+      주문번호: a.id,
+      "결제 금액": "29,000원",
+      "결제 수단": "카드",
+      성함: "홍길동",
+      성별: "여",
+      "양력·음력": "양력",
+      생년월일: "1978-08-08",
+      "태어난 시각": "10:00",
+      이메일: "c@d.co",
+      "받을 곳": "이메일",
+      "감정서 주소": `https://x.test/r/${a.token}`,
+    });
+    const csv = ordersCsv([row]);
+    expect(csv.startsWith("﻿결제일시,주문번호")).toBe(true);
+    expect(csv).toContain(a.id);
+  });
+
+  it("관리 비밀번호와 쿠키를 확인한다", () => {
+    vi.stubEnv("ADMIN_PASSWORD", "correct-horse");
+    expect(checkAdminPassword("correct-horse")).toBe(true);
+    expect(checkAdminPassword("wrong")).toBe(false);
+    expect(checkAdminSession(adminSessionValue()!)).toBe(true);
+    expect(checkAdminSession("x")).toBe(false);
+    vi.stubEnv("ADMIN_PASSWORD", "");
+    expect(checkAdminPassword("")).toBe(false);
+  });
+});

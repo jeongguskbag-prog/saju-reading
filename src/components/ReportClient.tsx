@@ -217,7 +217,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
   const lookupNote = "감정서 주소를 잃어버리셔도 사이트 아래 '주문 조회'에서 주문번호와 연락처로 다시 찾을 수 있습니다. ";
   const delivery = sendTo
     ? sendAt && sendAt.getTime() - 9 * 3_600_000 > Date.now()
-      ? `${sendAtText}까지 PDF 파일과 HTML 문서를 저장하지 않으시면 ${sendTo}(으)로 보내 드립니다. ${lookupNote}`
+      ? `${sendAtText}에 ${sendTo}(으)로 감정서 PDF 파일과 HTML 문서를 보내 드립니다. ${lookupNote}`
       : `${lookupNote}`
     : `이 페이지 주소가 감정서 열쇠입니다. 파일을 저장하고, 주소도 복사해 두세요. ${lookupNote}`;
   const notice = (

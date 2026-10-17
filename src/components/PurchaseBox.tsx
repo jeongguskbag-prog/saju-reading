@@ -54,7 +54,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [name, setName] = useState(input.name ?? "");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  // 주문번호·결제 내역(과 저장하지 않은 감정서 파일)을 받을 곳. 여러 곳을 고르면 모두 보낸다.
+  // 주문번호·결제 내역과 감정서 파일(PDF·HTML)을 받을 곳. 여러 곳을 고르면 모두 보낸다.
   const offered: Target[] = ["email", ...(checkout.kakao ? (["kakao"] as const) : []), ...(checkout.sms ? (["sms"] as const) : [])];
   const [targets, setTargets] = useState<Target[]>(["email"]);
   const picked = targets.filter((t) => offered.includes(t));
@@ -87,7 +87,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
     if (email.trim() && !emailOk) return setError("이메일 주소를 확인해 주세요.");
     if (phone.trim() && !phoneOk) return setError("휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)");
-    if (!picked.length) return setError("주문번호와 결제 내역을 받을 곳을 하나 이상 골라 주세요.");
+    if (!picked.length) return setError("주문 내역과 감정서 파일을 받을 곳을 하나 이상 골라 주세요.");
     if (picked.includes("email") && !email.trim()) return setError("이메일로 받으시려면 이메일 주소를 적어 주세요.");
     if (picked.some((t) => t !== "email") && !phone.trim()) return setError("카카오톡·문자로 받으시려면 휴대폰 번호를 적어 주세요.");
     if (!agree) return setError("주문 내용과 청약철회 안내에 동의해 주세요.");
@@ -169,8 +169,8 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             <p className="muted">적어 주신 이메일·휴대폰 번호와 주문번호로 나중에 감정서를 다시 찾을 수 있습니다(주문 조회).</p>
           </div>
           <div className="field">
-            <span className="label">주문번호·결제 내역 받을 곳 (여러 곳 가능)</span>
-            <div className="chip-row" role="group" aria-label="주문번호·결제 내역 받을 곳">
+            <span className="label">주문 내역과 감정서 파일 받을 곳 (여러 곳 가능)</span>
+            <div className="chip-row" role="group" aria-label="주문 내역과 감정서 파일 받을 곳">
               {offered.map((t) => (
                 <button key={t} type="button" className="chip" aria-pressed={picked.includes(t)} onClick={() => toggleTarget(t)}>
                   {picked.includes(t) ? "✓ " : ""}
@@ -179,8 +179,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               ))}
             </div>
             <p className="muted">
-              결제가 끝나면 주문번호와 결제 내역을 바로 보내 드립니다. 신청 10분 뒤까지 화면에서 감정서 파일을 저장하지 않으셨다면 PDF 파일과 HTML 문서도
-              같은 곳으로 보내 드립니다.
+              결제가 끝나면 주문번호와 결제 내역을 바로 보내 드리고, 신청 10분 뒤 감정서 PDF 파일과 HTML 문서도 같은 곳으로 보내 드립니다.
             </p>
           </div>
           {checkout.mobilePhone && (
@@ -210,7 +209,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
           </button>
           <p className="purchase-time">
             ⏳ 결제 후 명식 계산, 각 부의 풀이 작성, 책자 편집을 거쳐 <b>약 3분 뒤</b> 화면에 감정서가 열립니다.
-            열리면 <b>PDF 파일 저장</b>·<b>HTML 문서 저장</b> 버튼으로 바로 내려받으세요. 신청 10분 뒤까지 저장하지 않으시면 고르신 곳으로 파일을 보내 드립니다.
+            열리면 <b>PDF 파일 저장</b>·<b>HTML 문서 저장</b> 버튼으로 바로 내려받으세요. 신청 10분 뒤에는 고르신 곳으로도 두 파일을 보내 드립니다.
           </p>
           <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
           {checkout.testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}

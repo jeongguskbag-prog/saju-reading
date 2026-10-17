@@ -39,6 +39,12 @@ export interface Order {
   channels?: PhoneChannel[];
   /** 토스 카드 영수증 주소 */
   receiptUrl?: string;
+  /** 결제 상세(토스 승인 응답에서 필요한 것만: 카드사·가린 카드번호·할부·승인번호, 간편결제) */
+  payment?: {
+    card?: { company?: string; number?: string; installmentPlanMonths?: number; approveNo?: string };
+    easyPay?: string;
+    approvedAt?: string;
+  };
   /** 예전 주문: 휴대폰으로 받는 방법 하나 */
   channel?: PhoneChannel;
   /** 파일(PDF·HTML)을 보내기로 예약한 시각(ISO). 있으면 완성되어도 바로 보내지 않고 이때 보낸다. */
@@ -59,6 +65,17 @@ const orderKey = (id: string) => `order:${id}`;
 const reportKey = (token: string) => `report:${token}`;
 const partKey = (token: string, part: PartKey) => `report:${token}:part:${part}`;
 const lockKey = (token: string, part: PartKey) => `lock:${token}:${part}`;
+
+/** 결제한 주문번호 목록(최근 것이 앞) */
+export const PAID_INDEX = "orders:paid";
+
+/** 최근 결제한 주문들 */
+export async function listPaidOrders(limit = 200, offset = 0): Promise<Order[]> {
+  const store = requireStore();
+  const ids = await store.listRange(PAID_INDEX, offset, offset + limit - 1);
+  const orders = await Promise.all(ids.map((id) => getOrder(id)));
+  return orders.filter((o): o is Order => Boolean(o));
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -158,6 +175,9 @@ interface TossPayment {
   method?: string;
   approvedAt?: string;
   receipt?: { url?: string };
+  /** 카드사·간편결제 등 결제 상세(관리용으로 남긴다) */
+  card?: { company?: string; issuerCode?: string; number?: string; installmentPlanMonths?: number; approveNo?: string };
+  easyPay?: { provider?: string };
 }
 
 async function tossConfirm(paymentKey: string, orderId: string, amount: number): Promise<TossPayment> {
@@ -209,10 +229,19 @@ export async function confirmOrder(
     paymentKey: params.paymentKey,
     method: payment.method,
     ...(payment.receipt?.url ? { receiptUrl: payment.receipt.url } : {}),
+    payment: {
+      ...(payment.card
+        ? { card: { company: payment.card.company ?? payment.card.issuerCode, number: payment.card.number, installmentPlanMonths: payment.card.installmentPlanMonths, approveNo: payment.card.approveNo } }
+        : {}),
+      ...(payment.easyPay?.provider ? { easyPay: payment.easyPay.provider } : {}),
+      approvedAt: payment.approvedAt,
+    },
     token: randomBytes(24).toString("base64url"),
   };
   await store.set(orderKey(order.id), paid);
   await store.set(reportKey(paid.token!), order.id);
+  // 결제한 주문 목록(관리 화면·내보내기). 주문 내용(결제 정보·사주 입력·연락처)은 order:주문번호에 그대로 남는다.
+  await store.listPush(PAID_INDEX, order.id);
   return { order: paid, justPaid: true };
 }
 

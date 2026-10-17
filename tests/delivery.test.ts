@@ -60,7 +60,7 @@ describe("감정서 파일 발송", () => {
     await expect(createOrder(input, "", "core", now, undefined, undefined, ["email"])).rejects.toThrow("이메일");
   });
 
-  it("손님이 화면에서 PDF·HTML을 모두 저장했으면 파일을 보내지 않는다", async () => {
+  it("손님이 화면에서 파일을 저장했어도 고른 곳으로 파일을 보낸다", async () => {
     const paid = await paidCore();
     await fillParts(paid.token!);
     await markSaved(paid.id, "pdf");
@@ -68,8 +68,8 @@ describe("감정서 파일 발송", () => {
     const mail = vi.fn(async () => json({ id: "m1" }));
     vi.stubGlobal("fetch", mail);
     await markSaved(paid.id, "html");
-    expect(await deliverReport(report, "https://x.test", fakeFiles)).toBe("saved");
-    expect(mail).not.toHaveBeenCalled();
+    expect(await deliverReport(report, "https://x.test", fakeFiles)).toBe("sent");
+    expect(mail).toHaveBeenCalledTimes(1);
   });
 
   it("휴대폰 번호만 적고 이메일로만 받기를 고르면 문자는 보내지 않는다", async () => {

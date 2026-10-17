@@ -14,6 +14,10 @@ export interface Store {
   del(key: string): Promise<void>;
   /** 정수 카운터를 1 올리고 올린 값을 돌려준다. 처음 만들 때 ttlSeconds 뒤에 사라지게 한다. */
   incr(key: string, ttlSeconds: number): Promise<number>;
+  /** 목록 맨 앞에 값을 넣는다(최근 것이 앞). */
+  listPush(key: string, value: string): Promise<void>;
+  /** 목록의 start~stop번째(0부터, stop 포함) 값 */
+  listRange(key: string, start: number, stop: number): Promise<string[]>;
 }
 
 export class StoreError extends Error {}
@@ -56,6 +60,13 @@ function upstashStore(env: { url: string; token: string }): Store {
       if (n === 1) await command(["EXPIRE", key, ttl]);
       return n;
     },
+    async listPush(key, value) {
+      await command(["LPUSH", key, value]);
+    },
+    async listRange(key, start, stop) {
+      const r = await command(["LRANGE", key, start, stop]);
+      return Array.isArray(r) ? r.map(String) : [];
+    },
   };
 }
 
@@ -88,6 +99,16 @@ function memoryStore(map = new Map<string, Entry>()): Store {
       const n = (typeof e?.value === "number" ? e.value : 0) + 1;
       map.set(key, { value: n, expires: e?.expires ?? Date.now() + ttl * 1000 });
       return n;
+    },
+    async listPush(key, value) {
+      const e = live(key);
+      const list = Array.isArray(e?.value) ? (e.value as string[]) : [];
+      map.set(key, { value: [value, ...list], expires: null });
+    },
+    async listRange(key, start, stop) {
+      const e = live(key);
+      const list = Array.isArray(e?.value) ? (e.value as string[]) : [];
+      return list.slice(start, stop < 0 ? undefined : stop + 1);
     },
   };
 }
@@ -138,6 +159,15 @@ function fileStore(dir: string): Store {
       await mkdir(dir, { recursive: true });
       await writeFile(path(key), JSON.stringify({ value: n, expires: e?.expires ?? Date.now() + ttl * 1000 }));
       return n;
+    },
+    async listPush(key, value) {
+      const e = await read(key);
+      await write(key, [value, ...(Array.isArray(e?.value) ? (e.value as string[]) : [])]);
+    },
+    async listRange(key, start, stop) {
+      const e = await read(key);
+      const list = Array.isArray(e?.value) ? (e.value as string[]) : [];
+      return list.slice(start, stop < 0 ? undefined : stop + 1);
     },
   };
 }

@@ -824,3 +824,8 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .file-buttons .muted { margin-top: 8px; }
 .btn-link { background: none; border: 0; padding: 4px 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; font-size: 14px; }
 .report-files h2 { margin-bottom: 4px; }
+
+/* 관리 화면 주문 표 */
+.admin-table-wrap { overflow-x: auto; margin-top: 12px; }
+.admin-table { font-size: 12.5px; white-space: nowrap; }
+.admin-table th, .admin-table td { padding: 6px 8px; }
