@@ -7,7 +7,14 @@ import OwnerLinks from "./OwnerLinks";
 import { FloatingKakao } from "./SupportLinks";
 
 /** 결제·리포트·안내 화면의 머리와 꼬리. 브랜드를 눌러 첫 화면으로 돌아간다. */
-export default function SiteShell({ children, admin = false }: { children: ReactNode; /** 관리자 화면: 앱 화면·홈페이지 바로가기를 늘 보인다 */ admin?: boolean }) {
+export default function SiteShell({
+  children,
+  admin = false,
+}: {
+  children: ReactNode;
+  /** 관리자 화면: 앱 화면·홈페이지 바로가기를 늘 보인다. "in"이면 로그인한 상태라 로그아웃 버튼도 보인다. */
+  admin?: boolean | "in";
+}) {
   return (
     <>
       <header className="site-bar no-print">
@@ -18,7 +25,7 @@ export default function SiteShell({ children, admin = false }: { children: React
         </a>
         <LangSwitch tone="bar" />
       </header>
-      {admin && <OwnerLinks mode="admin" />}
+      {admin && <OwnerLinks mode="admin" loggedIn={admin === "in"} />}
       <main className="container">{children}</main>
       <SiteFooter />
       <FloatingKakao />

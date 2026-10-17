@@ -36,7 +36,7 @@ export default async function AdminPage() {
   const total = orders.reduce((s, o) => s + o.amount, 0);
   const reviews = await listReviews({ limit: 100, includeHidden: true });
   return (
-    <SiteShell admin>
+    <SiteShell admin="in">
       <section className="card admin-orders">
         <h2>결제한 주문 ({rows.length}건, {total.toLocaleString("ko-KR")}원)</h2>
         <p className="muted">최근 200건입니다. 전체는 엑셀(CSV)로 내려받으세요.</p>
