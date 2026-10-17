@@ -845,3 +845,12 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .lang-switch li a[aria-current="true"] { font-weight: 700; color: var(--accent); }
 .lang-bar { top: 50%; transform: translateY(-50%); }
 @media (max-width: 480px) { .lang-switch { top: 10px; right: 10px; font-size: 12px; } .lang-bar { top: 50%; } }
+
+/* 앱 화면 오른쪽 위 바로가기(홈페이지 · 관리자) */
+.app-head { position: relative; }
+.app-links { position: absolute; top: 0; right: 0; display: flex; gap: 6px; }
+.app-links a {
+  display: inline-block; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface); color: var(--text-2); font-size: 12px; font-weight: 600; text-decoration: none; line-height: 1.5;
+}
+.app-links a:active, .app-links a:hover { border-color: var(--accent); color: var(--accent); }

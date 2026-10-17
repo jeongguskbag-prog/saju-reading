@@ -23,6 +23,9 @@ const KO = {
 
   // 앱 머리글(AppShell)
   shellBadge: "정밀 만세력 × 최신 AI 감정",
+  shellLinksAria: "바로가기",
+  shellHome: "홈페이지",
+  shellAdmin: "관리자",
   shellIntro:
     "이 감정서는 절기를 분 단위까지 계산하는 정밀 만세력 엔진으로 사주 명식을 산출하고, 그 명식 데이터를 근거로 AI 문장 생성 기술이 오행·십신·대운의 명리 이론에 따라 풀이를 작성합니다.",
   shellDisclaimer: "명식은 만세력 계산 엔진이 산출하고, 풀이 문장은 AI 기술로 작성합니다. 재미와 자기 성찰을 위한 참고 자료로 활용해 주세요.",
@@ -237,6 +240,9 @@ const ZH: Messages = {
   noble: (n) => NOBLE_ZH[n],
 
   shellBadge: "精密萬年曆 × 最新 AI 論命",
+  shellLinksAria: "快速連結",
+  shellHome: "官網",
+  shellAdmin: "管理",
   shellIntro:
     "本命書以精確到分鐘的節氣萬年曆引擎排出四柱命盤，再以命盤數據為依據，由 AI 文字生成技術依照五行、十神、大運的命理理論撰寫解讀。",
   shellDisclaimer: "命盤由萬年曆計算引擎排出，解讀文字以 AI 技術撰寫。僅供娛樂與自我探索參考。",
@@ -442,6 +448,9 @@ const ZH_HANS: Messages = {
   noble: (n) => NOBLE_HANS[n],
 
   shellBadge: "精密万年历 × 最新 AI 论命",
+  shellLinksAria: "快捷链接",
+  shellHome: "官网",
+  shellAdmin: "管理",
   shellIntro:
     "本命书以精确到分钟的节气万年历引擎排出四柱命盘，再以命盘数据为依据，由 AI 文字生成技术依照五行、十神、大运的命理理论撰写解读。",
   shellDisclaimer: "命盘由万年历计算引擎排出，解读文字以 AI 技术撰写。仅供娱乐与自我探索参考。",
