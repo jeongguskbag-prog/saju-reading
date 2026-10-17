@@ -13,6 +13,8 @@ import SiteFooter from "./SiteFooter";
 import LangSwitch from "./LangSwitch";
 import ReviewsSection from "./ReviewsSection";
 import TopicCards from "./TopicCards";
+import { Compare, Excerpt, FlowBand, ForWhom, HowWeRead, PART_QUESTIONS, Receive } from "./LandingStory";
+import StickyCta from "./StickyCta";
 import type { Review } from "@/lib/reviews";
 import { FloatingKakao, SupportBox } from "./SupportLinks";
 
@@ -73,6 +75,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
               <BrandSeal size={40} title="" />
               {t.brand.name} <span>{t.brand.tagline}</span>
             </p>
+            {site === "ko" && <p className="lp-hero-ask">내 사주는 다섯 유형 중 어디일까?</p>}
             <h1>{L.h1}</h1>
             <p className="lp-hero-sub">{L.heroSub}</p>
             <div className="lp-cta-row">
@@ -137,7 +140,10 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
         </div>
       </Section>
 
+      {site === "ko" && <FlowBand />}
+      {site === "ko" && <ForWhom />}
       {site === "ko" && <TopicCards years={years} />}
+      {site === "ko" && <HowWeRead />}
 
       <Section id="contents" tone="sunk" title={L.contentsTitle} lead={L.contentsLead}>
         <ol className="lp-toc">
@@ -147,6 +153,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
               <li key={k}>
                 <span className="lp-toc-num" aria-label={c.label}>第{HANJA_NUM[i]}部</span>
                 <div>
+                  {site === "ko" && PART_QUESTIONS[k] && <span className="lp-toc-q">{PART_QUESTIONS[k]}</span>}
                   <b>{withYears(c.title, years)}</b>
                   <p>{c.sections.map((s) => withYears(s, years)).join(", ")}</p>
                 </div>
@@ -155,6 +162,9 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
           })}
         </ol>
       </Section>
+
+      {site === "ko" && <Excerpt />}
+      {site === "ko" && <Compare />}
 
       <Section
         id="price"
@@ -206,6 +216,8 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
         </ol>
       </Section>
 
+      {site === "ko" && <Receive />}
+
       <Section id="method" tone="sunk" title={L.methodTitle}>
         <dl className="lp-method">
           {L.method.map((m) => (
@@ -244,6 +256,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
 
       <SiteFooter site={site} />
       <FloatingKakao site={site} />
+      {site === "ko" && <StickyCta />}
     </div>
   );
 }
