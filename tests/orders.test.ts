@@ -8,6 +8,9 @@ import { sendCompletionIfReady } from "@/lib/fulfill";
 import { josa } from "@/lib/josa";
 import { POST as readingPOST } from "@/app/api/reading/route";
 
+// 감정서 파일(헤드리스 크롬)은 시험에서 만들지 않는다.
+vi.mock("@/lib/render", () => ({ renderReportFiles: vi.fn(async () => { throw new Error("no chrome in tests"); }) }));
+
 const input: BirthInput = { name: "홍길동", gender: "female", calendar: "solar", year: 1978, month: 8, day: 8, hour: 10, minute: 0 };
 const now = new Date("2026-10-15T03:00:00Z");
 

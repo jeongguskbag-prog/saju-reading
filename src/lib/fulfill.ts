@@ -1,9 +1,8 @@
 // 결제한 감정서를 끝까지 써서 저장하고, 다 쓰면 완성 메일을 한 번 보낸다(서버 전용).
 // 손님이 결제 직후 창을 닫아도 결제 승인 단계에서 이 작업을 이어서 돌리므로 감정서와 메일이 빠지지 않는다.
 // 손님 화면도 같은 파트를 요청할 수 있는데, 파트마다 잠금이 있어 AI는 한 번만 부른다.
-import { sendReportEmail } from "./mail";
-import { sendReportSms } from "./sms";
-import { getReport, getSavedPart, getSavedParts, lockPart, markMailed, savePart, unlockPart, unmarkMailed, type Report } from "./orders";
+import { deliverReport } from "./delivery";
+import { getReport, getSavedPart, lockPart, savePart, unlockPart, type Report } from "./orders";
 import { generatePart, ReadingError } from "./reading";
 import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
 
@@ -35,22 +34,14 @@ async function writeNaming(report: Report): Promise<PartResult> {
   return { part: "naming", naming: await generateNaming(report.chart, report.order.naming) };
 }
 
-/** 상품의 모든 파트가 저장됐으면 완성 메일을 보낸다(주문당 한 번). */
+/**
+ * 상품의 모든 파트가 저장됐으면 감정서(PDF·HTML 파일과 링크)를 보낸다(주문당 한 번).
+ * 발송을 예약해 둔 주문(deliverAt)은 여기서 보내지 않고, 예약 시각에 /api/deliver가 보낸다.
+ */
 export async function sendCompletionIfReady(report: Report, origin?: string): Promise<boolean> {
   if (!origin) return false;
-  const saved = await getSavedParts(report.order.token!, report.product.parts);
-  if (report.product.parts.some((p) => !saved[p])) return false;
-  if (!(await markMailed(report.order.id))) return false;
-  const url = `${origin}/r/${report.order.token}`;
-  // 이메일과 문자(휴대폰 번호를 남긴 경우)를 함께 보낸다. 하나라도 가면 보낸 것으로 본다.
-  const [mailed, texted] = await Promise.all([
-    report.order.email ? sendReportEmail(report.order, url, report.expiresAt) : Promise.resolve(false),
-    sendReportSms(report.order, url, report.expiresAt),
-  ]);
-  const ok = mailed || texted;
-  // 메일·문자 설정이 없거나 모두 실패하면 표시를 지워, 나중에 다시 보낼 수 있게 한다.
-  if (!ok) await unmarkMailed(report.order.id);
-  return ok;
+  if (report.order.deliverAt) return false;
+  return (await deliverReport(report, origin)) === "sent";
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -59,9 +50,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * 결제 직후 서버에서 감정서 전체를 쓴다. 파트들은 동시에 쓰고, 다른 곳(손님 화면)이 쓰는 중인 파트는 끝날 때까지 기다린다.
  * 한 파트가 실패해도 나머지는 계속 쓴다. 실패한 파트는 손님이 리포트 화면을 열 때 다시 쓴다.
  */
-export async function completeReport(token: string, origin: string, deadlineMs = 280_000): Promise<void> {
+export async function completeReport(token: string, origin: string, deadlineMs = 280_000): Promise<boolean> {
   const report = await getReport(token);
-  if (!report || report.expired) return;
+  if (!report || report.expired) return false;
   const until = Date.now() + deadlineMs;
   await Promise.all(
     report.product.parts.map(async (part) => {
@@ -78,4 +69,5 @@ export async function completeReport(token: string, origin: string, deadlineMs =
     }),
   );
   await sendCompletionIfReady(report, origin);
+  return true;
 }

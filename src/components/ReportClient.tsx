@@ -7,6 +7,7 @@ import ReportView, { type PartStates } from "./ReportView";
 import NamingReport from "./NamingReport";
 import ResultActions from "./ResultActions";
 import { josa } from "@/lib/josa";
+import { buildResultHtml } from "@/lib/export";
 
 interface Props {
   token: string;
@@ -21,6 +22,8 @@ interface Props {
   /** 완성 링크를 보낼 곳(이메일, 가린 휴대폰 번호). 보낼 수 없으면 null */
   sendTo: string | null;
   orderId: string;
+  /** 파일을 보낼 시각(ISO). 발송을 예약하지 않았으면 null(완성 즉시 발송) */
+  deliverAt: string | null;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -80,7 +83,7 @@ function whenVisible(): Promise<void> {
   });
 }
 
-export default function ReportClient({ token, partKeys, productName, expiresAt, chart, initialParts, justPaid, sendTo, orderId }: Props) {
+export default function ReportClient({ token, partKeys, productName, expiresAt, chart, initialParts, justPaid, sendTo, orderId, deliverAt }: Props) {
   const [parts, setParts] = useState<PartStates>(() =>
     Object.fromEntries(Object.entries(initialParts).map(([k, result]) => [k, { status: "done", result }])),
   );
@@ -119,6 +122,16 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
   const busy = Object.values(parts).some((p) => p?.status === "loading");
   const doneCount = partKeys.filter((p) => parts[p]?.status === "done").length;
 
+  // 서버가 감정서를 파일로 만들 때(헤드리스 크롬) 쓰는 함수: 다 쓰인 뒤에만 연다.
+  useEffect(() => {
+    if (doneCount !== partKeys.length) return;
+    const w = window as unknown as { __reportHtml?: () => string };
+    w.__reportHtml = () => buildResultHtml(document.getElementById("result")!, productName, "ko");
+    return () => {
+      delete w.__reportHtml;
+    };
+  }, [doneCount, partKeys.length, productName]);
+
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(`${location.origin}/r/${token}`);
@@ -131,6 +144,17 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
 
   const until = new Date(new Date(expiresAt).getTime() + 9 * 3_600_000);
   const untilText = `${until.getUTCFullYear()}년 ${until.getUTCMonth() + 1}월 ${until.getUTCDate()}일`;
+  const sendAt = deliverAt ? new Date(new Date(deliverAt).getTime() + 9 * 3_600_000) : null;
+  const sendAtText = sendAt
+    ? `${sendAt.getUTCMonth() + 1}월 ${sendAt.getUTCDate()}일 ${sendAt.getUTCHours() < 12 ? "오전" : "오후"} ${sendAt.getUTCHours() % 12 || 12}시${sendAt.getUTCMinutes() ? ` ${sendAt.getUTCMinutes()}분` : ""}`
+    : "";
+  const delivery = sendTo
+    ? sendAt
+      ? sendAt.getTime() - 9 * 3_600_000 > Date.now()
+        ? `${sendAtText}에 ${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. 그 전이라도 완성되면 이 화면에서 바로 보실 수 있습니다. `
+        : `${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
+      : `완성되면 ${sendTo}(으)로 감정서 PDF 파일과 HTML 파일을 보내 드립니다. `
+    : "이 페이지 주소가 감정서 열쇠입니다. 아래 버튼으로 복사해 두세요. ";
   const notice = (
     <section className="card report-notice no-print" aria-live="polite">
       {justPaid && <h2>신청이 접수되었습니다</h2>}
@@ -140,9 +164,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
           : `${josa(productName, "이", "가")} 완성되었습니다.`}
       </p>
       <p className="muted">
-        {sendTo
-          ? `완성되면 ${sendTo}(으)로 감정서 링크를 보내 드립니다. `
-          : "이 페이지 주소가 감정서 열쇠입니다. 아래 버튼으로 복사해 두세요. "}
+        {delivery}
         감정서는 {untilText}까지 열 수 있으니 기간 안에 PDF로 저장해 두세요. 링크를 아는 사람은 누구나 볼 수 있으니 공유에
         주의해 주세요. 주문번호 {orderId}
       </p>

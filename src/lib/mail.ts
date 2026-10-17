@@ -2,6 +2,13 @@
 import { BRAND, REPORT_VALID_DAYS, won } from "./product";
 import type { Order } from "./orders";
 import { josa } from "./josa";
+import type { ReportFiles } from "./render";
+
+/** 함께 보낼 파일과 받기 링크(발송 예약을 쓸 때) */
+export interface MailFiles {
+  files: ReportFiles | null;
+  links: { view: string; pdf: string; html: string };
+}
 
 export function isMailEnabled(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.MAIL_FROM);
@@ -15,7 +22,7 @@ const ymd = (iso: string) => {
 };
 
 /** 감정서 완성 메일. 문구는 천기록 안내문을 따른다. */
-export function reportEmail(order: Order, url: string, expiresAt: string) {
+export function reportEmail(order: Order, url: string, expiresAt: string, extra?: MailFiles) {
   const name = order.input.name?.trim() || "의뢰인";
   const subject = `[${BRAND.name}] 의뢰하신 ${name} 님의 맞춤 감정서가 완성되었습니다`;
   const until = ymd(expiresAt);
@@ -23,13 +30,19 @@ export function reportEmail(order: Order, url: string, expiresAt: string) {
     order.productId === "naming"
       ? "의뢰인님의 사주 명식에서 보완할 오행을 찾고, 수리·자원오행·발음오행을 하나하나 맞춰 지은"
       : "의뢰인님의 사주 명식에 깃든 오행의 분포와 대운의 흐름을 정밀하게 계산하고 감정한";
+  const attached = Boolean(extra?.files);
+  const fileLine = extra
+    ? attached
+      ? "감정서를 PDF 파일과 HTML 파일로 이 메일에 첨부해 드립니다. 아래 링크에서도 감정서를 열고 파일을 받으실 수 있습니다."
+      : "아래 링크에서 감정서를 열고 PDF 파일과 HTML 파일을 받으실 수 있습니다."
+    : "아래 링크에서 감정서를 열고 PDF로 저장하실 수 있습니다.";
   const text = `[${BRAND.name}] 의뢰하신 ${name} 님의 맞춤 감정서가 완성되었습니다.
 
 ${lead} [${josa(order.orderName, "]이", "]가")} 완성되었습니다.
-아래 링크에서 감정서를 열고 PDF로 저장하실 수 있습니다.
+${fileLine}
 
 ${url}
-
+${extra ? `\nPDF 파일 받기: ${extra.links.pdf}\nHTML 파일 받기: ${extra.links.html}\n` : ""}
 운(運)은 정해진 종착역이 아니라, 내가 가진 배의 모양과 바다의 조류(潮流)를 아는 지혜입니다.
 본 감정서가 의뢰인님의 앞날에 가장 든든한 등대이자 인생의 나침반이 되기를 진심으로 기원합니다.
 
@@ -42,8 +55,12 @@ ${url}
   const html = `<div style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.8;color:#2a2926;max-width:560px;margin:0 auto;padding:8px">
 <p style="font-size:13px;letter-spacing:.3em;color:#b0262c;margin:0 0 4px">天 機 錄</p>
 <h1 style="font-size:20px;margin:0 0 20px;font-weight:700">의뢰하신 ${e(name)} 님의 맞춤 감정서가 완성되었습니다.</h1>
-<p>${e(lead)} <b>[${e(order.orderName)}]</b>${josa(order.orderName, "이", "가").slice(order.orderName.length)} 완성되었습니다. 아래 버튼을 눌러 감정서를 열고 PDF로 저장하실 수 있습니다.</p>
-<p style="margin:24px 0"><a href="${e(url)}" style="display:inline-block;background:#b0262c;color:#ffffff;padding:14px 26px;border-radius:4px;text-decoration:none;font-weight:700">감정서 열기</a></p>
+<p>${e(lead)} <b>[${e(order.orderName)}]</b>${josa(order.orderName, "이", "가").slice(order.orderName.length)} 완성되었습니다. ${e(fileLine)}</p>
+<p style="margin:24px 0"><a href="${e(url)}" style="display:inline-block;background:#b0262c;color:#ffffff;padding:14px 26px;border-radius:4px;text-decoration:none;font-weight:700">감정서 열기</a>${
+    extra
+      ? ` <a href="${e(extra.links.pdf)}" style="display:inline-block;border:1px solid #b0262c;color:#b0262c;padding:13px 18px;border-radius:4px;text-decoration:none;font-weight:700;margin-left:6px">PDF 받기</a> <a href="${e(extra.links.html)}" style="display:inline-block;border:1px solid #b0262c;color:#b0262c;padding:13px 18px;border-radius:4px;text-decoration:none;font-weight:700;margin-left:6px">HTML 받기</a>`
+      : ""
+  }</p>
 <p style="border-left:3px solid #b0262c;padding-left:14px;color:#57544d">운(運)은 정해진 종착역이 아니라,<br>내가 가진 배의 모양과 바다의 조류(潮流)를 아는 지혜입니다.</p>
 <p>본 감정서가 의뢰인님의 앞날에 가장 든든한 등대이자 인생의 나침반이 되기를 진심으로 기원합니다.</p>
 <ul style="font-size:13px;color:#57544d;padding-left:18px">
@@ -58,14 +75,21 @@ ${url}
 }
 
 /** 보냈으면 true. 메일 실패는 결제 흐름을 막지 않는다. */
-export async function sendReportEmail(order: Order, url: string, expiresAt: string): Promise<boolean> {
+export async function sendReportEmail(order: Order, url: string, expiresAt: string, extra?: MailFiles): Promise<boolean> {
   if (!isMailEnabled()) return false;
-  const { subject, html, text } = reportEmail(order, url, expiresAt);
+  const { subject, html, text } = reportEmail(order, url, expiresAt, extra);
+  const f = extra?.files;
+  const attachments = f
+    ? [
+        { filename: `${f.baseName}.pdf`, content: f.pdf.toString("base64") },
+        { filename: `${f.baseName}.html`, content: Buffer.from(f.html, "utf8").toString("base64") },
+      ]
+    : undefined;
   try {
     const res = await fetch(`${(process.env.RESEND_API_BASE || "https://api.resend.com").replace(/\/$/, "")}/emails`, {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [order.email], subject, html, text }),
+      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [order.email], subject, html, text, ...(attachments ? { attachments } : {}) }),
     });
     if (!res.ok) console.error("메일 발송 실패", res.status, await res.text().catch(() => ""));
     return res.ok;

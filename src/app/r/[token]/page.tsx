@@ -58,6 +58,7 @@ export default async function ReportPage({ params, searchParams }: { params: Par
             .join(", ") || null
         }
         orderId={report.order.id}
+        deliverAt={report.order.deliverAt ?? null}
       />
     </SiteShell>
   );

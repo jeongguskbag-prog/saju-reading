@@ -24,14 +24,25 @@ export const KAKAO_TEMPLATE = `[천기록] #{이름} 님, 의뢰하신 #{상품}
 아래 링크에서 감정서를 열고 PDF로 저장하실 수 있습니다.
 #{링크}
 
+PDF 파일 받기: #{PDF}
+HTML 파일 받기: #{HTML}
+
 열람 기간: #{기한}까지
 링크를 아는 사람은 누구나 열 수 있으니 소중히 보관해 주세요.`;
 
-export function kakaoVariables(order: Order, url: string, expiresAt: string): Record<string, string> {
+/** 파일 받기 링크 */
+export interface FileLinks {
+  pdf: string;
+  html: string;
+}
+
+export function kakaoVariables(order: Order, url: string, expiresAt: string, links?: FileLinks): Record<string, string> {
   return {
     "#{이름}": order.input.name?.trim() || "의뢰인",
     "#{상품}": order.orderName,
     "#{링크}": url,
+    "#{PDF}": links?.pdf ?? `${url}/pdf`,
+    "#{HTML}": links?.html ?? `${url}/html`,
     "#{기한}": ymd(expiresAt),
   };
 }
@@ -52,12 +63,12 @@ const ymd = (iso: string) => {
   return `${d.getUTCFullYear()}.${d.getUTCMonth() + 1}.${d.getUTCDate()}`;
 };
 
-export function reportSmsText(order: Order, url: string, expiresAt: string): string {
+export function reportSmsText(order: Order, url: string, expiresAt: string, links?: FileLinks): string {
   const name = order.input.name?.trim() || "의뢰인";
   return `[${BRAND.name}] ${name} 님의 ${josa(order.orderName, "이", "가")} 완성되었습니다.
 아래 링크에서 감정서를 열고 PDF로 저장하실 수 있습니다.
 ${url}
-열람 기간: ${ymd(expiresAt)}까지(${REPORT_VALID_DAYS}일)
+${links ? `PDF 파일: ${links.pdf}\nHTML 파일: ${links.html}\n` : ""}열람 기간: ${ymd(expiresAt)}까지(${REPORT_VALID_DAYS}일)
 링크를 아는 사람은 누구나 열 수 있으니 소중히 보관해 주세요.`;
 }
 
@@ -72,10 +83,10 @@ export function solapiAuth(apiKey: string, secret: string, now = new Date(), sal
  * 보냈으면 true. 실패해도 결제 흐름을 막지 않는다.
  * 손님이 카카오톡을 고르고 알림톡 설정이 있으면 알림톡, 아니면 문자(90바이트가 넘으면 솔라피가 장문 LMS로)로 보낸다.
  */
-export async function sendReportSms(order: Order, url: string, expiresAt: string): Promise<boolean> {
+export async function sendReportSms(order: Order, url: string, expiresAt: string, links?: FileLinks): Promise<boolean> {
   if (!isSmsEnabled() || !order.phone) return false;
   const kakao = order.channel === "kakao" && isKakaoEnabled();
-  const vars = kakao ? kakaoVariables(order, url, expiresAt) : null;
+  const vars = kakao ? kakaoVariables(order, url, expiresAt, links) : null;
   const base = (process.env.SOLAPI_API_BASE || "https://api.solapi.com").replace(/\/$/, "");
   try {
     const res = await fetch(`${base}/messages/v4/send-many/detail`, {
@@ -90,7 +101,7 @@ export async function sendReportSms(order: Order, url: string, expiresAt: string
             to: order.phone,
             from: process.env.SMS_FROM!.replace(/\D/g, ""),
             // 알림톡은 템플릿 문구와 같은 글을 함께 넣어 두면, 실패할 때 이 글이 문자로 대신 간다.
-            text: vars ? kakaoText(vars) : reportSmsText(order, url, expiresAt),
+            text: vars ? kakaoText(vars) : reportSmsText(order, url, expiresAt, links),
             subject: `[${BRAND.name}] 감정서 완성`,
             autoTypeDetect: true,
             ...(vars

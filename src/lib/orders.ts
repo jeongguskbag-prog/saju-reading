@@ -31,6 +31,8 @@ export interface Order {
   phone?: string;
   /** 휴대폰으로 받는 방법: 문자(기본) 또는 카카오톡 알림톡 */
   channel?: "sms" | "kakao";
+  /** 파일(PDF·HTML)을 보내기로 예약한 시각(ISO). 있으면 완성되어도 바로 보내지 않고 이때 보낸다. */
+  deliverAt?: string;
 }
 
 export class OrderError extends Error {
@@ -247,6 +249,16 @@ export async function getSavedParts(token: string, parts: readonly PartKey[]): P
 export async function savePart(token: string, part: PartKey, result: PartResult, expiresAt?: string, now = new Date()): Promise<void> {
   const ttl = expiresAt ? Math.max(3600, Math.ceil((new Date(expiresAt).getTime() + DAY - now.getTime()) / 1000)) : undefined;
   await requireStore().set(partKey(token, part), result, ttl);
+}
+
+/** 발송 예약 시각을 적거나(null이면) 지운다. */
+export async function setDeliverAt(orderId: string, deliverAt: string | null): Promise<void> {
+  const store = requireStore();
+  const order = await getOrder(orderId);
+  if (!order) return;
+  const { deliverAt: _old, ...rest } = order;
+  void _old;
+  await store.set(orderKey(orderId), deliverAt ? { ...rest, deliverAt } : rest);
 }
 
 /** 완성 메일을 한 번만 보내기 위한 표시. 처음 표시하면 true. */

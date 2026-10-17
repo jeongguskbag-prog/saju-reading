@@ -125,8 +125,8 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
     <section className="card purchase no-print" aria-labelledby="purchase-h">
       <h2 id="purchase-h">1:1 맞춤 감정서 신청</h2>
       <p className="purchase-lead">
-        이 명식을 바탕으로 의뢰인 한 분만을 위한 감정서를 써서 책자로 엮어 드립니다. 결제하면 바로 작성을 시작하고, 완성되면 이메일이나 문자로
-        감정서 링크를 보내 드립니다.
+        이 명식을 바탕으로 의뢰인 한 분만을 위한 감정서를 써서 책자로 엮어 드립니다. 결제하면 바로 작성을 시작하고, 완성되는 대로
+        화면에서 보실 수 있으며, 신청 50분 뒤 이메일·카카오톡·문자로 PDF 파일과 HTML 파일을 보내 드립니다.
       </p>
       {checkout.enabled ? (
         <form className="form-grid" onSubmit={onBuy} noValidate>
@@ -225,7 +225,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
           </button>
           <p className="purchase-time">
             ⏳ 결제 후 명식 계산부터 각 부의 풀이 작성, 책자 편집까지 차례로 진행되어 <b>완성까지 최대 1시간가량</b> 걸릴 수 있습니다.
-            창을 닫으셔도 작성은 이어지며, 완성되면 바로 알려 드립니다.
+            창을 닫으셔도 작성은 이어지며, <b>신청 50분 뒤</b> 감정서 PDF 파일과 HTML 파일을 보내 드립니다.
           </p>
           <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
           {checkout.testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}

@@ -6,6 +6,9 @@ import { createMemoryStore, setStoreForTest } from "@/lib/store";
 import { maskPhone, normalizePhone, reportSmsText, solapiAuth } from "@/lib/sms";
 import { sendCompletionIfReady } from "@/lib/fulfill";
 
+// 감정서 파일(헤드리스 크롬)은 시험에서 만들지 않는다.
+vi.mock("@/lib/render", () => ({ renderReportFiles: vi.fn(async () => { throw new Error("no chrome in tests"); }) }));
+
 const input: BirthInput = { name: "홍길동", gender: "female", calendar: "solar", year: 1978, month: 8, day: 8, hour: 10, minute: 0 };
 const now = new Date("2026-10-15T03:00:00Z");
 const json = (body: object) => new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
