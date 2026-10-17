@@ -14,6 +14,12 @@ export const birthInputSchema = z.object({
   minute: z.number().int().min(0).max(59).nullable().optional(),
   region: z.enum(["KR", "TW", "HK", "CN"]).optional(),
   locale: z.enum(["ko", "zh-Hant", "zh-Hans"]).optional(),
+  life: z
+    .object({
+      marital: z.enum(["married", "dating", "single"]).optional(),
+      children: z.boolean().optional(),
+    })
+    .optional(),
   options: z
     .object({
       solarTimeCorrection: z.boolean().optional(),

@@ -38,6 +38,11 @@ export interface BirthInput {
   region?: Region;
   /** 결과 문장의 언어. 기본 ko */
   locale?: Locale;
+  /** 손님이 선택해서 알려 준 생활 상황(선택). 애정·가족 풀이의 조언을 맞추는 데만 쓴다. */
+  life?: {
+    marital?: "married" | "dating" | "single";
+    children?: boolean;
+  };
   options?: {
     /** 출생지 경도로 진태양시(평균태양시) 보정. 기본 true */
     solarTimeCorrection?: boolean;

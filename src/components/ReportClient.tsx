@@ -7,6 +7,7 @@ import ReportView, { type PartStates } from "./ReportView";
 import NamingReport from "./NamingReport";
 import { josa } from "@/lib/josa";
 import { buildResultHtml } from "@/lib/export";
+import ReviewForm, { type MyReview } from "./ReviewForm";
 
 interface Props {
   token: string;
@@ -25,6 +26,8 @@ interface Props {
   deliverAt: string | null;
   /** 화면에 감정서를 펼치기까지 남은 시간(ms). 결제 뒤 몇 분(기본 3분)을 기다린다. 0이면 바로 보여 준다. */
   revealInMs: number;
+  /** 이 주문으로 남긴 후기(없으면 null) */
+  initialReview: MyReview | null;
 }
 
 /** 서버가 만든 감정서 파일(PDF·HTML)을 내려받는 버튼. 만드는 데 몇 초 걸려 그동안 버튼에 표시한다. */
@@ -149,7 +152,7 @@ function whenVisible(): Promise<void> {
   });
 }
 
-export default function ReportClient({ token, partKeys, productName, expiresAt, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs }: Props) {
+export default function ReportClient({ token, partKeys, productName, expiresAt, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, initialReview }: Props) {
   const [parts, setParts] = useState<PartStates>(() =>
     Object.fromEntries(Object.entries(initialParts).map(([k, result]) => [k, { status: "done", result }])),
   );
@@ -318,6 +321,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
         <h2>감정서 저장</h2>
         <FileButtons token={token} ready={!busy && doneCount === partKeys.length} productName={productName} personName={chart.input.name ?? ""} />
       </section>
+      {!busy && doneCount === partKeys.length && <ReviewForm token={token} initial={initialReview} />}
     </div>
   );
 }

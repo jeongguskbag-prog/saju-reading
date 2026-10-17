@@ -6,6 +6,7 @@ import { isMailEnabled } from "@/lib/mail";
 import { isKakaoEnabled, isSmsEnabled, maskPhone, phoneChannels } from "@/lib/sms";
 import { webRevealMinutes } from "@/lib/delivery";
 import { getReport, getSavedParts } from "@/lib/orders";
+import { getReviewByOrder } from "@/lib/reviews";
 import { BRAND, BUSINESS, REPORT_VALID_DAYS } from "@/lib/product";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,7 @@ export default async function ReportPage({ params, searchParams }: { params: Par
     );
   }
   const saved = await getSavedParts(token, report.product.parts);
+  const myReview = await getReviewByOrder(report.order.id).catch(() => null);
   return (
     <SiteShell>
       <ReportClient
@@ -63,6 +65,9 @@ export default async function ReportPage({ params, searchParams }: { params: Par
         }
         orderId={report.order.id}
         deliverAt={report.order.deliverAt ?? null}
+        initialReview={
+          myReview ? { name: myReview.name, rating: myReview.rating, text: myReview.text, createdAt: myReview.createdAt, hidden: Boolean(myReview.hidden) } : null
+        }
         // 결제 뒤 몇 분(기본 3분)이 지나야 화면에 감정서를 펼친다. 파일 만들기(render=1)는 기다리지 않는다.
         revealInMs={
           render === "1"

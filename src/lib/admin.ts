@@ -50,6 +50,8 @@ export const ORDER_COLUMNS = [
   "태어난 시각",
   "출생 지역",
   "진태양시 보정",
+  "결혼",
+  "자녀",
   "작명 신청",
   "이메일",
   "휴대폰",
@@ -82,6 +84,8 @@ export function orderRow(o: Order, origin: string): OrderRow {
     "태어난 시각": i.hour === null || i.hour === undefined ? "모름" : `${p(i.hour)}:${p(i.minute ?? 0)}`,
     "출생 지역": REGION_LABEL[i.region ?? "KR"] ?? String(i.region ?? "KR"),
     "진태양시 보정": i.options?.solarTimeCorrection === false ? "안 함" : "함",
+    결혼: i.life?.marital ? { married: "기혼", dating: "연애", single: "싱글" }[i.life.marital] : "",
+    자녀: i.life?.children === undefined ? "" : i.life.children ? "있음" : "없음",
     "작명 신청": n
       ? [
           n.mode === "baby" ? "아기 이름" : "개명",

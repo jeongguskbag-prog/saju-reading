@@ -78,6 +78,9 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
   const [minute, setMinute] = useState("0");
   const [solarTimeCorrection, setSolarTimeCorrection] = useState(true);
   const [dayBoundary, setDayBoundary] = useState<"at23" | "at0">("at23");
+  // 결혼·자녀(선택, 한국어 화면). 애정·가족 풀이를 상황에 맞추는 데만 쓴다. 같은 버튼을 다시 누르면 선택이 풀린다.
+  const [marital, setMarital] = useState<"" | "married" | "dating" | "single">("");
+  const [children, setChildren] = useState<"" | "yes" | "no">("");
 
   const [chart, setChart] = useState<SajuChart | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -136,6 +139,9 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
       // 한국어 웹은 예전과 같은 요청 모양을 유지한다.
       ...(locale === "ko" ? {} : { locale }),
       ...(region === "KR" ? {} : { region }),
+      ...(locale === "ko" && (marital || children)
+        ? { life: { ...(marital ? { marital } : {}), ...(children ? { children: children === "yes" } : {}) } }
+        : {}),
       options: { solarTimeCorrection, dayBoundary, ...(region === "CN" ? { longitude: CN_CITIES[cityIndex].longitude } : {}) },
     };
     setSubmitting(true);
@@ -246,6 +252,31 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
             </label>
           </div>
         </div>
+
+        {locale === "ko" && (
+          <div className="field life-fields">
+            <span className="label">결혼·자녀 <span className="muted">(선택)</span></span>
+            <div className="life-row">
+              <div>
+                <span className="sublabel">결혼 여부</span>
+                <div className="segmented" role="group" aria-label="결혼 여부">
+                  {([["married", "기혼"], ["dating", "연애"], ["single", "싱글"]] as const).map(([v, l]) => (
+                    <button key={v} type="button" aria-pressed={marital === v} onClick={() => setMarital(marital === v ? "" : v)}>{l}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span className="sublabel">자녀 여부</span>
+                <div className="segmented" role="group" aria-label="자녀 여부">
+                  {([["yes", "있음"], ["no", "없음"]] as const).map(([v, l]) => (
+                    <button key={v} type="button" aria-pressed={children === v} onClick={() => setChildren(children === v ? "" : v)}>{l}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <p className="muted">알려 주시면 감정서의 애정·가족 풀이와 생활 조언을 상황에 맞춰 드립니다. 명식 계산에는 쓰지 않습니다.</p>
+          </div>
+        )}
 
         <details className="advanced">
           <summary>{t.calcOptions}</summary>

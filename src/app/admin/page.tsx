@@ -4,6 +4,8 @@ import AdminLogin from "@/components/AdminLogin";
 import SiteShell from "@/components/SiteShell";
 import { ADMIN_COOKIE, checkAdminSession, isAdminEnabled, ORDER_COLUMNS, orderRow } from "@/lib/admin";
 import { listPaidOrders } from "@/lib/orders";
+import { listReviews } from "@/lib/reviews";
+import AdminReviewToggle from "@/components/AdminReviewToggle";
 import { originFrom } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +34,7 @@ export default async function AdminPage() {
   const orders = await listPaidOrders(200);
   const rows = orders.map((o) => orderRow(o, origin));
   const total = orders.reduce((s, o) => s + o.amount, 0);
+  const reviews = await listReviews({ limit: 100, includeHidden: true });
   return (
     <SiteShell>
       <section className="card admin-orders">
@@ -51,6 +54,30 @@ export default async function AdminPage() {
                   {ORDER_COLUMNS.map((c) => (
                     <td key={c}>{c === "감정서 주소" && r[c] ? <a href={r[c]} target="_blank" rel="noopener">열기</a> : r[c]}</td>
                   ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section className="card admin-orders">
+        <h2>의뢰인 후기 ({reviews.length}건)</h2>
+        <p className="muted">첫 화면에는 숨기지 않은 후기가 최신 순으로 실립니다. 욕설·개인정보·광고처럼 싣기 어려운 후기만 숨기세요.</p>
+        <div className="admin-table-wrap">
+          <table className="table admin-table">
+            <thead>
+              <tr><th>작성일</th><th>주문번호</th><th>이름</th><th>별점</th><th>상품</th><th>후기</th><th>공개</th></tr>
+            </thead>
+            <tbody>
+              {reviews.map((r) => (
+                <tr key={r.orderId}>
+                  <td>{r.createdAt.slice(0, 10)}</td>
+                  <td>{r.orderId}</td>
+                  <td>{r.name}</td>
+                  <td>{"★".repeat(r.rating)}</td>
+                  <td>{r.product}</td>
+                  <td style={{ whiteSpace: "pre-line", minWidth: 260 }}>{r.text}</td>
+                  <td><AdminReviewToggle orderId={r.orderId} hidden={Boolean(r.hidden)} /></td>
                 </tr>
               ))}
             </tbody>

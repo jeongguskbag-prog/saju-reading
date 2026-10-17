@@ -854,3 +854,48 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   background: var(--surface); color: var(--text-2); font-size: 12px; font-weight: 600; text-decoration: none; line-height: 1.5;
 }
 .app-links a:active, .app-links a:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 의뢰인 후기 */
+.lp-reviews-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.review-avg { color: #c9971c; font-weight: 700; }
+.review-cards { list-style: none; padding: 0; margin: 20px 0 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.review-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; min-height: 180px; }
+.review-card-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-3); }
+.review-stars { color: #e0a82e; letter-spacing: 1px; font-size: 16px; }
+.review-stars .off { color: var(--border); }
+.review-text { margin: 0; flex: 1; white-space: pre-line; line-height: 1.7; }
+.review-who { margin: 0; font-size: 13px; color: var(--text-2); }
+.review-badge { display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px; font-size: 11px; color: var(--accent); border: 1px solid var(--accent); }
+.review-note { font-size: 13px; }
+.review-form textarea { width: 100%; font: inherit; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); resize: vertical; }
+.review-count { text-align: right; font-size: 12px; margin-top: 4px; }
+.review-mine { white-space: pre-line; }
+.star-pick { display: flex; align-items: center; gap: 2px; }
+.star-pick button { background: none; border: 0; font-size: 32px; line-height: 1; padding: 2px; cursor: pointer; color: var(--border); }
+.star-pick button.on { color: #e0a82e; }
+.star-label { margin-left: 10px; font-size: 14px; color: var(--text-2); }
+
+/* 결혼·자녀(선택) */
+.life-row { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; }
+.life-row .sublabel { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+@media (max-width: 420px) { .life-row { grid-template-columns: 1fr; } }
+
+/* 감정서에서 풀어 드리는 내용 */
+.topic-cards { list-style: none; padding: 0; margin: 22px 0 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.topic-card { position: relative; border-radius: 16px; padding: 20px 20px 16px; border: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; min-height: 200px; }
+.topic-card.tone-sky { background: linear-gradient(160deg, #e3ecfa, var(--surface) 70%); }
+.topic-card.tone-lilac { background: linear-gradient(160deg, #ece6f7, var(--surface) 70%); }
+.topic-card.tone-gold { background: linear-gradient(160deg, #f8efc9, var(--surface) 70%); }
+.topic-card.tone-mint { background: linear-gradient(160deg, #dff3e8, var(--surface) 70%); }
+.topic-card.tone-rose { background: linear-gradient(160deg, #f8e3e3, var(--surface) 70%); }
+.topic-glyph { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); font-family: "Noto Serif KR", serif; font-size: 22px; color: var(--accent); box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+.topic-card h3 { font-family: var(--display); font-weight: 400; font-size: 20px; margin: 18px 0 8px; }
+.topic-card ul { margin: 0 0 12px; padding-left: 16px; font-size: 14px; color: var(--text-2); line-height: 1.7; flex: 1; }
+.topic-scope { margin: 0; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.topic-scope .tag { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); }
+.topic-scope .tag.both { color: var(--accent); border-color: var(--accent); }
+.topic-part { color: var(--text-3); }
+.topic-note { font-size: 13px; }
+@media (prefers-color-scheme: dark) {
+  .topic-card[class*="tone-"] { background: var(--surface); }
+}

@@ -11,6 +11,9 @@ import SamplePreview from "./SamplePreview";
 import BrandSeal from "./BrandSeal";
 import SiteFooter from "./SiteFooter";
 import LangSwitch from "./LangSwitch";
+import ReviewsSection from "./ReviewsSection";
+import TopicCards from "./TopicCards";
+import type { Review } from "@/lib/reviews";
 import { FloatingKakao, SupportBox } from "./SupportLinks";
 
 const HANJA_NUM = ["一", "二", "三", "四", "五"];
@@ -43,7 +46,7 @@ function Section({ id, title, lead, children, tone }: { id?: string; title: stri
   );
 }
 
-export default function Landing({ form, checkoutOpen = false, site = "ko" }: { form: ReactNode; checkoutOpen?: boolean; site?: SiteLocale }) {
+export default function Landing({ form, checkoutOpen = false, site = "ko", reviews = [] }: { form: ReactNode; checkoutOpen?: boolean; site?: SiteLocale; reviews?: Review[] }) {
   const t = siteCopy(site);
   const L = t.landing;
   const cfg = SITES[site];
@@ -134,6 +137,8 @@ export default function Landing({ form, checkoutOpen = false, site = "ko" }: { f
         </div>
       </Section>
 
+      {site === "ko" && <TopicCards years={years} />}
+
       <Section id="contents" tone="sunk" title={L.contentsTitle} lead={L.contentsLead}>
         <ol className="lp-toc">
           {CHAPTER_KEYS.map((k, i) => {
@@ -211,6 +216,8 @@ export default function Landing({ form, checkoutOpen = false, site = "ko" }: { f
           ))}
         </dl>
       </Section>
+
+      {site === "ko" && <ReviewsSection reviews={reviews} />}
 
       <section id="saju-form" className="lp-section lp-form" aria-labelledby="saju-form-h">
         <div className="lp-inner narrow">

@@ -6,10 +6,11 @@ import { BRAND } from "@/lib/product";
 
 export const metadata: Metadata = { title: `주문 조회 — ${BRAND.name}`, robots: { index: false, follow: false } };
 
-export default function OrderPage() {
+export default async function OrderPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const { next } = await searchParams;
   return (
     <SiteShell>
-      <OrderLookup />
+      <OrderLookup next={next} />
       <SupportBox compact />
     </SiteShell>
   );

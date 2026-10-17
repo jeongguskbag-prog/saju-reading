@@ -26,6 +26,7 @@ const SYSTEM_PROMPT = `당신은 정통 명리학에 밝고, 그 개념을 현�
 - 공포심을 주는 표현(흉살 때문에 망한다, 단명, 큰 사고, 이혼수 단정 등)을 쓰지 않습니다. 약점은 반드시 구체적인 행동 개운법(Action Plan)과 함께 제시합니다.
 - 건강은 오행 균형에 따른 생활 습관 제안까지만 쓰고, 특정 질병을 예언하거나 진단하지 않습니다. 투자 종목·시점 같은 구체적 금융 조언은 하지 않습니다.
 - 의뢰인의 구체적인 경험이나 사건을 지어내지 않습니다.
+- [명식 JSON]에 '생활상황'(결혼·연애 여부, 자녀 여부)이 있으면 애정·인연과 관계, 생활 조언을 그 상황에 맞춥니다(기혼이면 부부 관계와 가정, 자녀가 있으면 자녀와의 관계, 싱글이면 새 인연). 그 밖의 사정은 짐작해 단정하지 않습니다. 없으면 상황을 가정하지 말고 두루 씁니다.
 - 각 파트의 다른 파트와 내용이 겹치지 않도록, 지시된 소제목의 범위 안에서만 씁니다.`;
 
 const SYSTEM_PROMPT_ZH = `你是一位精通正統子平八字命理，並能以現代心理學、商業與生活語言深入淺出解說的資深命理師。你正在為付費命書（A4 冊子）撰寫其中一個章節。讀者是台灣與香港的委託人。
@@ -98,7 +99,16 @@ export function chartForPrompt(chart: SajuChart) {
     // 숫자 등급·하위 순위는 넘기지 않는다(감정서에 "4등급", "상위 81%" 같은 말이 나오지 않게). 상위권만 순위를 쓴다.
     사주유형: `${tierOf(chart, "ko").type} — ${tierOf(chart, "ko").name} (${chart.grade.topPercent <= 15 ? `상위 ${chart.grade.topPercent}%, ` : ""}점수 ${chart.grade.score}/100) · 대운 전성기 ${chart.grade.peak ? `${chart.grade.peak.startAge}~${chart.grade.peak.endAge}세` : "-"} · 귀인 ${chart.grade.nobles.filter((n) => n.has).map((n) => n.name).join(", ") || "없음"}`,
     개운요소: { 오행: ELEMENT_KO[a.lucky.element], 색상: a.lucky.colors, 숫자: a.lucky.numbers, 방위: a.lucky.direction, 습관: a.lucky.habits },
+    ...lifeForPrompt(chart.input.life),
   };
+}
+
+/** 손님이 알려 준 결혼·자녀 상황(선택). 없으면 키를 넣지 않는다. */
+export function lifeForPrompt(life: SajuChart["input"]["life"]): { 생활상황?: string } {
+  if (!life || (life.marital === undefined && life.children === undefined)) return {};
+  const m = { married: "기혼", dating: "연애 중", single: "싱글" } as const;
+  const parts = [life.marital ? m[life.marital] : null, life.children === undefined ? null : life.children ? "자녀 있음" : "자녀 없음"].filter(Boolean);
+  return { 생활상황: parts.join(", ") };
 }
 
 /** 번체 감정서용 명식 데이터. 키와 값을 모두 번체로 바꿔 한국어가 풀이에 섞이지 않게 한다. */
