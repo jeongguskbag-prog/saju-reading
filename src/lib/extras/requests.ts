@@ -22,7 +22,36 @@ export const newyearChoices = (now = new Date()): [number, number] => {
   return [y, y + 1];
 };
 
+/** 택일록 */
+export const TAEKIL_PURPOSES = { wedding: "결혼", move: "이사·입주", opening: "개업", contract: "계약", travel: "여행·출장", construction: "공사·인테리어" } as const;
+export type TaekilPurpose = keyof typeof TAEKIL_PURPOSES;
+const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+export const taekilRequestSchema = z.object({
+  purpose: z.enum(["wedding", "move", "opening", "contract", "travel", "construction"]),
+  start: ymd,
+  end: ymd,
+  weekendsOnly: z.boolean().optional(),
+});
+export type TaekilRequest = z.infer<typeof taekilRequestSchema>;
+export const TAEKIL_MAX_DAYS = 92;
+
+/** 기간 검사: 내일부터 1년 안, 최대 92일. 문제가 있으면 문구를 돌려준다. */
+export function checkTaekilRange(start: string, end: string, now = new Date()): string | null {
+  const t = (s: string) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+  const k = new Date(now.getTime() + 9 * 3_600_000);
+  const today = Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate());
+  const a = t(start);
+  const b = t(end);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || new Date(a).toISOString().slice(0, 10) !== start || new Date(b).toISOString().slice(0, 10) !== end) return "날짜를 확인해 주세요.";
+  if (a <= today) return "시작일은 내일 이후로 골라 주세요.";
+  if (b < a) return "끝나는 날이 시작일보다 앞섭니다.";
+  if ((b - a) / 86_400_000 + 1 > TAEKIL_MAX_DAYS) return `기간은 ${TAEKIL_MAX_DAYS}일(약 3개월)까지 고를 수 있습니다.`;
+  if (b - today > 400 * 86_400_000) return "1년 안의 날짜로 골라 주세요.";
+  return null;
+}
+
 const SCHEMAS: Partial<Record<ExtraKind, z.ZodType>> = {
+  taekil: taekilRequestSchema,
   gunghap: gunghapRequestSchema,
   newyear: newyearRequestSchema,
 };

@@ -77,7 +77,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
     price: 29000,
     parts: ["taekil"],
     summary: "결혼·이사·개업·계약 등 큰일에 맞는 길일을 내 사주와 날의 간지로 골라 드립니다",
-    available: false,
+    available: true,
   },
   iching: {
     id: "iching",

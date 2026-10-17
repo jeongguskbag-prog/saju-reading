@@ -1009,3 +1009,10 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .ny-month-head h3 span { font-family: var(--display); font-weight: 400; color: var(--accent); margin-left: 4px; }
 .ny-month-head .gh-mini-row { flex: 0 1 220px; }
 .ny-month p { margin: 6px 0 0; }
+.tk-rank { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-family: inherit !important; margin: 0 2px 0 0 !important; }
+.tk-pick p { margin: 6px 0 0; }
+.tk-cal td, .tk-cal th { padding: 5px 8px; font-size: 13px; }
+.tk-cal tr.pick td { background: color-mix(in srgb, #1baf7a 10%, transparent); font-weight: 600; }
+.tk-cal tr.ex td { color: var(--text-3); }
+.ny-month-head h3 .tk-rank { color: #fff; font-family: inherit; font-size: 12px; margin: 0 2px 0 0; }
+.tk-fit { color: #13865d; font-weight: 600; }

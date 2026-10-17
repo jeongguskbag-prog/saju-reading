@@ -24,6 +24,12 @@ declare module "lunar-javascript" {
     getJieQiTable(): Record<string, Solar>;
     getPrevJie(wholeDay?: boolean): JieQi;
     getNextJie(wholeDay?: boolean): JieQi;
+    getDayInGanZhi(): string;
+    getZhiXing(): string;
+    getDayTianShen(): string;
+    getDayTianShenType(): string;
+    getDayYi(): string[];
+    getDayJi(): string[];
   }
 
   export class JieQi {

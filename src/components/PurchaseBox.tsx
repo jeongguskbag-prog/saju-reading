@@ -8,6 +8,7 @@ import NamingFields, { emptyNamingForm, toNamingRequest, type NamingForm } from 
 import GunghapFields, { emptyGunghapForm, toGunghapRequest, type GunghapForm } from "./extras/GunghapFields";
 import { isExtraKind } from "@/lib/extras/kinds";
 import { newyearChoices } from "@/lib/extras/requests";
+import TaekilFields, { emptyTaekilForm, toTaekilRequest, type TaekilForm } from "./extras/TaekilFields";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withProductYears, won, type ProductId } from "@/lib/product";
 
 export interface CheckoutInfo {
@@ -72,6 +73,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [gunghap, setGunghap] = useState<GunghapForm>(() => emptyGunghapForm(input.gender));
   const isExtra = isExtraKind(productId);
   const yearChoices = newyearChoices();
+  const [taekil, setTaekil] = useState<TaekilForm>(emptyTaekilForm);
   // 10월부터는 내년을 먼저 고른다.
   const [newyearYear, setNewyearYear] = useState(() => (new Date().getMonth() >= 9 ? yearChoices[1] : yearChoices[0]));
   const coreProducts = products.filter((p) => !isExtraKind(p.id));
@@ -93,6 +95,11 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       extraReq = r.value;
     }
     if (productId === "newyear") extraReq = { year: newyearYear };
+    if (productId === "taekil") {
+      const r = toTaekilRequest(taekil);
+      if (!r.ok) return setError(r.error);
+      extraReq = r.value;
+    }
     // 작명록은 아기 이름이 아직 없으니 "김○○", 개명은 지금 이름으로 표지에 적는다.
     const reportName = isNaming
       ? naming.mode === "rename"
@@ -192,6 +199,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             </div>
           )}
           {productId === "gunghap" && <GunghapFields value={gunghap} onChange={setGunghap} />}
+          {productId === "taekil" && <TaekilFields value={taekil} onChange={setTaekil} />}
           {productId === "newyear" && (
             <div className="field">
               <span className="label">볼 해</span>
