@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PRODUCT_ORDER, PRODUCTS, type ProductId } from "@/lib/product";
 
 /**
@@ -44,6 +44,16 @@ const SAMPLES: Partial<Record<ProductId, { file: string; pages: number; thumbs: 
   },
 };
 
+/**
+ * 천기록 Android 앱(WebView)은 PDF를 화면에 띄우지 못하고, PDF 링크를 누르면 내려받기로 넘겨 아무 반응이 없다.
+ * 앱 안에서는 intent:// 주소로 바꿔 휴대폰 브라우저(또는 PDF 앱)에서 열게 한다. 앱은 intent 주소를 이미 바깥 앱으로 넘긴다.
+ */
+function appPdfHref(path: string): string {
+  const url = new URL(path, location.href);
+  const fallback = encodeURIComponent(url.href);
+  return `intent://${url.host}${url.pathname}#Intent;scheme=${url.protocol.replace(":", "")};action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end`;
+}
+
 const SHORT: Partial<Record<ProductId, string>> = { core: "핵심 명식록", full: "종합 감정서", naming: "작명록" };
 
 /**
@@ -55,7 +65,10 @@ export default function SamplePreview({ productId }: { productId?: ProductId }) 
   const [picked, setPicked] = useState<ProductId>(ids.includes("full") ? "full" : ids[0]);
   const id = productId ?? picked;
   const s = SAMPLES[id];
+  const [inApp, setInApp] = useState(false);
+  useEffect(() => setInApp(Boolean(window.AndroidBridge)), []);
   if (!s) return null;
+  const href = inApp ? appPdfHref(s.file) : s.file;
   return (
     <section className="sample-preview" aria-labelledby={`sample-h-${id}`}>
       <h3 id={`sample-h-${id}`}>{PRODUCTS[id].name} 견본 미리 보기</h3>
@@ -74,13 +87,13 @@ export default function SamplePreview({ productId }: { productId?: ProductId }) 
       </p>
       <div className="sample-thumbs">
         {s.thumbs.map((t) => (
-          <a key={t.src} href={s.file} target="_blank" rel="noopener">
+          <a key={t.src} href={href} target="_blank" rel="noopener">
             <img src={t.src} alt={`견본 ${t.label}`} loading="lazy" width={300} height={424} />
             <span>{t.label}</span>
           </a>
         ))}
       </div>
-      <a className="btn-secondary link-btn" href={s.file} target="_blank" rel="noopener">
+      <a className="btn-secondary link-btn" href={href} target="_blank" rel="noopener">
         견본 PDF 전체 보기 ({s.pages}쪽)
       </a>
     </section>

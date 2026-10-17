@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.print.PrintAttributes;
 import android.print.PrintManager;
 import android.webkit.CookieManager;
+import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -63,6 +64,15 @@ public class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
         webView.setWebViewClient(new SiteClient());
+        // WebView는 PDF 같은 파일을 화면에 띄우지 못한다. 파일 링크는 휴대폰 브라우저(또는 PDF 앱)로 넘긴다.
+        webView.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimeType, long contentLength) {
+                if (url != null && url.startsWith("https://")) {
+                    openExternal(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                }
+            }
+        });
         // 웹 화면의 "PDF로 저장", "HTML로 저장" 버튼이 호출한다.
         webView.addJavascriptInterface(new Bridge(), "AndroidBridge");
         setContentView(webView);
