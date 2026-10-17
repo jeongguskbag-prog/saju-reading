@@ -34,7 +34,7 @@ export default function SiteFooter({ site = "ko" }: { site?: SiteLocale }) {
         <p className="site-footer-note">{f.note(t.brand.name)}</p>
         <nav className="site-footer-langs" aria-label={f.languages}>
           {SITE_ORDER.map((l) => (
-            <a key={l} href={SITES[l].path || "/"} hrefLang={SITES[l].hreflang} lang={SITES[l].htmlLang} aria-current={l === site ? "true" : undefined}>
+            <a key={l} href={`${SITES[l].path || "/"}?lang=${l}`} hrefLang={SITES[l].hreflang} lang={SITES[l].htmlLang} aria-current={l === site ? "true" : undefined}>
               {SITES[l].label}
             </a>
           ))}

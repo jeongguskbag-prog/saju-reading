@@ -35,3 +35,20 @@ describe("사이트 언어", () => {
     expect(siteCopy("zh-TW").meta.description).toContain("台灣時區");
   });
 });
+
+describe("브라우저 언어로 첫 화면 고르기", async () => {
+  const { siteFromAcceptLanguage } = await import("@/lib/site-copy");
+  it("우선순위가 높은 지원 언어를 고른다", () => {
+    expect(siteFromAcceptLanguage("ko-KR,ko;q=0.9,en-US;q=0.8")).toBe("ko");
+    expect(siteFromAcceptLanguage("zh-TW,zh;q=0.9,en;q=0.8")).toBe("zh-TW");
+    expect(siteFromAcceptLanguage("zh-HK,zh;q=0.9")).toBe("zh-HK");
+    expect(siteFromAcceptLanguage("zh-Hant-HK")).toBe("zh-HK");
+    expect(siteFromAcceptLanguage("zh-MO")).toBe("zh-HK");
+    expect(siteFromAcceptLanguage("zh-CN,zh;q=0.9")).toBe("zh-TW");
+    expect(siteFromAcceptLanguage("en-US,ko;q=0.5")).toBe("ko");
+    expect(siteFromAcceptLanguage("en-US,zh-TW;q=0.9,ko;q=0.8")).toBe("zh-TW");
+    expect(siteFromAcceptLanguage("ko;q=0.3,zh-HK;q=0.7")).toBe("zh-HK");
+    expect(siteFromAcceptLanguage("en-US,en")).toBeNull();
+    expect(siteFromAcceptLanguage("")).toBeNull();
+  });
+});

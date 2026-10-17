@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { BRAND } from "@/lib/product";
 import BrandSeal from "./BrandSeal";
 import SiteFooter from "./SiteFooter";
+import LangSwitch from "./LangSwitch";
 import { FloatingKakao } from "./SupportLinks";
 
 /** 결제·리포트·안내 화면의 머리와 꼬리. 브랜드를 눌러 첫 화면으로 돌아간다. */
@@ -14,6 +15,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
           <span className="site-bar-name">{BRAND.name}</span>
           <span className="site-bar-sub">{BRAND.tagline}</span>
         </a>
+        <LangSwitch tone="bar" />
       </header>
       <main className="container">{children}</main>
       <SiteFooter />

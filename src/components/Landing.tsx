@@ -10,6 +10,7 @@ import Seal from "./Seal";
 import SamplePreview from "./SamplePreview";
 import BrandSeal from "./BrandSeal";
 import SiteFooter from "./SiteFooter";
+import LangSwitch from "./LangSwitch";
 import { FloatingKakao, SupportBox } from "./SupportLinks";
 
 const HANJA_NUM = ["一", "二", "三", "四", "五"];
@@ -57,6 +58,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko" }: { f
     <div className="lp">
       <header className="lp-hero">
         <Binding />
+        <LangSwitch site={site} />
         <div className="lp-hero-inner">
           <div className="lp-slip" aria-hidden>
             {/* 세로쓰기: 글꼴마다 세로 조판 지원이 달라 글자를 한 자씩 쌓는다 */}

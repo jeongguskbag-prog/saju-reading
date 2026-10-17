@@ -612,7 +612,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 @media print { .lp-hero, .lp-section:not(.lp-form), .lp-form > .lp-inner > h2, .lp-form .lp-lead { display: none !important; } .lp-form { padding: 0; border: 0; } }
 
 /* 결제·리포트 */
-.site-bar { background: var(--cover); color: var(--cover-ink); padding: 12px 16px; }
+.site-bar { background: var(--cover); color: var(--cover-ink); padding: 12px 16px; position: relative; }
 .site-bar-brand { display: flex; align-items: center; gap: 10px; max-width: 720px; margin: 0 auto; color: inherit; text-decoration: none; }
 .site-bar-name { font-family: var(--display); font-size: 22px; line-height: 1; }
 .site-bar-sub { font-size: 13px; opacity: 0.7; }
@@ -831,3 +831,17 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .admin-table th, .admin-table td { padding: 6px 8px; }
 
 .req { color: var(--accent); font-weight: 400; font-size: 0.9em; }
+
+/* 맨 위 오른쪽 언어 선택 */
+.lang-switch { position: absolute; top: 14px; right: 16px; z-index: 20; font-size: 13px; }
+.lang-switch summary { list-style: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; cursor: pointer; border: 1px solid currentColor; opacity: 0.85; white-space: nowrap; }
+.lang-switch summary::-webkit-details-marker { display: none; }
+.lang-switch summary:hover, .lang-switch[open] summary { opacity: 1; }
+.lang-switch[open] .lang-caret { transform: rotate(180deg); }
+.lang-cover, .lang-bar { color: var(--cover-ink); }
+.lang-switch ul { position: absolute; right: 0; top: calc(100% + 6px); margin: 0; padding: 6px; list-style: none; min-width: 168px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
+.lang-switch li a { display: block; padding: 9px 12px; border-radius: 6px; color: inherit; text-decoration: none; }
+.lang-switch li a:hover { background: var(--surface-2); }
+.lang-switch li a[aria-current="true"] { font-weight: 700; color: var(--accent); }
+.lang-bar { top: 50%; transform: translateY(-50%); }
+@media (max-width: 480px) { .lang-switch { top: 10px; right: 10px; font-size: 12px; } .lang-bar { top: 50%; } }

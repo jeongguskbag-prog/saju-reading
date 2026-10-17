@@ -57,6 +57,35 @@ export function siteFromPath(pathname: string): SiteLocale {
   return "ko";
 }
 
+/** 손님이 고른 언어를 기억하는 쿠키(1년). 있으면 브라우저 언어보다 먼저 따른다. */
+export const SITE_LANG_COOKIE = "site_lang";
+
+export const isSiteLocale = (v: unknown): v is SiteLocale => v === "ko" || v === "zh-TW" || v === "zh-HK";
+
+/**
+ * 브라우저·기기 언어(Accept-Language)로 첫 화면 언어를 고른다. 우선순위가 높은 언어부터 보고,
+ * 한국어 → 한국어, 홍콩·마카오 중국어 → 홍콩, 그 밖의 중국어(대만·번체·간체) → 대만. 해당이 없으면 null(한국어 그대로).
+ */
+export function siteFromAcceptLanguage(header: string | null | undefined): SiteLocale | null {
+  if (!header) return null;
+  const tags = header
+    .split(",")
+    .map((part, i) => {
+      const [tag, ...params] = part.trim().split(";");
+      const q = Number(params.find((p) => p.trim().startsWith("q="))?.trim().slice(2) ?? 1);
+      return { tag: tag.trim().toLowerCase(), q: Number.isFinite(q) ? q : 0, i };
+    })
+    .filter((t) => t.tag && t.q > 0)
+    .sort((a, b) => b.q - a.q || a.i - b.i);
+  for (const { tag } of tags) {
+    if (tag === "ko" || tag.startsWith("ko-")) return "ko";
+    if (tag === "zh" || tag.startsWith("zh-")) {
+      return /-(hk|mo)\b/.test(tag) ? "zh-HK" : "zh-TW";
+    }
+  }
+  return null;
+}
+
 /** 검색엔진에 알려 줄 언어별 주소(hreflang). */
 export function languageAlternates(): Record<string, string> {
   const out: Record<string, string> = {};
