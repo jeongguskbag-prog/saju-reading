@@ -179,7 +179,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               ))}
             </div>
             <p className="muted">
-              결제가 끝나면 주문번호와 결제 내역을 바로 보내 드리고, 신청 10분 뒤 감정서 PDF 파일과 HTML 문서도 같은 곳으로 보내 드립니다.
+              결제가 끝나면 주문번호와 결제 내역을 바로 보내 드리고, 신청 3분 뒤 감정서 PDF 파일과 HTML 문서도 같은 곳으로 보내 드립니다.
             </p>
           </div>
           {checkout.mobilePhone && (
@@ -209,7 +209,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
           </button>
           <p className="purchase-time">
             ⏳ 결제 후 명식 계산, 각 부의 풀이 작성, 책자 편집을 거쳐 <b>약 3분 뒤</b> 화면에 감정서가 열립니다.
-            열리면 <b>PDF 파일 저장</b>·<b>HTML 문서 저장</b> 버튼으로 바로 내려받으세요. 신청 10분 뒤에는 고르신 곳으로도 두 파일을 보내 드립니다.
+            열리면 <b>PDF 파일 저장</b>·<b>HTML 문서 저장</b> 버튼으로 바로 내려받으세요. 신청 3분 뒤에는 고르신 곳으로도 두 파일을 보내 드립니다.
           </p>
           <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
           {checkout.testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}
