@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import SiteShell from "@/components/SiteShell";
 import { AccountButtons, ClaimOrderForm, ProfileButtons, SavePendingProfile } from "@/components/MyActions";
-import { isMemberEnabled, MAX_PROFILES, MEMBER_COOKIE, memberFromCookie, memberOrders, WELCOME_QUESTIONS, type SavedProfile } from "@/lib/member";
+import { isMemberEnabled, memberSetupMissing, MAX_PROFILES, MEMBER_COOKIE, memberFromCookie, memberOrders, WELCOME_QUESTIONS, type SavedProfile } from "@/lib/member";
 import { productOf } from "@/lib/orders";
 import { BRAND } from "@/lib/product";
 import { calculateSaju } from "@/lib/saju/calc";
@@ -68,7 +68,11 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
               카카오로 3초 만에 시작하기
             </a>
           ) : (
-            <p className="muted">회원 기능을 준비하고 있습니다.</p>
+            <>
+              <p className="muted">회원 기능을 준비하고 있습니다.</p>
+              {/* 설정 확인용: 빠진 환경변수 이름만 보인다(값은 보이지 않는다). */}
+              <p className="muted small">설정 확인: {memberSetupMissing().join(", ")} 없음</p>
+            </>
           )}
           <p className="muted small">카카오에서는 회원 번호와 닉네임만 받습니다. 가입하면 이용약관과 개인정보처리방침에 동의한 것으로 봅니다.</p>
         </section>

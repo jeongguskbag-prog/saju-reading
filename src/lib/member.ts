@@ -53,7 +53,17 @@ const providerKey = (provider: string, providerId: string) => `member:${provider
 const secret = () => process.env.MEMBER_SESSION_SECRET ?? "";
 
 /** 카카오 앱 키·로그인 쿠키 서명 키·저장소가 모두 있어야 회원 기능을 연다. */
-export const isMemberEnabled = () => Boolean(process.env.KAKAO_REST_API_KEY && secret().length >= 32 && getStore());
+export const isMemberEnabled = () => memberSetupMissing().length === 0;
+
+/** 회원 기능을 켜는 데 빠진 설정(이름만, 값은 드러내지 않는다). 마이 화면이 사장님께 알려 준다. */
+export function memberSetupMissing(): string[] {
+  const missing: string[] = [];
+  if (!process.env.KAKAO_REST_API_KEY?.trim()) missing.push("KAKAO_REST_API_KEY");
+  if (!secret()) missing.push("MEMBER_SESSION_SECRET");
+  else if (secret().length < 32) missing.push(`MEMBER_SESSION_SECRET(32자 이상 필요, 지금 ${secret().length}자)`);
+  if (!getStore()) missing.push("저장소(Upstash KV)");
+  return missing;
+}
 
 const sign = (payload: string) => createHmac("sha256", secret()).update(payload).digest("base64url");
 
