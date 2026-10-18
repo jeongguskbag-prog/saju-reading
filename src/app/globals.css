@@ -591,7 +591,10 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 /* FAQ */
 .lp-faq details { border-top: 1px solid var(--border); padding: 18px 0; }
 .lp-faq details:last-child { border-bottom: 1px solid var(--border); }
-.lp-faq summary { cursor: pointer; font-size: 17px; font-weight: 600; list-style-position: outside; }
+.lp-faq summary { cursor: pointer; font-size: 17px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.lp-faq summary::-webkit-details-marker { display: none; }
+.lp-faq summary::after { content: "+"; flex: none; color: var(--accent); font-weight: 400; font-size: 20px; line-height: 1; }
+.lp-faq details[open] summary::after { content: "−"; }
 .lp-faq p { margin: 10px 0 0; color: var(--text-2); font-size: 15px; line-height: 1.75; word-break: keep-all; }
 
 
@@ -1103,6 +1106,8 @@ input[aria-invalid="true"] { border-color: var(--danger); }
   body:has(.bottom-nav) .kakao-float { display: none; }
   /* '무료로 확인하기' 버튼은 메뉴 바로 위에 뜬다 */
   body:has(.bottom-nav) .sticky-cta { bottom: calc(62px + env(safe-area-inset-bottom)); padding-bottom: 10px; }
+  /* 떠 있는 '무료로 확인하기' 버튼이 맨 아래 글(사업자 정보 등)을 가리지 않게 그만큼 더 띄운다 */
+  body:has(.bottom-nav):has(.sticky-cta.on) { padding-bottom: calc(66px + 74px + env(safe-area-inset-bottom)); }
 }
 #price, #extras { scroll-margin-top: 20px; }
 @media print { .bottom-nav { display: none !important; } }
