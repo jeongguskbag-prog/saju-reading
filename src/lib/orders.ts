@@ -52,6 +52,8 @@ export interface Order {
   channel?: PhoneChannel;
   /** 파일(PDF·HTML)을 보내기로 예약한 시각(ISO). 있으면 완성되어도 바로 보내지 않고 이때 보낸다. */
   deliverAt?: string;
+  /** 회원 보관함에 든 주문이면 회원번호. 보관함의 감정서는 열람 기간 없이 계속 열 수 있다. */
+  memberId?: string;
 }
 
 export class OrderError extends Error {
@@ -120,6 +122,7 @@ export async function createOrder(
   phone?: string,
   targets: NotifyTarget[] = [...(email ? (["email"] as const) : []), ...(phone ? (["sms"] as const) : [])],
   extraRequest?: unknown,
+  memberId?: string,
 ): Promise<Order> {
   const product = sellableProducts().find((p) => p.id === productId);
   if (!product) throw new OrderError("지금은 신청할 수 없는 상품입니다.");
@@ -178,6 +181,7 @@ export async function createOrder(
     ...(mobile ? { phone: mobile, channels: picked } : {}),
     status: "pending",
     createdAt: now.toISOString(),
+    ...(memberId ? { memberId } : {}),
   };
   await requireStore().set(orderKey(order.id), order, PENDING_TTL);
   return order;
@@ -262,6 +266,11 @@ export async function confirmOrder(
   await store.set(reportKey(paid.token!), order.id);
   // 결제한 주문 목록(관리 화면·내보내기). 주문 내용(결제 정보·사주 입력·연락처)은 order:주문번호에 그대로 남는다.
   await store.listPush(PAID_INDEX, order.id);
+  // 로그인한 회원이 산 감정서는 그 회원의 보관함에 넣는다(회원 모듈이 주문 모듈을 쓰므로 여기서는 필요할 때 불러온다).
+  if (paid.memberId) {
+    const { linkOrder } = await import("./member");
+    await linkOrder(paid.memberId, paid.id).catch((error) => console.error("보관함에 넣지 못했습니다", error));
+  }
   return { order: paid, justPaid: true };
 }
 
@@ -272,13 +281,15 @@ export interface Report {
   /** 열람 마감 시각(ISO) */
   expiresAt: string;
   expired: boolean;
+  /** 회원 보관함의 감정서: 열람 기간 없이 계속 열 수 있고 풀이도 지우지 않는다. */
+  kept: boolean;
 }
 
 const DAY = 86_400_000;
 
 /**
  * 결제한 리포트. 감정 연도가 바뀌지 않도록 결제 시점 기준으로 명식을 계산한다.
- * 결제 후 REPORT_VALID_DAYS일이 지나면 expired로 돌려준다(풀이는 열지 않는다).
+ * 결제 후 REPORT_VALID_DAYS일이 지나면 expired로 돌려준다(풀이는 열지 않는다). 회원 보관함의 감정서는 기간이 없다.
  */
 export async function getReport(token: string, now = new Date()): Promise<Report | null> {
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
@@ -294,7 +305,8 @@ export async function getReport(token: string, now = new Date()): Promise<Report
     product: productOf(order),
     chart: calculateSaju(order.input, paidAt),
     expiresAt: expiresAt.toISOString(),
-    expired: now.getTime() > expiresAt.getTime(),
+    expired: !order.memberId && now.getTime() > expiresAt.getTime(),
+    kept: Boolean(order.memberId),
   };
 }
 
@@ -313,7 +325,7 @@ export async function getSavedParts(token: string, parts: readonly PartKey[]): P
   return out;
 }
 
-/** 풀이는 열람 기간이 끝나고 하루 뒤 저장소에서 지운다. */
+/** 풀이는 열람 기간이 끝나고 하루 뒤 저장소에서 지운다. expiresAt이 없으면(회원 보관함) 지우지 않는다. */
 export async function savePart(token: string, part: PartKey, result: PartResult, expiresAt?: string, now = new Date()): Promise<void> {
   const ttl = expiresAt ? Math.max(3600, Math.ceil((new Date(expiresAt).getTime() + DAY - now.getTime()) / 1000)) : undefined;
   await requireStore().set(partKey(token, part), result, ttl);

@@ -115,7 +115,7 @@ export function ganzhiScore(stemElement: Element, branchElement: Element, u: Use
   return Math.max(0, Math.min(100, Math.round(50 + raw * 10)));
 }
 
-const markOf = (score: number): MonthFlow["mark"] => (score >= 65 ? "좋음" : score <= 35 ? "주의" : "보통");
+export const markOf = (score: number): MonthFlow["mark"] => (score >= 65 ? "좋음" : score <= 35 ? "주의" : "보통");
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /** 해당 연도의 12절 기준 월별 간지. 양력 각 달 20일이 속한 절기 달을 쓴다(절입일은 양력 4~8일 사이). */
@@ -140,7 +140,7 @@ export function monthlyFlow(year: number, dayStem: Pillar["stem"], u: Usefulness
   return months;
 }
 
-function branchElementOf(branch: Pillar["branch"]): Element {
+export function branchElementOf(branch: Pillar["branch"]): Element {
   const hidden = HIDDEN_STEMS[branch];
   return STEM_ELEMENT[hidden[hidden.length - 1]];
 }

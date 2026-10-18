@@ -21,7 +21,7 @@ export async function ensurePart(report: Report, part: PartKey, origin?: string)
     if (again) return { status: "done", result: again };
     const result =
       part === "naming" ? await writeNaming(report) : isExtraKind(part) ? await writeExtra(report, part) : await generatePart(report.chart, part);
-    await savePart(token, part, result, report.expiresAt);
+    await savePart(token, part, result, report.kept ? undefined : report.expiresAt);
     await sendCompletionIfReady(report, origin);
     return { status: "done", result };
   } finally {

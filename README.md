@@ -96,6 +96,10 @@ npm run dev                  # http://localhost:3000
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | 선택 | Claude API 키. 없으면 AI 풀이 영역에 안내 문구만 표시하고 계산 결과는 정상 동작합니다. |
 | `ANTHROPIC_MODEL` | 선택 | 풀이에 쓸 모델. 기본값 `claude-opus-5-5`. |
+| `KAKAO_REST_API_KEY` | 회원 기능 | 카카오 개발자 사이트 앱의 REST API 키. 이것과 `MEMBER_SESSION_SECRET`, 저장소가 있어야 마이·카카오 로그인이 열립니다. |
+| `KAKAO_CLIENT_SECRET` | 선택 | 카카오 앱에서 Client Secret을 켰을 때만. |
+| `KAKAO_ADMIN_KEY` | 선택 | 회원 탈퇴 때 카카오 앱 연결 끊기에 씁니다. |
+| `MEMBER_SESSION_SECRET` | 회원 기능 | 로그인 쿠키 서명 키(32자 이상 무작위 문자열). 바꾸면 모든 회원이 로그아웃됩니다. |
 
 API 키는 서버에서만 읽으며 브라우저로 전달되지 않습니다. AI에는 이름을 보내지 않고 명식 데이터(간지·십신·오행·대운)만 보냅니다.
 

@@ -1106,3 +1106,33 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 }
 #price, #extras { scroll-margin-top: 20px; }
 @media print { .bottom-nav { display: none !important; } }
+
+/* ── 회원(마이·카카오 로그인) ── */
+.kakao-login {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px;
+  border: 0; border-radius: 10px; background: #fee500; color: #191919; font: inherit; font-size: 16px; font-weight: 700;
+  text-decoration: none; cursor: pointer;
+}
+.kakao-login:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.member-save { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0 0 16px; padding: 14px 16px; border: 1px dashed var(--border); border-radius: 12px; background: var(--surface); }
+.member-save p { margin: 0; flex: 1 1 260px; font-size: 14px; line-height: 1.6; }
+.my-hero h1 { font-family: var(--display); font-weight: 400; margin: 0 0 8px; }
+.my-benefits { list-style: none; padding: 0; margin: 14px 0 18px; display: grid; gap: 10px; }
+.my-benefits li { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.my-benefits b { color: var(--accent); }
+.my-benefits span { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+.my-list { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 10px; }
+.my-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.my-list li > div:first-child { display: grid; gap: 2px; }
+.my-row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.my-row-actions .btn-secondary, .member-save .btn-secondary, .my-account .btn-secondary { width: auto; min-height: 40px; padding: 0 18px; display: inline-flex; align-items: center; text-decoration: none; }
+.btn-link.danger { color: var(--text-2); }
+.tag { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 11px; vertical-align: 2px; }
+.notice { padding: 10px 14px; border-radius: 10px; background: rgba(176, 38, 44, 0.07); font-size: 14px; }
+.my-fortune-title { font-family: var(--display); font-size: 21px; margin: 6px 0; }
+.mark { display: inline-block; padding: 2px 10px; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 700; vertical-align: 3px; border: 1px solid currentColor; }
+.mark-좋음 { color: #2f7d4f; }
+.mark-보통 { color: var(--text-2); }
+.mark-주의 { color: var(--accent); }
+.my-claim { display: grid; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.my-account { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }

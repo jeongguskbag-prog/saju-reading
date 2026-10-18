@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { BirthInput, SajuChart } from "@/lib/saju/calc";
 import { CHAPTER_KEYS, PART_KEYS, type ChapterKey, type PartKey, type PartResult } from "@/lib/report-shared";
 import { DEFAULT_PRODUCT, PRODUCTS, type ProductId } from "@/lib/product";
@@ -13,6 +13,7 @@ import { isExtraKind, type ExtraKind } from "@/lib/extras/kinds";
 import ReportView, { type PartStates } from "./ReportView";
 import YearField from "./YearField";
 import ResultActions from "./ResultActions";
+import MemberSaveBar from "./MemberSaveBar";
 import PurchaseBox, { type CheckoutInfo } from "./PurchaseBox";
 import { useLocale, useT } from "./LocaleProvider";
 import { messages, type Messages } from "@/lib/messages";
@@ -47,6 +48,12 @@ interface Props {
   productChoice?: boolean;
   /** 결제 상자가 없을 때 등급 카드 아래에 넣을 안내(해외 화면의 "감정서 준비 중" 등) */
   afterGrade?: ReactNode;
+  /** 미리 채울 입력(마이에 저장한 사주 보기) */
+  initial?: BirthInput;
+  /** initial이 있을 때 화면을 열자마자 결과를 보여 준다 */
+  autoRun?: boolean;
+  /** 결과 위에 '마이에 저장' 띠를 보인다(한국어 웹, 회원 기능이 켜졌을 때만 실제로 보인다) */
+  memberSave?: boolean;
 }
 
 const serverChart = (input: BirthInput, t: Messages) => postJson<{ chart: SajuChart }>("/api/chart", input, t).then((r) => r.chart);
@@ -56,10 +63,10 @@ const serverPart = (input: BirthInput, part: PartKey, t: Messages) =>
 const serverNaming = (input: BirthInput, naming: unknown, t: Messages) =>
   postJson<PartResult>("/api/reading", { input, part: "naming", naming, locale: input.locale }, t);
 
-export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], productChoice = false, afterGrade }: Props) {
+export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], productChoice = false, afterGrade, initial, autoRun = false, memberSave = false }: Props) {
   const t = useT();
   const locale = useLocale();
-  const [region, setRegion] = useState<Region>(regions[0]);
+  const [region, setRegion] = useState<Region>(initial?.region && regions.includes(initial.region) ? initial.region : regions[0]);
   const [productId, setProductId] = useState<ProductId>(DEFAULT_PRODUCT);
   // 제출할 때 고른 감정서. 결과를 보는 중에 다른 카드를 눌러도 이미 받은 감정서 구성은 바뀌지 않는다.
   const [shownProduct, setShownProduct] = useState<ProductId | null>(null);
@@ -72,23 +79,32 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
   const lastExtra = useRef<unknown>(null);
   const extraKind: ExtraKind | null = productChoice && isExtraKind(productId) ? productId : null;
   // 중국 대륙은 전국이 한 표준시라 출생 도시 경도로 진태양시를 맞춘다.
-  const [cityIndex, setCityIndex] = useState(0);
-  const [name, setName] = useState("");
+  const [cityIndex, setCityIndex] = useState(() => {
+    const i = CN_CITIES.findIndex((c) => c.longitude === initial?.options?.longitude);
+    return i < 0 ? 0 : i;
+  });
+  const [name, setName] = useState(initial?.name ?? "");
   // 성별·생년월일·시각은 비워 두고 시작한다(미리 채운 값으로 결과가 나오지 않게). 빠진 칸은 제출할 때 알린다.
-  const [gender, setGender] = useState<BirthInput["gender"] | "">("");
-  const [calendar, setCalendar] = useState<BirthInput["calendar"]>("solar");
-  const [isLeapMonth, setIsLeapMonth] = useState(false);
-  const [year, setYear] = useState("");
-  const [month, setMonth] = useState("");
-  const [day, setDay] = useState("");
-  const [timeUnknown, setTimeUnknown] = useState(false);
-  const [hour, setHour] = useState("");
-  const [minute, setMinute] = useState("");
-  const [solarTimeCorrection, setSolarTimeCorrection] = useState(true);
-  const [dayBoundary, setDayBoundary] = useState<"at23" | "at0">("at23");
+  // 마이에 저장한 사주를 볼 때만 저장한 값으로 채운다.
+  const [gender, setGender] = useState<BirthInput["gender"] | "">(initial?.gender ?? "");
+  const [calendar, setCalendar] = useState<BirthInput["calendar"]>(initial?.calendar ?? "solar");
+  const [isLeapMonth, setIsLeapMonth] = useState(Boolean(initial?.isLeapMonth));
+  const [year, setYear] = useState(initial ? String(initial.year) : "");
+  const [month, setMonth] = useState(initial ? String(initial.month) : "");
+  const [day, setDay] = useState(initial ? String(initial.day) : "");
+  const [timeUnknown, setTimeUnknown] = useState(initial ? initial.hour === null : false);
+  const [hour, setHour] = useState(initial && initial.hour !== null ? String(initial.hour) : "");
+  const [minute, setMinute] = useState(initial && initial.hour !== null ? String(initial.minute ?? 0) : "");
+  const [solarTimeCorrection, setSolarTimeCorrection] = useState(initial?.options?.solarTimeCorrection ?? true);
+  const [dayBoundary, setDayBoundary] = useState<"at23" | "at0">(initial?.options?.dayBoundary ?? "at23");
   // 결혼·자녀(선택, 한국어 화면). 애정·가족 풀이를 상황에 맞추는 데만 쓴다. 같은 버튼을 다시 누르면 선택이 풀린다.
-  const [marital, setMarital] = useState<"" | "married" | "dating" | "single">("");
-  const [children, setChildren] = useState<"" | "yes" | "no">("");
+  const [marital, setMarital] = useState<"" | "married" | "dating" | "single">(initial?.life?.marital ?? "");
+  const [children, setChildren] = useState<"" | "yes" | "no">(initial?.life?.children === undefined ? "" : initial.life.children ? "yes" : "no");
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    if (autoRun && initial) formRef.current?.requestSubmit();
+    // 화면을 처음 열 때 한 번만
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [chart, setChart] = useState<SajuChart | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -213,7 +229,7 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
       {productChoice && (
         <AppProducts value={productId} onChange={setProductId} years={[new Date().getFullYear(), new Date().getFullYear() + 1]} />
       )}
-      <form id="saju-form" className="card form-grid no-print" onSubmit={onSubmit} noValidate>
+      <form id="saju-form" ref={formRef} className="card form-grid no-print" onSubmit={onSubmit} noValidate>
         <div className="field">
           <label htmlFor="name">{t.nameLabel}</label>
           <input id="name" type="text" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder={t.namePlaceholder} />
@@ -385,6 +401,7 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
 
       {chart && shownProduct !== "naming" && !(shownProduct && isExtraKind(shownProduct)) && (
         <div id="result">
+          {memberSave && lastInput.current && <MemberSaveBar input={lastInput.current} />}
           <ReportView
             chart={chart}
             aiEnabled={aiEnabled}

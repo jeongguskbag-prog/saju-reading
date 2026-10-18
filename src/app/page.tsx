@@ -1,5 +1,6 @@
 import Landing from "@/components/Landing";
 import SajuApp from "@/components/SajuApp";
+import { isMemberEnabled } from "@/lib/member";
 import { checkoutConfig } from "@/lib/orders";
 import { isAiEnabled, isFreeReading } from "@/lib/reading";
 import { languageAlternates } from "@/lib/site-copy";
@@ -21,7 +22,7 @@ export default async function Home() {
     <Landing
       reviews={reviews}
       checkoutOpen={enabled}
-      form={<SajuApp aiEnabled={free} checkout={free ? undefined : { enabled, testMode, mobilePhone, sms, kakao }} />}
+      form={<SajuApp aiEnabled={free} checkout={free ? undefined : { enabled, testMode, mobilePhone, sms, kakao }} memberSave={isMemberEnabled()} />}
     />
   );
 }

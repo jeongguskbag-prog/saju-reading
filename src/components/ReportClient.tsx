@@ -19,6 +19,8 @@ interface Props {
   productName: string;
   /** 열람 마감(ISO) */
   expiresAt: string;
+  /** 회원 보관함의 감정서(열람 기간 없음) */
+  kept?: boolean;
   chart: SajuChart;
   initialParts: Partial<Record<PartKey, PartResult>>;
   justPaid: boolean;
@@ -192,7 +194,7 @@ function whenVisible(): Promise<void> {
   });
 }
 
-export default function ReportClient({ token, partKeys, productName, expiresAt, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, initialReview }: Props) {
+export default function ReportClient({ token, partKeys, productName, expiresAt, kept = false, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, initialReview }: Props) {
   const [parts, setParts] = useState<PartStates>(() =>
     Object.fromEntries(Object.entries(initialParts).map(([k, result]) => [k, { status: "done", result }])),
   );
@@ -286,8 +288,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
       </p>
       <p className="muted">
         {delivery}
-        이 감정서는 무작위가 아니라, 입력하신 정보로 계산한 명식·점수 데이터를 근거로 작성했습니다(근거 표는 본문에 함께 실었습니다). 감정서는{" "}
-        {untilText}까지 열 수 있으니 기간 안에 PDF로 저장해 두세요. 링크를 아는 사람은 누구나 볼 수 있으니 공유에
+        이 감정서는 무작위가 아니라, 입력하신 정보로 계산한 명식·점수 데이터를 근거로 작성했습니다(근거 표는 본문에 함께 실었습니다). {kept ? "이 감정서는 회원 보관함에 있어 기간 없이 '마이'에서 다시 열 수 있습니다." : `감정서는 ${untilText}까지 열 수 있으니 기간 안에 PDF로 저장해 두세요.`} 링크를 아는 사람은 누구나 볼 수 있으니 공유에
         주의해 주세요. 주문번호 {orderId}
       </p>
       <FileButtons token={token} ready={!busy && doneCount === partKeys.length} productName={productName} personName={chart.input.name ?? ""} />
