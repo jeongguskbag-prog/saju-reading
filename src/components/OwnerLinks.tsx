@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 /**
  * 운영자용 바로가기(오른쪽 위, 화면을 내려도 따라온다).
  * - home: 홈페이지에서 앱 화면·관리자로. 손님 화면이라 천기록 앱(AndroidBridge) 안에서 볼 때만 보인다.
- * - admin: 관리자 화면에서 앱 화면·홈페이지로. 관리자 화면은 비밀번호로 잠겨 있어 항상 보인다.
+ * - admin: 관리자 화면에서 홈페이지로(앱 안이면 앱 화면도). 관리자 화면은 비밀번호로 잠겨 있어 항상 보인다.
  *   로그인한 상태(loggedIn)면 로그아웃 버튼도 보인다.
  */
 export default function OwnerLinks({ mode, loggedIn = false }: { mode: "home" | "admin"; loggedIn?: boolean }) {
@@ -31,7 +31,8 @@ export default function OwnerLinks({ mode, loggedIn = false }: { mode: "home" | 
 
   return (
     <nav className="owner-links no-print" aria-label="바로가기">
-      <a href="/app">앱 화면</a>
+      {/* 앱 화면(/app)은 천기록 앱 안에서만 열리므로, 앱 밖(PC 등)에서는 바로가기를 숨긴다. */}
+      {inApp && <a href="/app">앱 화면</a>}
       {mode === "home" ? <a href="/admin">관리자</a> : <a href="/">홈페이지</a>}
       {mode === "admin" && loggedIn && (
         <button type="button" className="owner-logout" onClick={logout} disabled={leaving}>

@@ -8,6 +8,7 @@ import { listReviews } from "@/lib/reviews";
 import AdminReviewToggle from "@/components/AdminReviewToggle";
 import { originFrom } from "@/lib/site";
 import AdminResend from "@/components/AdminResend";
+import AdminCsvButton from "@/components/AdminCsvButton";
 import { deliverySettings, lastSignatureFail, orderDeliveries } from "@/lib/delivery-status";
 
 export const dynamic = "force-dynamic";
@@ -82,7 +83,7 @@ export default async function AdminPage() {
                   <td>{d.schedule ? d.schedule.note : d.deliverAt ? `예약 ${kstTime(d.deliverAt)}` : "기록 없음"}</td>
                   <td>{d.mailed ? `보냄 ${kstTime(d.mailed)}` : "안 보냄"}</td>
                   <td>{d.log ? `${kstTime(d.log.at)} · 파일 ${d.log.files} · 메일 ${d.log.mail} · 휴대폰 ${d.log.phone}` : "시도 기록 없음"}</td>
-                  <td><AdminResend orderId={d.orderId} /></td>
+                  <td><AdminResend orderId={d.orderId} name={d.name} /></td>
                 </tr>
               ))}
             </tbody>
@@ -93,7 +94,7 @@ export default async function AdminPage() {
         <h2>결제한 주문 ({rows.length}건, {total.toLocaleString("ko-KR")}원)</h2>
         <p className="muted">최근 200건입니다. 전체는 엑셀(CSV)로 내려받으세요.</p>
         <p>
-          <a className="btn-secondary link-btn" href="/api/admin/orders">엑셀(CSV)로 내려받기</a>
+          <AdminCsvButton />
         </p>
         <div className="admin-table-wrap">
           <table className="table admin-table">

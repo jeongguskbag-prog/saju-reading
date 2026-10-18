@@ -1,6 +1,6 @@
 // 관리 화면(주문 내역) 로그인과 주문 표(서버 전용). ADMIN_PASSWORD가 있어야 열린다.
 import { extraRequestSummary } from "./extras/summary";
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { REGION_LABEL } from "./admin-labels";
 import { won } from "./product";
 import type { Order } from "./orders";
@@ -13,6 +13,27 @@ export const isAdminEnabled = () => Boolean(process.env.ADMIN_PASSWORD && proces
 export function adminSessionValue(): string | null {
   if (!isAdminEnabled()) return null;
   return createHash("sha256").update(`chungirok-admin:${process.env.ADMIN_PASSWORD}`).digest("hex");
+}
+
+/**
+ * 로그인 쿠키 없이 쓰는 짧은 다운로드 표(5분). 천기록 앱(WebView)은 파일을 직접 받지 못해
+ * 휴대폰 브라우저로 넘겨 받는데, 그 브라우저에는 관리자 로그인 쿠키가 없기 때문이다.
+ */
+export function adminDownloadToken(now = Date.now()): string | null {
+  const key = adminSessionValue();
+  if (!key) return null;
+  const exp = Math.floor(now / 1000) + 300;
+  return `${exp}.${createHmac("sha256", key).update(`csv:${exp}`).digest("hex").slice(0, 32)}`;
+}
+
+export function checkAdminDownloadToken(token: string | null | undefined, now = Date.now()): boolean {
+  const key = adminSessionValue();
+  if (!key || !token) return false;
+  const [expRaw, sig] = token.split(".");
+  const exp = Number(expRaw);
+  if (!Number.isFinite(exp) || exp < Math.floor(now / 1000) || !sig) return false;
+  const want = createHmac("sha256", key).update(`csv:${exp}`).digest("hex").slice(0, 32);
+  return same(sig, want);
 }
 
 const same = (a: string, b: string) => {

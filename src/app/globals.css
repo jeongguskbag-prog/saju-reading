@@ -1085,7 +1085,26 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .owner-links .owner-logout:disabled { opacity: 0.7; }
 
 /* ── 휴대폰 하단 메뉴(BottomNav). 넓은 화면에서는 숨긴다. ── */
-.bottom-nav { display: none; }
+/* 넓은 화면(PC): 같은 다섯 메뉴를 화면 아래 가운데에 떠 있는 막대로 보여 준다. */
+@media (min-width: 900px) {
+  .bottom-nav {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 60;
+    display: flex; gap: 4px; padding: 6px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+  }
+  .bottom-nav a {
+    display: flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 999px;
+    color: var(--text-2); text-decoration: none; font-size: 14px; font-weight: 600; white-space: nowrap;
+  }
+  .bottom-nav a:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--text); }
+  .bottom-nav svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .bottom-nav a[aria-current="page"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .bottom-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* 맨 아래 글이 메뉴에 가리지 않게 */
+  body:has(.bottom-nav) { padding-bottom: 84px; }
+  /* 카톡 상담은 메뉴의 '상담' 칸에 있다 */
+  body:has(.bottom-nav) .kakao-float { display: none; }
+}
 @media (max-width: 899px) {
   .bottom-nav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
@@ -1171,3 +1190,12 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .consult-pack small { color: var(--text-2); }
 .consult-pack:disabled { opacity: 0.5; cursor: wait; }
 .consult-agree { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+
+/* 관리 화면 '다시 보내기' 안내 창 */
+.admin-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 100; width: min(460px, calc(100vw - 32px)); background: var(--surface); color: var(--text); border: 1px solid var(--border); border-left: 4px solid #2a78d6; border-radius: 12px; padding: 14px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); font-size: 14px; line-height: 1.6; white-space: normal; text-align: left; }
+.admin-toast.ok { border-left-color: #1baf7a; }
+.admin-toast.fail { border-left-color: #e34948; }
+.admin-toast p { margin: 0; word-break: keep-all; }
+.admin-toast .spinner { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; }
+.admin-toast-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 10px; }
+.admin-toast-actions .btn-secondary, .admin-toast-actions .btn-link { width: auto; flex: none; white-space: nowrap; padding: 6px 14px; font-size: 13px; }
