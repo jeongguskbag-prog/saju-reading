@@ -55,3 +55,24 @@ export async function orderDeliveries(orders: Order[]): Promise<OrderDelivery[]>
 }
 
 export const lastSignatureFail = async () => (await getStore()?.get<{ at: string; url: string }>(SIGNATURE_FAIL_KEY)) ?? null;
+
+export interface ClientError {
+  at: string;
+  path: string;
+  message: string;
+  digest: string;
+  stack: string;
+  ua: string;
+}
+
+/** 손님 화면에서 난 오류(최근 순) */
+export async function recentClientErrors(limit = 20): Promise<ClientError[]> {
+  const raw = (await getStore()?.listRange("client-errors", 0, limit - 1)) ?? [];
+  return raw.flatMap((r) => {
+    try {
+      return [JSON.parse(r) as ClientError];
+    } catch {
+      return [];
+    }
+  });
+}

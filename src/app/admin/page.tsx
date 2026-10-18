@@ -9,7 +9,7 @@ import AdminReviewToggle from "@/components/AdminReviewToggle";
 import { originFrom } from "@/lib/site";
 import AdminResend from "@/components/AdminResend";
 import AdminCsvButton from "@/components/AdminCsvButton";
-import { deliverySettings, lastSignatureFail, orderDeliveries } from "@/lib/delivery-status";
+import { deliverySettings, lastSignatureFail, orderDeliveries, recentClientErrors } from "@/lib/delivery-status";
 
 export const dynamic = "force-dynamic";
 
@@ -48,8 +48,36 @@ export default async function AdminPage() {
   const settings = deliverySettings();
   const deliveries = await orderDeliveries(orders.slice(0, 20)).catch(() => []);
   const sigFail = await lastSignatureFail().catch(() => null);
+  const clientErrors = await recentClientErrors().catch(() => []);
   return (
     <SiteShell admin="in">
+      {clientErrors.length > 0 && (
+        <section className="card admin-orders">
+          <h2>화면 오류 ({clientErrors.length}건)</h2>
+          <p className="muted">손님 화면이 멈췄을 때 남은 기록입니다(최근 순).</p>
+          <div className="admin-table-wrap">
+            <table className="table admin-table">
+              <thead>
+                <tr><th>시각</th><th>주소</th><th>오류</th><th>기기</th></tr>
+              </thead>
+              <tbody>
+                {clientErrors.map((e, i) => (
+                  <tr key={i}>
+                    <td>{kstTime(e.at)}</td>
+                    <td>{e.path}</td>
+                    <td>
+                      {e.message}
+                      {e.digest ? ` (${e.digest})` : ""}
+                      <details><summary>자세히</summary><pre style={{ whiteSpace: "pre-wrap", fontSize: 11 }}>{e.stack}</pre></details>
+                    </td>
+                    <td><small>{e.ua}</small></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
       <section className="card admin-orders">
         <h2>파일 발송 점검</h2>
         <p className="muted">감정서 PDF·HTML이 메일·문자로 나가는 데 필요한 설정입니다(값은 보이지 않습니다).</p>
