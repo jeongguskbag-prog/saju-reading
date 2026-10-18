@@ -21,7 +21,9 @@ export default function MemberSaveBar({ input }: { input: BirthInput }) {
       .then(setMe)
       .catch(() => setMe(null));
   }, []);
-  useEffect(() => setState("idle"), [input]);
+  useEffect(() => {
+    setState("idle");
+  }, [input]);
   if (!me?.enabled) return null;
 
   async function save() {

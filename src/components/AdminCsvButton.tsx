@@ -9,7 +9,9 @@ import { useEffect, useState } from "react";
 export default function AdminCsvButton() {
   const [inApp, setInApp] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  useEffect(() => setInApp(Boolean(window.AndroidBridge)), []);
+  useEffect(() => {
+    setInApp(Boolean(window.AndroidBridge));
+  }, []);
 
   async function openInBrowser(e: React.MouseEvent) {
     if (!inApp) return; // 일반 브라우저는 링크 그대로 받는다.

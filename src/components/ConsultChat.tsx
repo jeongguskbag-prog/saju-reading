@@ -43,7 +43,9 @@ export default function ConsultChat({
   const endRef = useRef<HTMLDivElement>(null);
   // 천기록 앱(사장님용)은 질문권 없이 질문한다(서버가 앱 키로 확인).
   const [inApp, setInApp] = useState(false);
-  useEffect(() => setInApp(Boolean(window.AndroidBridge?.appKey?.())), []);
+  useEffect(() => {
+    setInApp(Boolean(window.AndroidBridge?.appKey?.()));
+  }, []);
 
   useEffect(() => {
     if (!profileId) return;
@@ -57,7 +59,9 @@ export default function ConsultChat({
       .catch(() => {});
   }, [profileId]);
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), [turns.length, pending?.a]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [turns.length, pending?.a]);
 
   async function ask(q: string) {
     const text = q.trim();

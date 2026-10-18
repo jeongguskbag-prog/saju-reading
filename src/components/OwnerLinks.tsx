@@ -18,7 +18,9 @@ export default function OwnerLinks({ mode, loggedIn = false }: { mode: "home" | 
     const timer = setTimeout(() => setArmed(false), 4000);
     return () => clearTimeout(timer);
   }, [armed]);
-  useEffect(() => setInApp(Boolean(window.AndroidBridge)), []);
+  useEffect(() => {
+    setInApp(Boolean(window.AndroidBridge));
+  }, []);
   if (mode === "home" && !inApp) return null;
 
   async function logout() {

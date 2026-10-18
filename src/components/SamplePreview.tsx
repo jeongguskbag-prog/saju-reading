@@ -66,7 +66,9 @@ export default function SamplePreview({ productId }: { productId?: ProductId }) 
   const id = productId ?? picked;
   const s = SAMPLES[id];
   const [inApp, setInApp] = useState(false);
-  useEffect(() => setInApp(Boolean(window.AndroidBridge)), []);
+  useEffect(() => {
+    setInApp(Boolean(window.AndroidBridge));
+  }, []);
   if (!s) return null;
   const href = inApp ? appPdfHref(s.file) : s.file;
   return (
