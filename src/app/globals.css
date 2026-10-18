@@ -1144,3 +1144,12 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .admin-checks { list-style: none; padding: 0; margin: 10px 0 14px; display: grid; gap: 6px; font-size: 14px; }
 .admin-checks .ok { color: #2f7d4f; }
 .admin-checks .no { color: var(--accent); }
+
+/* 관리 화면 '다시 보내기' 안내 창 */
+.admin-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 100; width: min(460px, calc(100vw - 32px)); background: var(--surface); color: var(--text); border: 1px solid var(--border); border-left: 4px solid #2a78d6; border-radius: 12px; padding: 14px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); font-size: 14px; line-height: 1.6; white-space: normal; text-align: left; }
+.admin-toast.ok { border-left-color: #1baf7a; }
+.admin-toast.fail { border-left-color: #e34948; }
+.admin-toast p { margin: 0; word-break: keep-all; }
+.admin-toast .spinner { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; }
+.admin-toast-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 10px; }
+.admin-toast-actions .btn-secondary, .admin-toast-actions .btn-link { width: auto; flex: none; white-space: nowrap; padding: 6px 14px; font-size: 13px; }

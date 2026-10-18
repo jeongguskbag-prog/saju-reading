@@ -82,7 +82,7 @@ export default async function AdminPage() {
                   <td>{d.schedule ? d.schedule.note : d.deliverAt ? `예약 ${kstTime(d.deliverAt)}` : "기록 없음"}</td>
                   <td>{d.mailed ? `보냄 ${kstTime(d.mailed)}` : "안 보냄"}</td>
                   <td>{d.log ? `${kstTime(d.log.at)} · 파일 ${d.log.files} · 메일 ${d.log.mail} · 휴대폰 ${d.log.phone}` : "시도 기록 없음"}</td>
-                  <td><AdminResend orderId={d.orderId} /></td>
+                  <td><AdminResend orderId={d.orderId} name={d.name} /></td>
                 </tr>
               ))}
             </tbody>
