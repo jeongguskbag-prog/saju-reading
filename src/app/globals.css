@@ -1153,3 +1153,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .admin-toast .spinner { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; }
 .admin-toast-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 10px; }
 .admin-toast-actions .btn-secondary, .admin-toast-actions .btn-link { width: auto; flex: none; white-space: nowrap; padding: 6px 14px; font-size: 13px; }
+.app-only { max-width: 520px; margin: 48px auto; text-align: center; }
+.app-only h1 { font-family: var(--display); font-weight: 400; font-size: 24px; margin: 0 0 10px; }
+.app-only p { color: var(--text-2); line-height: 1.75; word-break: keep-all; margin: 0 0 18px; }
+.app-only .btn-primary { display: inline-block; text-decoration: none; width: auto; padding: 13px 24px; }
