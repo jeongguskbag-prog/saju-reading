@@ -1169,6 +1169,10 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .consult { display: grid; gap: 14px; }
 .consult-why { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 6%, transparent); }
 .consult-why-h { margin: 0 0 6px; font-weight: 700; font-size: 14px; }
+.consult-why > p:not(.consult-why-h) { margin: 0 0 8px; font-size: 14px; line-height: 1.7; color: var(--text-2); }
+.lp-consult { padding: 18px 20px; }
+.lp-consult .consult-why-h { font-size: 17px; }
+.lp-consult .lp-cta-ghost { display: inline-flex; align-items: center; justify-content: center; margin-top: 6px; }
 .consult-why ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; line-height: 1.65; color: var(--text-2); }
 .consult-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .consult-bar label { font-weight: 700; font-size: 14px; }

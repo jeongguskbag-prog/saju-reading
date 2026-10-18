@@ -1,3 +1,4 @@
+import { CONSULT_WHY } from "@/lib/consult-copy";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import ConsultChat, { type ConsultProfile } from "@/components/ConsultChat";
@@ -29,12 +30,10 @@ export default async function ConsultPage({ searchParams }: { searchParams: Prom
         답합니다. 답변은 사람이 아닌 AI가 작성합니다.
       </p>
       <div className="consult-why">
-        <p className="consult-why-h">일반 AI에게 묻는 것과 무엇이 다른가요?</p>
-        <ul>
-          <li>일반 AI 채팅은 사주를 실제로 계산하지 않고, 누구에게나 들어맞을 법한 상투적인 말로 답하기 쉽습니다.</li>
-          <li>천기록은 먼저 생년월일시로 만세력(절기 시각 기준)을 세우고 오행·십신·용신·대운·세운·월별 흐름을 명리 공식으로 계산해 조회합니다.</li>
-          <li>그 방대한 명식 자료와 명리 이론을 근거로 유료 고성능 AI가 질문에 맞춰 답하고, 어떤 간지·십신을 근거로 했는지 함께 밝힙니다. 명식에 없는 간지나 날짜는 지어내지 않습니다.</li>
-        </ul>
+        <p className="consult-why-h">{CONSULT_WHY.title}</p>
+        <p>{CONSULT_WHY.general}</p>
+        <p>{CONSULT_WHY.ours}</p>
+        <p>{CONSULT_WHY.engine}</p>
       </div>
     </section>
   );

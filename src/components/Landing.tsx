@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import ExtraProducts from "./extras/ExtraProducts";
+import ConsultIntro from "./ConsultIntro";
 import { BRAND, PRODUCT_ORDER, PRODUCTS, withProductYears, won } from "@/lib/product";
 import { CHAPTER_KEYS, withYears } from "@/lib/report-shared";
 import { chaptersFor } from "@/lib/report-shared";
@@ -234,6 +235,8 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
           ))}
         </dl>
       </Section>
+
+      {site === "ko" && <ConsultIntro />}
 
       {site === "ko" && <ReviewsSection reviews={reviews} />}
 
