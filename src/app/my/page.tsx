@@ -7,6 +7,7 @@ import { productOf } from "@/lib/orders";
 import { BRAND } from "@/lib/product";
 import { calculateSaju } from "@/lib/saju/calc";
 import { dailyFortune } from "@/lib/saju/daily";
+import { questionsLeft } from "@/lib/consult";
 
 export const metadata: Metadata = { title: `마이 — ${BRAND.name}`, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ const BENEFITS = [
   ["내 사주·가족 사주 저장", `최대 ${MAX_PROFILES}명까지 저장해 두고 다음부터 입력 없이 바로 봅니다.`],
   ["감정서 평생 보관함", "로그인하고 산 감정서는 열람 기간 없이 언제든 다시 열 수 있습니다. 예전에 산 감정서도 넣을 수 있습니다."],
   ["매일 오늘의 운세", "오늘의 일진과 내 명식을 맞춰 본 하루 운세를 매일 드립니다."],
-  ["AI 상담 무료 질문", `가입하면 AI 상담 무료 질문 ${WELCOME_QUESTIONS}회를 드립니다(AI 상담은 곧 열립니다).`],
+  ["AI 상담 무료 질문", `가입하면 내 사주로 묻고 바로 답을 받는 AI 상담 무료 질문 ${WELCOME_QUESTIONS}회를 드립니다.`],
 ] as const;
 
 const fmtDate = (iso: string) => {
@@ -97,7 +98,9 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
       <section className="card my-hero">
         <h1>{member.nickname}님의 마이</h1>
         {q.welcome && <p className="notice">가입을 환영합니다. 가입 혜택으로 AI 상담 무료 질문 {WELCOME_QUESTIONS}회를 드렸습니다.</p>}
-        <p className="muted">AI 상담 무료 질문 {member.freeQuestions}회 남음 · AI 상담은 곧 열립니다.</p>
+        <p className="muted">
+          AI 상담 질문 {questionsLeft(member)}회 남음 · <a href="/consult">AI 상담하기</a>
+        </p>
       </section>
 
       <section className="card my-fortune" aria-labelledby="fortune-h">

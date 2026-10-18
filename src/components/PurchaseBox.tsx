@@ -41,7 +41,7 @@ declare global {
 
 const SDK_URL = "https://js.tosspayments.com/v2/standard";
 
-function loadSdk(): Promise<NonNullable<Window["TossPayments"]>> {
+export function loadSdk(): Promise<NonNullable<Window["TossPayments"]>> {
   if (window.TossPayments) return Promise.resolve(window.TossPayments);
   return new Promise((resolve, reject) => {
     const s = document.createElement("script");

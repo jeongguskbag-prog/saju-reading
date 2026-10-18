@@ -195,7 +195,7 @@ function tierOf(chart: SajuChart, locale: Locale) {
   return tiers.find((t) => t.level === chart.grade.tier.level) ?? tiers[0];
 }
 
-const TEN_GOD_TABLE = Object.entries(TEN_GOD_MODERN)
+export const TEN_GOD_TABLE = Object.entries(TEN_GOD_MODERN)
   .map(([g, m]) => `- ${g}: ${m}`)
   .join("\n");
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { kakaoChatUrl } from "@/lib/product";
 
 type Tab = "home" | "reports" | "fortune" | "consult" | "my";
 
@@ -32,13 +31,12 @@ const ICON: Record<Tab, ReactNode> = {
 
 /**
  * 휴대폰 화면 맨 아래에 고정되는 메뉴(홈·감정서·운세·상담·마이). 한국어 사이트에서만 쓴다.
- * - 상담: AI 상담 채팅을 만들기 전까지는 카카오톡 상담으로, 채널이 없으면 첫 화면 상담 안내로 보낸다.
+ * - AI 상담: 저장한 사주로 묻고 답을 받는 화면(카카오톡 상담 안내도 그 아래에 있다).
  * - 마이: 회원(카카오 로그인)·저장한 사주·감정서 보관함. 비회원은 주문 조회로 이어진다.
  * 첫 화면에서는 보고 있는 구역(감정서·운세)에 맞춰 칸에 불이 들어온다.
  */
 export default function BottomNav({ current }: { current?: Tab }) {
   const [active, setActive] = useState<Tab | undefined>(current);
-  const kakao = kakaoChatUrl();
 
   useEffect(() => {
     if (current) return;
@@ -62,8 +60,8 @@ export default function BottomNav({ current }: { current?: Tab }) {
     { tab: "home", label: "홈", href: "/" },
     { tab: "reports", label: "감정서", href: "/#price" },
     { tab: "fortune", label: "운세", href: "/#extras" },
-    // AI 상담 채팅이 생기기 전에는 사람이 답하는 상담이므로 'AI'를 붙이지 않는다.
-    kakao ? { tab: "consult", label: "상담", href: kakao, external: true } : { tab: "consult", label: "상담", href: "/#help" },
+    // AI 상담(회원 전용). 사람이 답하는 카카오톡 상담은 AI 상담 화면 아래에 함께 있다.
+    { tab: "consult", label: "AI 상담", href: "/consult" },
     { tab: "my", label: "마이", href: "/my" },
   ];
 

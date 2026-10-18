@@ -54,6 +54,8 @@ export interface Order {
   deliverAt?: string;
   /** 회원 보관함에 든 주문이면 회원번호. 보관함의 감정서는 열람 기간 없이 계속 열 수 있다. */
   memberId?: string;
+  /** AI 상담 질문권 주문(감정서가 아니다). 결제하면 회원에게 질문권을 넣어 준다. */
+  questionPack?: { id: string; count: number };
 }
 
 export class OrderError extends Error {
@@ -267,7 +269,7 @@ export async function confirmOrder(
   // 결제한 주문 목록(관리 화면·내보내기). 주문 내용(결제 정보·사주 입력·연락처)은 order:주문번호에 그대로 남는다.
   await store.listPush(PAID_INDEX, order.id);
   // 로그인한 회원이 산 감정서는 그 회원의 보관함에 넣는다(회원 모듈이 주문 모듈을 쓰므로 여기서는 필요할 때 불러온다).
-  if (paid.memberId) {
+  if (paid.memberId && !paid.questionPack) {
     const { linkOrder } = await import("./member");
     await linkOrder(paid.memberId, paid.id).catch((error) => console.error("보관함에 넣지 못했습니다", error));
   }
@@ -298,6 +300,8 @@ export async function getReport(token: string, now = new Date()): Promise<Report
   if (!orderId) return null;
   const order = await getOrder(orderId);
   if (!order || order.status !== "paid" || order.token !== token) return null;
+  // 질문권 주문에는 감정서가 없다.
+  if (order.questionPack) return null;
   const paidAt = new Date(order.paidAt ?? order.createdAt);
   const expiresAt = new Date(paidAt.getTime() + REPORT_VALID_DAYS * DAY);
   return {

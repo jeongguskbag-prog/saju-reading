@@ -5,6 +5,7 @@ import SiteShell from "@/components/SiteShell";
 import { completeReport } from "@/lib/fulfill";
 import { scheduleDelivery } from "@/lib/delivery";
 import { sendReceipt } from "@/lib/receipt";
+import { creditQuestionOrder } from "@/lib/consult";
 import { confirmOrder, OrderError } from "@/lib/orders";
 import { originFrom } from "@/lib/site";
 import { StoreError } from "@/lib/store";
@@ -19,11 +20,17 @@ type Params = Promise<{ paymentKey?: string; orderId?: string; amount?: string }
 export default async function PaySuccess({ searchParams }: { searchParams: Params }) {
   const { paymentKey, orderId, amount } = await searchParams;
   let token: string | null = null;
+  let packDone = false;
   let message = "결제 정보를 확인하지 못했습니다.";
   if (paymentKey && orderId && amount && /^\d+$/.test(amount)) {
     try {
       const { order, justPaid } = await confirmOrder({ paymentKey, orderId, amount: Number(amount) });
-      token = order.token ?? null;
+      // AI 상담 질문권: 감정서를 쓰지 않고 회원에게 질문권만 넣는다(새로고침해도 한 번만).
+      if (order.questionPack) {
+        await creditQuestionOrder(order);
+        packDone = true;
+      }
+      token = order.questionPack ? null : (order.token ?? null);
       if (justPaid && token) {
         const origin = originFrom(await headers());
         const t = token;
@@ -44,6 +51,7 @@ export default async function PaySuccess({ searchParams }: { searchParams: Param
       }
     }
   }
+  if (packDone) redirect("/consult?paid=1");
   if (token) redirect(`/r/${token}?new=1`);
   return (
     <SiteShell>

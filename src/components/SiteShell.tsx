@@ -17,7 +17,7 @@ export default function SiteShell({
   /** 관리자 화면: 앱 화면·홈페이지 바로가기를 늘 보인다. "in"이면 로그인한 상태라 로그아웃 버튼도 보인다. */
   admin?: boolean | "in";
   /** 하단 메뉴에서 불을 켤 칸(주문 조회는 "my") */
-  nav?: "my";
+  nav?: "my" | "consult";
 }) {
   return (
     <>

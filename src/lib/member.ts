@@ -1,7 +1,7 @@
-// 회원(카카오 로그인) 정보와 로그인 쿠키, 저장한 사주, 감정서 보관함(서버 전용).
+// 회원(카카오 로그인) 정보와 로그인 쿠키, 저장한 사주, 감정서 보관함(서버 전용). AI 상담 질문권은 consult.ts.
 // - 회원은 가입하지 않아도 된다. 가입하면 사주 저장·감정서 평생 보관·오늘의 운세·AI 상담 무료 질문을 준다.
 // - 카카오에서는 회원 번호와 닉네임만 받는다. 카카오 접속 토큰은 저장하지 않는다.
-// - 탈퇴하면 회원 정보와 저장한 사주를 지우고, 보관함의 감정서는 일반 주문처럼 열람 기간이 지나면 지워지게 되돌린다.
+// - 탈퇴하면 회원 정보와 저장한 사주·AI 상담 대화를 지우고, 보관함의 감정서는 일반 주문처럼 열람 기간이 지나면 지워지게 되돌린다.
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { REPORT_VALID_DAYS } from "./product";
 import { getOrder, getSavedPart, productOf, savePart, type Order } from "./orders";
@@ -36,6 +36,8 @@ export interface Member {
   orderIds: string[];
   /** AI 상담 무료 질문 남은 수 */
   freeQuestions: number;
+  /** 산 AI 상담 질문권 남은 수 */
+  paidQuestions?: number;
 }
 
 export class MemberError extends Error {
@@ -164,6 +166,8 @@ export async function removeProfile(memberId: string, profileId: string): Promis
   // 내 사주를 지우면 다음 사주가 내 사주가 된다.
   if (rest.length && !rest.some((p) => p.self)) rest[0] = { ...rest[0], self: true };
   await saveMember({ ...m, profiles: rest });
+  // 이 사주로 나눈 AI 상담 대화도 지운다.
+  await requireStore().del(`consult:${m.id}:${profileId}`);
 }
 
 export async function setSelfProfile(memberId: string, profileId: string): Promise<void> {
@@ -221,14 +225,6 @@ export async function memberOrders(m: Member): Promise<Order[]> {
   return orders.filter((o): o is Order => Boolean(o && o.memberId === m.id && o.token));
 }
 
-/** AI 상담 무료 질문을 하나 쓴다. 남은 것이 없으면 false. */
-export async function spendFreeQuestion(memberId: string): Promise<boolean> {
-  const m = await getMember(memberId);
-  if (!m || m.freeQuestions <= 0) return false;
-  await saveMember({ ...m, freeQuestions: m.freeQuestions - 1 });
-  return true;
-}
-
 /** 회원 탈퇴: 회원 정보·저장한 사주를 지우고, 보관함 감정서는 일반 주문의 보관 기간으로 되돌린다. */
 export async function deleteMember(memberId: string, now = new Date()): Promise<Member | null> {
   const m = await getMember(memberId);
@@ -242,6 +238,7 @@ export async function deleteMember(memberId: string, now = new Date()): Promise<
     await store.set(`order:${order.id}`, rest);
     await setPartsRetention(rest, false, now);
   }
+  for (const p of m.profiles) await store.del(`consult:${m.id}:${p.id}`);
   await store.del(providerKey(m.provider, m.providerId));
   await store.del(memberKey(m.id));
   return m;
