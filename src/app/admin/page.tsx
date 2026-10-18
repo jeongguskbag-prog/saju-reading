@@ -8,6 +8,7 @@ import { listReviews } from "@/lib/reviews";
 import AdminReviewToggle from "@/components/AdminReviewToggle";
 import { originFrom } from "@/lib/site";
 import AdminResend from "@/components/AdminResend";
+import AdminCsvButton from "@/components/AdminCsvButton";
 import { deliverySettings, lastSignatureFail, orderDeliveries } from "@/lib/delivery-status";
 
 export const dynamic = "force-dynamic";
@@ -93,7 +94,7 @@ export default async function AdminPage() {
         <h2>결제한 주문 ({rows.length}건, {total.toLocaleString("ko-KR")}원)</h2>
         <p className="muted">최근 200건입니다. 전체는 엑셀(CSV)로 내려받으세요.</p>
         <p>
-          <a className="btn-secondary link-btn" href="/api/admin/orders">엑셀(CSV)로 내려받기</a>
+          <AdminCsvButton />
         </p>
         <div className="admin-table-wrap">
           <table className="table admin-table">
