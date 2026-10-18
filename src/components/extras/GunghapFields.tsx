@@ -24,15 +24,18 @@ export const emptyGunghapForm = (myGender: "male" | "female"): GunghapForm => ({
   calendar: "solar",
   isLeapMonth: false,
   year: "",
-  month: "1",
-  day: "1",
-  hour: "12",
-  minute: "0",
+  month: "",
+  day: "",
+  hour: "",
+  minute: "",
   timeUnknown: false,
 });
 
 export function toGunghapRequest(f: GunghapForm): { ok: true; value: GunghapRequest } | { ok: false; error: string } {
   if (!f.name.trim()) return { ok: false, error: "상대 분의 성함을 적어 주세요." };
+  // 잘못 고른 기본값이 그대로 들어가지 않게, 비어 있는 칸을 모두 알려 준다.
+  const missing = [!/^\d{4}$/.test(f.year) && "태어난 해", !f.month && "달", !f.day && "날", !f.timeUnknown && !f.hour && "태어난 시(모르면 '모름' 체크)"].filter(Boolean);
+  if (missing.length) return { ok: false, error: `상대 분의 ${missing.join(", ")}을(를) 골라 주세요.` };
   if (!/^\d{4}$/.test(f.year) || Number(f.year) < 1900) return { ok: false, error: "상대 분의 태어난 해를 네 자리로 적어 주세요. (1900년 이후)" };
   const y = Number(f.year);
   const m = Number(f.month);
@@ -55,7 +58,7 @@ export function toGunghapRequest(f: GunghapForm): { ok: true; value: GunghapRequ
         month: m,
         day: d,
         hour: f.timeUnknown ? null : Number(f.hour),
-        minute: f.timeUnknown ? null : Number(f.minute),
+        minute: f.timeUnknown ? null : Number(f.minute || 0),
       },
     },
   };
@@ -99,11 +102,13 @@ export default function GunghapFields({ value: f, onChange }: { value: GunghapFo
         <div className="row">
           <YearField value={f.year} onChange={(year) => set({ year })} />
           <select aria-label="상대 분 태어난 달" value={f.month} onChange={(e) => set({ month: e.target.value })}>
+            <option value="" disabled>월</option>
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i + 1} value={i + 1}>{i + 1}월</option>
             ))}
           </select>
           <select aria-label="상대 분 태어난 날" value={f.day} onChange={(e) => set({ day: e.target.value })}>
+            <option value="" disabled>일</option>
             {Array.from({ length: 31 }, (_, i) => (
               <option key={i + 1} value={i + 1}>{i + 1}일</option>
             ))}
@@ -118,12 +123,14 @@ export default function GunghapFields({ value: f, onChange }: { value: GunghapFo
       <div className="field">
         <span className="label">상대 분 태어난 시각</span>
         <div className="row">
-          <select aria-label="상대 분 태어난 시" value={f.hour} disabled={f.timeUnknown} onChange={(e) => set({ hour: e.target.value })}>
+          <select aria-label="상대 분 태어난 시" value={f.hour} disabled={f.timeUnknown} onChange={(e) => set({ hour: e.target.value, minute: f.minute || "0" })}>
+            <option value="" disabled>시</option>
             {HOURS.map((h) => (
               <option key={h} value={h}>{h}시</option>
             ))}
           </select>
           <select aria-label="상대 분 태어난 분" value={f.minute} disabled={f.timeUnknown} onChange={(e) => set({ minute: e.target.value })}>
+            <option value="" disabled>분</option>
             {MINUTES.map((m) => (
               <option key={m} value={m}>{m}분</option>
             ))}
