@@ -1167,6 +1167,9 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 /* ── AI 사주 상담 ── */
 .consult-hero h1 { font-family: var(--display); font-weight: 400; margin: 0 0 8px; }
 .consult { display: grid; gap: 14px; }
+.consult-why { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.consult-why-h { margin: 0 0 6px; font-weight: 700; font-size: 14px; }
+.consult-why ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; line-height: 1.65; color: var(--text-2); }
 .consult-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .consult-bar label { font-weight: 700; font-size: 14px; }
 .consult-bar select { flex: 1 1 220px; min-width: 0; }

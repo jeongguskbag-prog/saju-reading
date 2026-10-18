@@ -57,7 +57,7 @@ export default function MemberSaveBar({ input }: { input: BirthInput }) {
         )
       ) : (
         <>
-          <p>카카오로 로그인하면 이 사주를 저장하고 매일 오늘의 운세를 받을 수 있습니다. 가입하면 AI 상담 무료 질문도 드립니다.</p>
+          <p>카카오로 로그인하면 이 사주를 저장하고 매일 오늘의 운세를 받을 수 있습니다. 가입하면 내 명식을 계산한 값으로 답하는 명리 AI 상담 무료 질문도 드립니다.</p>
           <button type="button" className="kakao-login" onClick={login}>
             카카오로 저장하기
           </button>
