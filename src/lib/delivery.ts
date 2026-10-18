@@ -7,6 +7,24 @@ import { sendReportEmail } from "./mail";
 import { sendReportSms } from "./sms";
 import { getSavedParts, markMailed, setDeliverAt, unmarkMailed, type Order, type Report } from "./orders";
 import { renderReportFiles, type ReportFiles } from "./render";
+import { getStore } from "./store";
+
+/** 주문별 마지막 발송 시도 기록(관리 화면에서 어디서 막혔는지 본다). 40일 보관. */
+export interface DeliveryLog {
+  at: string;
+  outcome: DeliverOutcome;
+  /** 파일(PDF·HTML) 만들기: ok 또는 실패 사유 */
+  files: string;
+  mail: string;
+  phone: string;
+}
+export const deliveryLogKey = (orderId: string) => `delivery-log:${orderId}`;
+/** QStash가 부른 요청의 서명이 맞지 않았던 마지막 시각 */
+export const SIGNATURE_FAIL_KEY = "delivery-log:signature-fail";
+
+async function writeLog(orderId: string, log: DeliveryLog) {
+  await getStore()?.set(deliveryLogKey(orderId), log, 60 * 60 * 24 * 40).catch(() => {});
+}
 
 export function isDeliveryScheduleEnabled(): boolean {
   return Boolean(process.env.QSTASH_TOKEN && process.env.QSTASH_CURRENT_SIGNING_KEY && process.env.QSTASH_NEXT_SIGNING_KEY);
@@ -40,8 +58,16 @@ export function fileLinks(origin: string, token: string) {
  * 결제 직후 발송을 예약한다. 예약하면 발송 시각(ISO)을, 설정이 없거나 실패하면 null(완성 즉시 발송)을 돌려준다.
  * 예약 시각을 주문에 먼저 적어, 그 사이 감정서가 완성되어도 바로 보내지 않게 한다.
  */
+export const scheduleLogKey = (orderId: string) => `delivery-schedule:${orderId}`;
+const noteSchedule = (orderId: string, note: string) =>
+  getStore()?.set(scheduleLogKey(orderId), { at: new Date().toISOString(), note }, 60 * 60 * 24 * 40).catch(() => {});
+
 export async function scheduleDelivery(order: Order, origin: string, now = new Date()): Promise<string | null> {
-  if (!isDeliveryScheduleEnabled() || !order.token || !hasDestination(order)) return null;
+  if (!order.token || !hasDestination(order)) return null;
+  if (!isDeliveryScheduleEnabled()) {
+    await noteSchedule(order.id, "예약 설정(QSTASH) 없음: 감정서 완성 즉시 발송");
+    return null;
+  }
   const paidAt = new Date(order.paidAt ?? now.toISOString()).getTime();
   const deliverAt = new Date(paidAt + deliveryDelayMinutes() * 60_000);
   await setDeliverAt(order.id, deliverAt.toISOString());
@@ -55,9 +81,11 @@ export async function scheduleDelivery(order: Order, origin: string, now = new D
       retries: 3,
       deduplicationId: `deliver-${order.id}`,
     });
+    await noteSchedule(order.id, `예약됨: ${origin}/api/deliver`);
     return deliverAt.toISOString();
   } catch (error) {
     console.error("발송 예약 실패, 완성 즉시 보냅니다", order.id, error);
+    await noteSchedule(order.id, `예약 실패: ${String((error as Error)?.message ?? error).slice(0, 300)}`);
     await setDeliverAt(order.id, null);
     return null;
   }
@@ -90,17 +118,30 @@ export async function deliverReport(report: Report, origin: string, render = ren
   if (report.product.parts.some((p) => !saved[p])) return "incomplete";
   if (!(await markMailed(report.order.id))) return "already";
   let files: ReportFiles | null = null;
+  let filesNote = "ok";
   try {
     files = await render(origin, report);
   } catch (error) {
     console.error("감정서 파일 만들기 실패, 링크만 보냅니다", report.order.id, error);
+    filesNote = `실패: ${String((error as Error)?.message ?? error).slice(0, 300)}`;
   }
   const links = fileLinks(origin, report.order.token!);
+  let mailNote = wantsEmail(report.order) ? "보냄" : "이메일로 받기 안 고름";
   const [mailed, texted] = await Promise.all([
-    wantsEmail(report.order) ? sendReportEmail(report.order, links.view, report.expiresAt, { files, links }) : Promise.resolve(false),
+    wantsEmail(report.order)
+      ? sendReportEmail(report.order, links.view, report.expiresAt, { files, links }, (m) => (mailNote = m))
+      : Promise.resolve(false),
     sendReportSms(report.order, links.view, report.expiresAt, links),
   ]);
-  if (mailed || texted) return "sent";
+  const outcome: DeliverOutcome = mailed || texted ? "sent" : "failed";
+  await writeLog(report.order.id, {
+    at: new Date().toISOString(),
+    outcome,
+    files: filesNote,
+    mail: mailNote,
+    phone: texted ? "보냄" : report.order.phone ? "안 보냄(문자·알림톡 설정 또는 선택 없음)" : "번호 없음",
+  });
+  if (outcome === "sent") return "sent";
   await unmarkMailed(report.order.id);
   return "failed";
 }

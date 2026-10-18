@@ -75,8 +75,11 @@ ${extra ? `\nPDF 파일 받기: ${extra.links.pdf}\nHTML 파일 받기: ${extra.
 }
 
 /** 보냈으면 true. 메일 실패는 결제 흐름을 막지 않는다. */
-export async function sendReportEmail(order: Order, url: string, expiresAt: string, extra?: MailFiles): Promise<boolean> {
-  if (!isMailEnabled()) return false;
+export async function sendReportEmail(order: Order, url: string, expiresAt: string, extra?: MailFiles, onError?: (message: string) => void): Promise<boolean> {
+  if (!isMailEnabled()) {
+    onError?.("메일 설정(RESEND_API_KEY·MAIL_FROM) 없음");
+    return false;
+  }
   const { subject, html, text } = reportEmail(order, url, expiresAt, extra);
   const f = extra?.files;
   const attachments = f
@@ -91,10 +94,15 @@ export async function sendReportEmail(order: Order, url: string, expiresAt: stri
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: process.env.MAIL_FROM, to: [order.email], subject, html, text, ...(attachments ? { attachments } : {}) }),
     });
-    if (!res.ok) console.error("메일 발송 실패", res.status, await res.text().catch(() => ""));
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      console.error("메일 발송 실패", res.status, detail);
+      onError?.(`Resend ${res.status}: ${detail.slice(0, 300)}`);
+    }
     return res.ok;
   } catch (error) {
     console.error("메일 발송 실패", error);
+    onError?.(`메일 발송 오류: ${(error as Error).message}`);
     return false;
   }
 }

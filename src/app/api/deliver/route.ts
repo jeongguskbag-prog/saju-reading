@@ -1,7 +1,8 @@
 // QStash가 예약 시각(신청 3분 뒤)에 부르는 곳: 감정서를 마저 쓰고 PDF·HTML을 만들어 보낸다.
 // 실패하면 500을 돌려 QStash가 다시 부르게 한다. 같은 주문은 한 번만 보낸다.
 import { completeReport } from "@/lib/fulfill";
-import { deliverReport, verifyQstash } from "@/lib/delivery";
+import { deliverReport, SIGNATURE_FAIL_KEY, verifyQstash } from "@/lib/delivery";
+import { getStore } from "@/lib/store";
 import { getReport } from "@/lib/orders";
 import { originFrom } from "@/lib/site";
 
@@ -12,7 +13,11 @@ export async function POST(request: Request) {
   const body = await request.text();
   const origin = originFrom(request.headers);
   const ok = await verifyQstash(request.headers.get("upstash-signature"), body, `${origin}/api/deliver`);
-  if (!ok) return Response.json({ error: "서명이 맞지 않습니다." }, { status: 401 });
+  if (!ok) {
+    // 관리 화면에서 보이도록 마지막 실패 시각과 확인한 주소를 남긴다.
+    await getStore()?.set(SIGNATURE_FAIL_KEY, { at: new Date().toISOString(), url: `${origin}/api/deliver` }, 60 * 60 * 24 * 40).catch(() => {});
+    return Response.json({ error: "서명이 맞지 않습니다." }, { status: 401 });
+  }
   let token: unknown;
   try {
     token = (JSON.parse(body) as { token?: unknown }).token;
