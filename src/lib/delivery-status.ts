@@ -36,6 +36,10 @@ export interface OrderDelivery {
   releaseAt?: string;
   released: boolean;
   cancelled: boolean;
+  /** report: 일반 감정서, gift: 선물 결제(감정서 없음), giftReport: 선물로 받은 0원 감정서 */
+  kind: "report" | "gift" | "giftReport";
+  /** 선물 결제가 이미 쓰였는지 */
+  redeemed: boolean;
   mailed: string | null;
   log: DeliveryLog | null;
 }
@@ -55,6 +59,8 @@ export async function orderDeliveries(orders: Order[]): Promise<OrderDelivery[]>
       releaseAt: orderReleaseAt(o).toISOString(),
       released: isReleased(o),
       cancelled: o.status === "cancelled",
+      kind: o.gift ? "gift" : o.giftOrderId ? "giftReport" : "report",
+      redeemed: Boolean(o.gift?.redeemedOrderId),
       mailed: await store.get<string>(`mailed:${o.id}`),
       log: await store.get<DeliveryLog>(deliveryLogKey(o.id)),
     })),

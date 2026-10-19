@@ -322,6 +322,10 @@ export async function cancelOrder(orderId: string, reason: string, now = new Dat
   if (order.status === "cancelled") return order;
   if (order.status !== "paid" || !order.paymentKey) throw new OrderError("결제가 끝난 주문만 취소할 수 있습니다.");
   if (order.gift?.redeemedOrderId) throw new OrderError("받는 분이 이미 사용한 선물은 취소할 수 없습니다. 받은 감정서(주문번호 " + order.gift.redeemedOrderId + ")를 확인해 주세요.");
+  // 선물: 받는 중이거나 받은 선물은 취소하지 않는다(받기와 같은 잠금을 잡는다. 취소되면 상태가 바뀌어 다시 받을 수 없다).
+  if (order.gift && !order.gift.redeemedOrderId && !(await requireStore().setIfAbsent(`gift-redeem:${order.gift.code}`, now.toISOString(), 600))) {
+    throw new OrderError("받는 분이 지금 선물을 받는 중입니다. 잠시 뒤 다시 확인해 주세요.", 409);
+  }
   const secret = process.env.TOSS_SECRET_KEY;
   if (!secret) throw new OrderError("결제 설정이 없습니다.", 503);
   const base = (process.env.TOSS_API_BASE || "https://api.tosspayments.com").replace(/\/$/, "");

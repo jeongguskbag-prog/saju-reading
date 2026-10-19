@@ -103,7 +103,13 @@ export async function redeemGift(
   calculateSaju(input, now); // 입력 오류(InputError)는 부른 쪽에서 메시지로 돌려준다.
   const fields = contactFields(contact.email, contact.phone, contact.targets);
   const store = requireStore();
-  if (!(await store.setIfAbsent(`gift-redeem:${code}`, now.toISOString()))) throw new OrderError("선물을 받는 중입니다. 잠시 뒤 새로고침해 주세요.", 409);
+  // 같은 선물을 동시에 받거나, 받는 중에 결제가 취소되지 않도록 잠근다(관리자 취소도 같은 잠금을 쓴다).
+  if (!(await store.setIfAbsent(`gift-redeem:${code}`, now.toISOString(), 600))) throw new OrderError("선물을 받는 중입니다. 잠시 뒤 새로고침해 주세요.", 409);
+  const fresh = await getGift(code);
+  if (!fresh?.gift || fresh.gift.redeemedOrderId) {
+    await store.del(`gift-redeem:${code}`).catch(() => {});
+    throw new OrderError("이미 받았거나 취소된 선물입니다. 링크를 새로고침해 주세요.", 409);
+  }
   const product = PRODUCTS[gift.gift.productId];
   const ymd = now.toISOString().slice(0, 10).replace(/-/g, "");
   const order: Order = {
@@ -128,7 +134,7 @@ export async function redeemGift(
     await store.set(orderKey(order.id), order);
     await store.set(reportKey(order.token!), order.id);
     await store.listPush(PAID_INDEX, order.id);
-    await store.set(orderKey(gift.id), { ...gift, gift: { ...gift.gift, redeemedOrderId: order.id, redeemedAt: now.toISOString() } });
+    await store.set(orderKey(fresh.id), { ...fresh, gift: { ...fresh.gift, redeemedOrderId: order.id, redeemedAt: now.toISOString() } });
   } catch (error) {
     // 저장이 중간에 실패하면 다시 받을 수 있게 잠금을 푼다.
     await store.del(`gift-redeem:${code}`).catch(() => {});

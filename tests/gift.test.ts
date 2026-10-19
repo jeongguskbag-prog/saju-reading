@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createGiftOrder, getGift, isGiftProduct, redeemGift } from "@/lib/gift";
 import { cancelOrder, confirmOrder, getOrder, getReport } from "@/lib/orders";
 import { giftReceiptText } from "@/lib/receipt";
-import { createMemoryStore, setStoreForTest } from "@/lib/store";
+import { createMemoryStore, requireStore, setStoreForTest } from "@/lib/store";
+import { claimOrder, findOrCreateMember } from "@/lib/member";
 import type { BirthInput } from "@/lib/saju/calc";
 
 const input: BirthInput = { name: "김어머니", gender: "female", calendar: "solar", year: 1960, month: 3, day: 3, hour: 9, minute: 0 };
@@ -11,6 +12,8 @@ const toss = (body: object, status = 200) => vi.fn(async () => new Response(JSON
 beforeEach(() => {
   setStoreForTest(createMemoryStore());
   vi.stubEnv("TOSS_SECRET_KEY", "test_sk_dummy");
+  vi.stubEnv("KAKAO_REST_API_KEY", "k");
+  vi.stubEnv("MEMBER_SESSION_SECRET", "x".repeat(40));
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -66,5 +69,18 @@ describe("감정서 선물", () => {
     await cancelOrder(paid.id, "고객 요청");
     expect(await getGift(paid.gift!.code)).toBeNull();
     await expect(redeemGift(paid.gift!.code, input, { email: "m@b.co", targets: ["email"] })).rejects.toThrow("찾을 수 없습니다");
+  });
+
+  it("선물 결제 주문은 보관함에 넣을 수 없다", async () => {
+    const paid = await paidGift();
+    const { member } = await findOrCreateMember("kakao", "g1", "a");
+    await expect(claimOrder(member.id, paid.id, "a@b.co")).rejects.toThrow("선물 주문은");
+  });
+
+  it("받는 중인 선물은 취소하지 않고, 취소 중인 선물은 받지 못한다", async () => {
+    const paid = await paidGift();
+    await requireStore().setIfAbsent(`gift-redeem:${paid.gift!.code}`, "x", 600);
+    await expect(cancelOrder(paid.id, "x")).rejects.toThrow("받는 중");
+    await expect(redeemGift(paid.gift!.code, input, { email: "m@b.co", targets: ["email"] })).rejects.toThrow("받는 중");
   });
 });

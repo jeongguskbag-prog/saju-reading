@@ -115,13 +115,26 @@ export default async function AdminPage() {
                   <td>{d.name}</td>
                   <td>{d.email || "(이메일 안 받음)"}</td>
                   <td>{d.receipt ? `보냄 ${kstTime(d.receipt)}` : "안 보냄"}</td>
-                  <td>{d.cancelled ? "결제 취소됨" : d.releaseAt ? (d.released ? `공개됨 (${kstTime(d.releaseAt)})` : `${kstTime(d.releaseAt)} 예정`) : ""}</td>
+                  <td>
+                    {d.cancelled
+                      ? "결제 취소됨"
+                      : d.kind === "gift"
+                        ? d.redeemed
+                          ? "선물 받음"
+                          : "선물 링크 대기"
+                        : d.released
+                          ? `공개됨 (${kstTime(d.releaseAt!)})`
+                          : `${kstTime(d.releaseAt!)} 예정`}
+                    {d.kind === "giftReport" ? " · 선물" : ""}
+                  </td>
                   <td>{d.schedule ? d.schedule.note : d.deliverAt ? `예약 ${kstTime(d.deliverAt)}` : "기록 없음"}</td>
                   <td>{d.mailed ? `보냄 ${kstTime(d.mailed)}` : "안 보냄"}</td>
                   <td>{d.log ? `${kstTime(d.log.at)} · 파일 ${d.log.files} · 메일 ${d.log.mail} · 휴대폰 ${d.log.phone}` : "시도 기록 없음"}</td>
                   <td>
-                    {!d.cancelled && <AdminResend orderId={d.orderId} name={d.name} held={!d.released} />}
-                    {!d.cancelled && <AdminCancel orderId={d.orderId} name={d.name} released={d.released} />}
+                    {!d.cancelled && d.kind !== "gift" && <AdminResend orderId={d.orderId} name={d.name} held={!d.released} />}
+                    {!d.cancelled && d.kind !== "giftReport" && !(d.kind === "gift" && d.redeemed) && (
+                      <AdminCancel orderId={d.orderId} name={d.name} released={d.kind === "gift" ? false : d.released} />
+                    )}
                   </td>
                 </tr>
               ))}

@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { after } from "next/server";
+import { sendCompletionIfReady } from "@/lib/fulfill";
+import { originFrom } from "@/lib/site";
 import ReportClient from "@/components/ReportClient";
 import SiteShell from "@/components/SiteShell";
 import { isMailEnabled } from "@/lib/mail";
@@ -42,6 +46,11 @@ export default async function ReportPage({ params, searchParams }: { params: Par
   const open = renderer || isReleased(report.order);
   const releaseAt = orderReleaseAt(report.order);
   const saved = open ? await getSavedParts(token, report.product.parts) : {};
+  // 예약 발송(QStash)이 없거나 예약에 실패한 주문: 공개 뒤 화면을 열 때 완성 메일·문자를 보낸다(주문당 한 번).
+  if (open && !renderer && !report.order.deliverAt && report.product.parts.every((p) => saved[p])) {
+    const origin = originFrom(await headers());
+    after(() => sendCompletionIfReady(report, origin).catch((e) => console.error("완성 발송 실패", e)));
+  }
   const myReview = await getReviewByOrder(report.order.id).catch(() => null);
   return (
     <SiteShell>

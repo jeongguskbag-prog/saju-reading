@@ -204,6 +204,8 @@ export async function linkOrder(memberId: string, orderId: string): Promise<Orde
   if (!m) throw new MemberError("로그인이 필요합니다.", 401);
   const order = await getOrder(orderId);
   if (!order || order.status !== "paid" || !order.token) throw new MemberError("결제가 끝난 주문을 찾지 못했습니다.", 404);
+  if (order.gift) throw new MemberError("선물 주문은 보관함에 넣을 수 없습니다. 받는 분이 선물 링크에서 받은 감정서를 넣어 주세요.", 400);
+  if (order.questionPack) throw new MemberError("감정서 주문이 아닙니다.", 400);
   if (order.memberId && order.memberId !== memberId) throw new MemberError("다른 회원의 보관함에 있는 감정서입니다.", 409);
   const linked: Order = { ...order, memberId };
   await requireStore().set(`order:${order.id}`, linked);
@@ -254,7 +256,7 @@ export async function claimOrder(memberId: string, orderIdRaw: string, contactRa
 
 export async function memberOrders(m: Member): Promise<Order[]> {
   const orders = await Promise.all(m.orderIds.map((id) => getOrder(id)));
-  return orders.filter((o): o is Order => Boolean(o && o.memberId === m.id && o.token));
+  return orders.filter((o): o is Order => Boolean(o && o.memberId === m.id && o.token && o.status === "paid" && !o.gift));
 }
 
 /** 회원 탈퇴: 회원 정보·저장한 사주를 지우고, 보관함 감정서는 일반 주문의 보관 기간으로 되돌린다. */
