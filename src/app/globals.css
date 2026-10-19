@@ -1222,3 +1222,11 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .report-preview-h { font-family: var(--display); font-weight: 400; margin: 10px 0 0; text-align: center; }
 .report-preview-lead { text-align: center; margin: 0; }
 .admin-cancel { color: var(--accent); margin-left: 8px; }
+
+/* 신년 시즌 배너 */
+.season-banner { background: linear-gradient(135deg, #7a1d22, #b0262c); color: #fff6ea; padding: 28px 0; }
+.season-inner { text-align: center; padding: 0 18px; }
+.season-eyebrow { letter-spacing: 0.12em; font-size: 13px; opacity: 0.9; margin: 0 0 6px; }
+.season-banner h2 { font-family: var(--display); font-weight: 400; margin: 0 0 10px; color: #fff; }
+.season-banner p { line-height: 1.7; margin: 0 auto 14px; max-width: 640px; }
+.season-banner .lp-cta { background: #fff6ea; color: #7a1d22; }

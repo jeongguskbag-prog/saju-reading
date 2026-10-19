@@ -1,7 +1,7 @@
 "use client";
 
 import { DEFAULT_RELEASE_MINUTES, waitLabel } from "@/lib/release";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BirthInput } from "@/lib/saju/calc";
 import { SupportBox } from "./SupportLinks";
 import SamplePreview from "./SamplePreview";
@@ -72,6 +72,11 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [naming, setNaming] = useState<NamingForm>(emptyNamingForm);
+  // 첫 화면 배너 등에서 ?p=상품으로 들어오면 그 상품을 골라 둔다.
+  useEffect(() => {
+    const want = new URLSearchParams(location.search).get("p");
+    if (want && sellableProducts().some((p) => p.id === want)) setProductId(want as ProductId);
+  }, []);
   const product = PRODUCTS[productId];
   const wait = waitLabel(checkout.release?.[productId] ?? DEFAULT_RELEASE_MINUTES[productId]);
   const isNaming = productId === "naming";

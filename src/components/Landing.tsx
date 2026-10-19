@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import ExtraProducts from "./extras/ExtraProducts";
+import SeasonBanner from "./SeasonBanner";
 import ConsultIntro from "./ConsultIntro";
 import { BRAND, PRODUCT_ORDER, PRODUCTS, withProductYears, won } from "@/lib/product";
 import { CHAPTER_KEYS, withYears } from "@/lib/report-shared";
@@ -90,6 +91,8 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
           </div>
         </div>
       </header>
+
+      {site === "ko" && <SeasonBanner />}
 
       {/* 재미로 보는 운세와 다른 점: 계산 자료와 명리학 근거를 첫 화면 바로 아래에서 강조한다. */}
       <section id="trust" className="lp-section lp-trust" aria-labelledby="trust-h">
