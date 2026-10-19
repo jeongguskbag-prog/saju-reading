@@ -19,7 +19,7 @@ export default async function SavedProfilePage({ params }: { params: Promise<{ i
   if (!member) redirect("/my");
   const profile = member.profiles.find((p) => p.id === id);
   if (!profile) notFound();
-  const { enabled, testMode, mobilePhone, sms, kakao } = checkoutConfig();
+  const { enabled, testMode, mobilePhone, sms, kakao, release } = checkoutConfig();
   // 첫 화면과 같은 방식(FREE_READING=1이면 바로 무료 풀이, 아니면 등급까지 무료 + 감정서 신청).
   const free = isFreeReading() && isAiEnabled();
   return (
@@ -28,7 +28,7 @@ export default async function SavedProfilePage({ params }: { params: Promise<{ i
         <a href="/my">← 마이로</a>
       </p>
       <LocaleProvider locale="ko">
-        <SajuApp aiEnabled={free} checkout={free ? undefined : { enabled, testMode, mobilePhone, sms, kakao }} initial={profile.input} autoRun />
+        <SajuApp aiEnabled={free} checkout={free ? undefined : { enabled, testMode, mobilePhone, sms, kakao, release }} initial={profile.input} autoRun />
       </LocaleProvider>
     </SiteShell>
   );

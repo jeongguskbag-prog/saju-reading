@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BirthInput } from "@/lib/saju/calc";
-import { checkoutConfig, confirmOrder, createOrder, getOrder, getReport, getSavedPart, lockPart, OrderError, savePart, unlockPart } from "@/lib/orders";
+import { cancelOrder, checkoutConfig, confirmOrder, createOrder, getOrder, getReport, getSavedPart, isReleased, lockPart, OrderError, orderReleaseAt, savePart, setReleaseAt, unlockPart } from "@/lib/orders";
+import { avoidQuietHours, computeReleaseAt, releaseLabel, releaseMinutes } from "@/lib/release";
 import { PRODUCTS } from "@/lib/product";
 import { createMemoryStore, setStoreForTest } from "@/lib/store";
 import { reportEmail } from "@/lib/mail";
@@ -154,6 +155,11 @@ describe("풀이 API", () => {
     const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
     const saved = { part: "intro" as const, intro: { coverKeywords: ["k"], summary: "s", preface: ["p"] } };
     await savePart(paid.token!, "intro", saved);
+    // 공개 시각 전에는 본문을 주지 않는다.
+    const held = await call({ token: paid.token, part: "intro" });
+    expect(held.status).toBe(202);
+    expect(await held.json()).toEqual({ pending: true, held: true });
+    await setReleaseAt(paid.id, new Date(0));
     const res = await call({ token: paid.token, part: "intro" });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(saved);
@@ -179,7 +185,8 @@ describe("상품·열람 기간·완성 메일", () => {
     vi.stubGlobal("fetch", tossReply({ orderId: order.id, status: "DONE", totalAmount: order.amount, approvedAt: paidAt }));
     const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
     vi.unstubAllGlobals();
-    return paid;
+    // 완성 메일 시험은 공개 시각이 지난 주문으로 한다.
+    return (await setReleaseAt(paid.id, new Date(0)))!;
   }
 
   it("작명록은 신청서가 있어야 하고, 성함 없는 주문은 만들지 않는다", async () => {
@@ -315,5 +322,84 @@ describe("실제 사이트의 테스트 결제", () => {
     vi.stubEnv("TOSS_SECRET_KEY", "live_sk_x");
     expect(checkoutConfig().enabled).toBe(true);
     expect(checkoutConfig().testMode).toBe(false);
+  });
+});
+
+describe("공개·발송 시각", () => {
+  it("상품별 대기 시간과 설정 덮어쓰기", () => {
+    expect(releaseMinutes("iching")).toBe(30);
+    expect(releaseMinutes("full")).toBe(120);
+    expect(releaseMinutes("naming")).toBe(180);
+    expect(releaseMinutes("full", "full=45, iching=10")).toBe(45);
+    expect(releaseMinutes("core", "full=45")).toBe(60);
+    expect(releaseMinutes("full", "full=abc")).toBe(120);
+  });
+
+  it("밤 10시~아침 8시(한국 시간)에 걸리면 아침 8시로 미룬다", () => {
+    // 한국 14:00 → 그대로
+    expect(avoidQuietHours(new Date("2026-10-20T05:00:00Z")).toISOString()).toBe("2026-10-20T05:00:00.000Z");
+    // 한국 22:30 → 다음 날 08:00
+    expect(avoidQuietHours(new Date("2026-10-20T13:30:00Z")).toISOString()).toBe("2026-10-20T23:00:00.000Z");
+    // 한국 02:00 → 그날 08:00
+    expect(avoidQuietHours(new Date("2026-10-20T17:00:00Z")).toISOString()).toBe("2026-10-20T23:00:00.000Z");
+    // 한국 21:00 결제 + 2시간 → 23:00 → 다음 날 08:00
+    expect(computeReleaseAt("full", new Date("2026-10-20T12:00:00Z")).toISOString()).toBe("2026-10-20T23:00:00.000Z");
+  });
+
+  it("공개 시각 문구", () => {
+    const now = new Date("2026-10-20T05:00:00Z"); // 한국 14:00
+    expect(releaseLabel("2026-10-20T06:10:00Z", now)).toBe("오늘 오후 3:10");
+    expect(releaseLabel("2026-10-20T23:00:00Z", now)).toBe("내일 오전 8:00");
+    expect(releaseLabel("2026-10-22T23:00:00Z", now)).toBe("10월 23일 오전 8:00");
+  });
+
+  it("결제하면 상품별 공개 시각을 정하고, 예전 주문은 결제 3분 뒤", async () => {
+    const order = await createOrder(input, "a@b.co", "full", now);
+    vi.stubGlobal("fetch", tossReply({ orderId: order.id, status: "DONE", totalAmount: order.amount, approvedAt: "2026-10-20T14:00:00+09:00" }));
+    const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
+    expect(paid.releaseAt).toBe("2026-10-20T07:00:00.000Z"); // 한국 16:00
+    expect(isReleased(paid, new Date("2026-10-20T06:59:00Z"))).toBe(false);
+    expect(isReleased(paid, new Date("2026-10-20T07:00:00Z"))).toBe(true);
+    const old = { ...paid, releaseAt: undefined };
+    expect(orderReleaseAt(old).toISOString()).toBe("2026-10-20T05:03:00.000Z");
+  });
+
+  it("공개 전에는 완성 메일을 보내지 않는다", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_x");
+    vi.stubEnv("MAIL_FROM", "a@x.kr");
+    const order = await createOrder(input, "a@b.co", "core", now);
+    vi.stubGlobal("fetch", tossReply({ orderId: order.id, status: "DONE", totalAmount: order.amount, approvedAt: new Date().toISOString() }));
+    const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
+    for (const part of ["intro", "part1", "part5"] as const) {
+      await savePart(paid.token!, part, part === "intro" ? { part, intro: { coverKeywords: ["k"], summary: "s", preface: ["p"] } } : { part, chapter: { sections: [{ heading: "h", paragraphs: ["p"] }], actionPlan: [] } });
+    }
+    expect(await sendCompletionIfReady((await getReport(paid.token!))!, "https://x.test")).toBe(false);
+  });
+});
+
+describe("결제 취소", () => {
+  it("토스에 전액 취소를 요청하고 주문을 취소로 바꾸면 감정서가 열리지 않는다", async () => {
+    const order = await createOrder(input, "a@b.co", "core", now);
+    vi.stubGlobal("fetch", tossReply({ orderId: order.id, status: "DONE", totalAmount: order.amount }));
+    const { order: paid } = await confirmOrder({ paymentKey: "pk_c", orderId: order.id, amount: order.amount });
+    const cancel = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ status: "CANCELED" }), { status: 200 }));
+    vi.stubGlobal("fetch", cancel);
+    const done = await cancelOrder(paid.id, "고객 요청");
+    expect(done.status).toBe("cancelled");
+    expect(cancel.mock.calls[0][0]).toContain("/v1/payments/pk_c/cancel");
+    expect(JSON.parse(String(cancel.mock.calls[0][1]?.body))).toEqual({ cancelReason: "고객 요청" });
+    expect(await getReport(paid.token!)).toBeNull();
+    // 다시 눌러도 토스를 또 부르지 않는다.
+    await cancelOrder(paid.id, "고객 요청");
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("토스가 거절하면 주문을 바꾸지 않는다", async () => {
+    const order = await createOrder(input, "a@b.co", "core", now);
+    vi.stubGlobal("fetch", tossReply({ orderId: order.id, status: "DONE", totalAmount: order.amount }));
+    const { order: paid } = await confirmOrder({ paymentKey: "pk_d", orderId: order.id, amount: order.amount });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ code: "NOT_CANCELABLE_PAYMENT", message: "취소할 수 없는 결제입니다." }), { status: 403 })));
+    await expect(cancelOrder(paid.id, "x")).rejects.toThrow("취소할 수 없는 결제입니다.");
+    expect((await getOrder(paid.id))?.status).toBe("paid");
   });
 });

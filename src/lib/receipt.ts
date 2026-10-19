@@ -1,5 +1,6 @@
 // 결제 확인(주문번호·결제 내역) 발송(서버 전용). 결제가 승인되면 손님이 고른 곳(이메일·카카오톡·문자) 모두로 한 번 보낸다.
 // 카카오톡 알림톡은 KAKAO_RECEIPT_TEMPLATE_ID(아래 RECEIPT_KAKAO_TEMPLATE 문구로 카카오 검수)가 있어야 하고, 없으면 문자로 대신 보낸다.
+import { orderReleaseAt, releaseLabel } from "./release";
 import { isMailEnabled } from "./mail";
 import { BRAND, REPORT_VALID_DAYS, won } from "./product";
 import type { Order } from "./orders";
@@ -48,7 +49,7 @@ export const RECEIPT_KAKAO_TEMPLATE = `[천기록] 결제가 완료되었습니�
 결제 일시: #{일시}
 
 감정서 보기: #{링크}
-결제 약 3분 뒤부터 열리며, PDF·HTML 파일로 저장하실 수 있습니다.
+감정서는 #{공개} 전후에 보내 드리며, 그때부터 위 링크에서 열고 PDF·HTML 파일로 저장하실 수 있습니다. 지금은 명식 미리보기를 보실 수 있습니다.
 
 주문 조회: #{조회}
 주문번호와 연락처로 감정서를 다시 찾을 수 있습니다.`;
@@ -63,6 +64,7 @@ export function receiptKakaoVariables(order: Order, links: ReceiptLinks): Record
     "#{일시}": at[1],
     "#{링크}": links.report,
     "#{조회}": links.lookup,
+    "#{공개}": releaseLabel(orderReleaseAt(order)),
   };
 }
 
@@ -73,7 +75,8 @@ export function receiptSmsText(order: Order, links: ReceiptLinks): string {
 ${receiptLines(order)
   .map(([k, v]) => `${k}: ${v}`)
   .join("\n")}
-감정서 보기(결제 약 3분 뒤부터): ${links.report}
+감정서 발송: ${releaseLabel(orderReleaseAt(order))} 전후(그때부터 아래 링크에서도 열림)
+감정서 보기: ${links.report}
 주문 조회: ${links.lookup}${order.receiptUrl ? `\n카드 영수증: ${order.receiptUrl}` : ""}`;
 }
 
@@ -86,7 +89,7 @@ export function receiptEmail(order: Order, links: ReceiptLinks) {
 ${lines.map(([k, v]) => `${k}: ${v}`).join("\n")}
 
 감정서 보기: ${links.report}
-결제 약 3분 뒤부터 열리며, PDF 파일과 HTML 문서로 저장하실 수 있습니다.
+감정서 본문은 ${releaseLabel(orderReleaseAt(order))} 전후에 이 메일 주소(또는 고르신 곳)로 보내 드리며, 그때부터 위 링크에서도 열립니다. 지금은 명식 미리보기를 보실 수 있습니다.
 
 주문 조회: ${links.lookup}
 주문번호와 이 메일 주소(또는 휴대폰 번호)로 감정서를 다시 찾을 수 있습니다. 열람 기간은 결제일로부터 ${REPORT_VALID_DAYS}일입니다.
@@ -100,7 +103,7 @@ ${order.receiptUrl ? `\n카드 영수증: ${order.receiptUrl}\n` : ""}
 ${lines.map(([k, v]) => `<tr><th style="text-align:left;padding:8px 10px;border-bottom:1px solid #e3e0d8;color:#57544d;font-weight:400;width:90px">${e(k)}</th><td style="padding:8px 10px;border-bottom:1px solid #e3e0d8"><b>${e(v)}</b></td></tr>`).join("\n")}
 </table>
 <p style="margin:0 0 6px"><a href="${e(links.report)}" style="display:inline-block;background:#b0262c;color:#ffffff;padding:13px 24px;border-radius:4px;text-decoration:none;font-weight:700">감정서 보기</a></p>
-<p style="font-size:13px;color:#57544d;margin:0 0 18px">결제 약 3분 뒤부터 열리며, PDF 파일과 HTML 문서로 저장하실 수 있습니다.</p>
+<p style="font-size:13px;color:#57544d;margin:0 0 18px">감정서 본문은 <b>${e(releaseLabel(orderReleaseAt(order)))} 전후</b>에 보내 드리며, 그때부터 위 버튼으로도 열립니다. 지금은 명식 미리보기를 보실 수 있습니다.</p>
 <p style="font-size:13px;color:#57544d">감정서 주소를 잃어버리셨다면 <a href="${e(links.lookup)}" style="color:#b0262c">주문 조회</a>에서 주문번호와 이 메일 주소(또는 휴대폰 번호)로 다시 찾을 수 있습니다. 열람 기간은 결제일로부터 ${REPORT_VALID_DAYS}일입니다.</p>
 ${order.receiptUrl ? `<p style="font-size:13px"><a href="${e(order.receiptUrl)}" style="color:#b0262c">카드 영수증 보기</a></p>` : ""}
 <p style="margin-top:20px">- 天機錄 운명연구원</p>

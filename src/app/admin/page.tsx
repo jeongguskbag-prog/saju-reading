@@ -8,6 +8,7 @@ import { listReviews } from "@/lib/reviews";
 import AdminReviewToggle from "@/components/AdminReviewToggle";
 import { originFrom } from "@/lib/site";
 import AdminResend from "@/components/AdminResend";
+import AdminCancel from "@/components/AdminCancel";
 import AdminCsvButton from "@/components/AdminCsvButton";
 import { deliverySettings, lastSignatureFail, lastSmsFail, orderDeliveries, recentClientErrors } from "@/lib/delivery-status";
 
@@ -43,7 +44,7 @@ export default async function AdminPage() {
   const origin = originFrom(await headers());
   const orders = await listPaidOrders(200);
   const rows = orders.map((o) => orderRow(o, origin));
-  const total = orders.reduce((s, o) => s + o.amount, 0);
+  const total = orders.filter((o) => o.status === "paid").reduce((s, o) => s + o.amount, 0);
   const reviews = await listReviews({ limit: 100, includeHidden: true });
   const settings = deliverySettings();
   const deliveries = await orderDeliveries(orders.slice(0, 20)).catch(() => []);
@@ -103,7 +104,7 @@ export default async function AdminPage() {
           <table className="table admin-table">
             <thead>
               <tr>
-                <th>결제일시</th><th>주문번호</th><th>성함</th><th>이메일</th><th>결제 확인</th><th>발송 예약</th><th>파일 발송</th><th>마지막 시도</th><th></th>
+                <th>결제일시</th><th>주문번호</th><th>성함</th><th>이메일</th><th>결제 확인</th><th>공개·발송 시각</th><th>발송 예약</th><th>파일 발송</th><th>마지막 시도</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -114,10 +115,14 @@ export default async function AdminPage() {
                   <td>{d.name}</td>
                   <td>{d.email || "(이메일 안 받음)"}</td>
                   <td>{d.receipt ? `보냄 ${kstTime(d.receipt)}` : "안 보냄"}</td>
+                  <td>{d.cancelled ? "결제 취소됨" : d.releaseAt ? (d.released ? `공개됨 (${kstTime(d.releaseAt)})` : `${kstTime(d.releaseAt)} 예정`) : ""}</td>
                   <td>{d.schedule ? d.schedule.note : d.deliverAt ? `예약 ${kstTime(d.deliverAt)}` : "기록 없음"}</td>
                   <td>{d.mailed ? `보냄 ${kstTime(d.mailed)}` : "안 보냄"}</td>
                   <td>{d.log ? `${kstTime(d.log.at)} · 파일 ${d.log.files} · 메일 ${d.log.mail} · 휴대폰 ${d.log.phone}` : "시도 기록 없음"}</td>
-                  <td><AdminResend orderId={d.orderId} name={d.name} /></td>
+                  <td>
+                    {!d.cancelled && <AdminResend orderId={d.orderId} name={d.name} held={!d.released} />}
+                    {!d.cancelled && <AdminCancel orderId={d.orderId} name={d.name} released={d.released} />}
+                  </td>
                 </tr>
               ))}
             </tbody>

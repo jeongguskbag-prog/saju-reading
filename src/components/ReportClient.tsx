@@ -12,6 +12,9 @@ import { buildResultHtml } from "@/lib/export";
 import { externalOpenUrl, inAppBrowser, isMobile, type InAppKind } from "@/lib/inapp";
 import ReviewForm, { type MyReview } from "./ReviewForm";
 import ConsultFollow from "./ConsultFollow";
+import GradeCard from "./GradeCard";
+import { DaeunCard, ElementCard, PillarsCard, YearFlowCard } from "./ChartView";
+import { releaseLabel } from "@/lib/release";
 
 interface Props {
   token: string;
@@ -30,8 +33,10 @@ interface Props {
   orderId: string;
   /** 파일을 보낼 시각(ISO). 발송을 예약하지 않았으면 null(완성 즉시 발송) */
   deliverAt: string | null;
-  /** 화면에 감정서를 펼치기까지 남은 시간(ms). 결제 뒤 몇 분(기본 3분)을 기다린다. 0이면 바로 보여 준다. */
+  /** 화면에 감정서를 펼치기까지 남은 시간(ms). 상품별 대기 시간이 지나야 본문을 연다. 0이면 바로 보여 준다. */
   revealInMs: number;
+  /** 본문을 여는(보내는) 시각(ISO) */
+  releaseAt: string;
   /** 이 주문으로 남긴 후기(없으면 null) */
   initialReview: MyReview | null;
 }
@@ -195,7 +200,7 @@ function whenVisible(): Promise<void> {
   });
 }
 
-export default function ReportClient({ token, partKeys, productName, expiresAt, kept = false, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, initialReview }: Props) {
+export default function ReportClient({ token, partKeys, productName, expiresAt, kept = false, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, releaseAt, initialReview }: Props) {
   const [parts, setParts] = useState<PartStates>(() =>
     Object.fromEntries(Object.entries(initialParts).map(([k, result]) => [k, { status: "done", result }])),
   );
@@ -208,7 +213,11 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
     const timer = setInterval(() => {
       const left = Math.max(0, openAt - Date.now());
       setWaitMs(left);
-      if (!left) clearInterval(timer);
+      if (!left) {
+        clearInterval(timer);
+        // 공개 시각이 되면 서버에서 본문을 받아 오도록 새로 연다.
+        location.reload();
+      }
     }, 1000);
     return () => clearInterval(timer);
   }, [revealInMs]);
@@ -223,7 +232,8 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
   }
 
   useEffect(() => {
-    if (started.current) return;
+    // 공개 전에는 본문을 받아 오지 않는다(서버도 공개 전에는 본문을 주지 않는다).
+    if (revealInMs > 0 || started.current) return;
     started.current = true;
     partKeys.filter((p) => !initialParts[p]).forEach(load);
     // 결제 직후 주소의 ?new=1은 지워 두어, 링크를 복사해도 깔끔하게 한다.
@@ -301,30 +311,35 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
 
   if (waiting) {
     const sec = Math.ceil(waitMs / 1000);
-    const written = doneCount === partKeys.length;
-    const total = Math.max(revealInMs, 1);
-    const percent = Math.min(99, Math.round(((total - waitMs) / total) * 100));
-    // 실제 진행에 맞춘 단계: 풀이를 다 쓰면 책자 편집 단계로 넘어간다.
+    const hh = Math.floor(sec / 3600);
+    const mm = Math.floor((sec % 3600) / 60);
+    const ss = sec % 60;
+    const left = hh ? `${hh}시간 ${String(mm).padStart(2, "0")}분` : `${mm}분 ${String(ss).padStart(2, "0")}초`;
+    const when = releaseLabel(releaseAt);
+    const isNewyear = partKeys.includes("newyear");
+    const withDaeun = !partKeys.some(isExtraKind) || partKeys.includes("ziwei");
     const steps: { label: string; state: "done" | "now" | "next" }[] = [
-      { label: "명식 계산", state: "done" },
-      { label: `각 부의 풀이 작성 (${doneCount}/${partKeys.length})`, state: written ? "done" : "now" },
-      { label: "책자 편집·마무리", state: written ? "now" : "next" },
-      { label: "감정서 열기", state: "next" },
+      { label: "결제 확인", state: "done" },
+      { label: "명식 계산(아래 미리보기)", state: "done" },
+      { label: "감정서 본문 작성·검수", state: "now" },
+      { label: `${when} 전후 발송·열람`, state: "next" },
     ];
     return (
       <div id="result">
-        <section className="card report-waiting no-print" aria-live="polite">
-          {justPaid && <p className="eyebrow">신청이 접수되었습니다</p>}
-          <h2>{josa(productName, "을", "를")} 작성하고 있습니다</h2>
+        <section className="card report-waiting report-hold no-print" aria-live="polite">
+          <p className="eyebrow">{justPaid ? "신청이 접수되었습니다" : "감정서를 준비하고 있습니다"}</p>
+          <h2>{josa(productName, "은", "는")} {when} 전후에 받아 보실 수 있습니다</h2>
           <p>
-            명식 계산부터 각 부의 풀이 작성, 책자 편집까지 차례로 진행되어 <b>약 3분</b> 걸립니다. 잠시만 기다려 주세요.
+            의뢰인의 명식을 계산해 두었고, 이를 바탕으로 감정서 본문을 작성·검수하고 있습니다.{" "}
+            {sendTo ? (
+              <>
+                완성되면 <b>{sendTo}</b>(으)로 감정서와 PDF·HTML 파일을 보내 드리며, 그때부터 이 화면에서도 열립니다.
+              </>
+            ) : (
+              <>완성되면 이 화면에서 열립니다. 아래 버튼으로 이 화면 주소를 꼭 복사해 두세요.</>
+            )}
           </p>
-          <div className="report-waiting-bar" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
-            <span style={{ width: `${percent}%` }} />
-          </div>
-          <p className="report-waiting-time">
-            남은 시간 {Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}
-          </p>
+          <p className="report-waiting-time">남은 시간 {left}</p>
           <ol className="report-steps">
             {steps.map((st) => (
               <li key={st.label} className={st.state}>
@@ -334,12 +349,23 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
             ))}
           </ol>
           <p className="muted">
-            작업이 끝나면 이 화면에 감정서가 열리고, PDF 파일과 HTML 문서로 바로 저장하실 수 있습니다. {sendTo ? delivery : ""}
-            이 창을 닫아도 작성은 이어지니, 아래 버튼으로 이 화면 주소를 복사해 두시면 나중에 다시 열어 보실 수 있습니다. 주문번호 {orderId}
+            밤 10시~아침 8시에 완성되는 감정서는 아침 8시에 보내 드립니다. 이 창을 닫아도 준비는 이어지며, 사이트 아래 &apos;주문 조회&apos;에서 주문번호와 연락처로 언제든 다시
+            찾을 수 있습니다. 주문번호 {orderId}
           </p>
           <button type="button" className="btn-secondary" onClick={copyLink}>
             {copied ? "감정서 주소를 복사했습니다" : "감정서 주소 복사"}
           </button>
+        </section>
+        <section className="report-preview" aria-labelledby="preview-h">
+          <h2 id="preview-h" className="report-preview-h">
+            먼저 보시는 명식 미리보기
+          </h2>
+          <p className="muted report-preview-lead">감정서 본문은 아래 계산값을 근거로 작성됩니다.</p>
+          <PillarsCard chart={chart} />
+          <ElementCard chart={chart} />
+          <GradeCard chart={chart} />
+          {withDaeun && <DaeunCard chart={chart} />}
+          {isNewyear && <YearFlowCard chart={chart} />}
         </section>
       </div>
     );

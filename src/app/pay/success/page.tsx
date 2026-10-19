@@ -36,10 +36,10 @@ export default async function PaySuccess({ searchParams }: { searchParams: Param
         const t = token;
         // 주문번호·결제 내역은 지금 고른 곳으로 보낸다.
         after(() => sendReceipt(order, origin).catch((e) => console.error("결제 확인 발송 실패", e)));
-        // 감정서 PDF·HTML 파일은 신청 3분 뒤 고른 곳으로 보낸다(QStash 예약).
+        // 감정서 PDF·HTML 파일은 상품별 공개 시각(release.ts)에 고른 곳으로 보낸다(QStash 예약).
         // QStash 설정이 없으면 완성 즉시 보낸다.
         await scheduleDelivery(order, origin);
-        // 손님이 창을 닫아도 감정서를 끝까지 쓴다. 화면에는 완성되는 대로 바로 보인다.
+        // 손님이 창을 닫아도 감정서를 끝까지 쓴다. 화면에는 공개 시각까지 명식 미리보기만 보인다.
         after(() => completeReport(t, origin));
       }
     } catch (error) {

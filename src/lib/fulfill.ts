@@ -2,7 +2,7 @@
 // 손님이 결제 직후 창을 닫아도 결제 승인 단계에서 이 작업을 이어서 돌리므로 감정서와 메일이 빠지지 않는다.
 // 손님 화면도 같은 파트를 요청할 수 있는데, 파트마다 잠금이 있어 AI는 한 번만 부른다.
 import { deliverReport } from "./delivery";
-import { getReport, getSavedPart, lockPart, savePart, unlockPart, type Report } from "./orders";
+import { getReport, getSavedPart, isReleased, lockPart, savePart, unlockPart, type Report } from "./orders";
 import { generatePart, ReadingError } from "./reading";
 import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
 import { isExtraKind, type ExtraKind } from "./extras/kinds";
@@ -52,6 +52,8 @@ async function writeExtra(report: Report, kind: ExtraKind): Promise<PartResult> 
 export async function sendCompletionIfReady(report: Report, origin?: string): Promise<boolean> {
   if (!origin) return false;
   if (report.order.deliverAt) return false;
+  // 공개 시각 전에는 보내지 않는다(예약 발송이 없으면 공개 뒤 손님이 화면을 열 때 보낸다).
+  if (!isReleased(report.order)) return false;
   return (await deliverReport(report, origin)) === "sent";
 }
 

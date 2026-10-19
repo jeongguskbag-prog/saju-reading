@@ -3,7 +3,7 @@ import { calculateSaju, InputError } from "@/lib/saju/calc";
 import { parseBirthInput } from "@/lib/input";
 import { generatePart, isAiEnabled, isAppRequest, isFreeReading, ReadingError } from "@/lib/reading";
 import { PART_KEYS, type PartKey, type ReportPartKey } from "@/lib/report-shared";
-import { getReport } from "@/lib/orders";
+import { getReport, isReleased } from "@/lib/orders";
 import { ensurePart } from "@/lib/fulfill";
 import { originFrom } from "@/lib/site";
 import { StoreError } from "@/lib/store";
@@ -135,6 +135,8 @@ async function paidPart(request: Request, token: string, part: ReportPartKey): P
     if (!report) return NextResponse.json({ error: "리포트를 찾을 수 없습니다. 링크를 다시 확인해 주세요." }, { status: 404 });
     if (report.expired) return NextResponse.json({ error: "감정서 열람 기간이 지났습니다." }, { status: 410 });
     if (!report.product.parts.includes(part)) return NextResponse.json({ error: "이 감정서에 들어 있지 않은 파트입니다." }, { status: 400 });
+    // 공개 시각 전에는 본문을 주지 않는다(작성은 결제 직후 서버에서 이어진다).
+    if (!isReleased(report.order)) return NextResponse.json({ pending: true, held: true }, { status: 202 });
     const r = await ensurePart(report, part, originFrom(request.headers));
     // 다른 곳(결제 직후 서버 작업이나 다른 창)에서 같은 파트를 쓰는 중이면 잠시 뒤 다시 물어보게 한다.
     if (r.status === "pending") return NextResponse.json({ pending: true }, { status: 202 });

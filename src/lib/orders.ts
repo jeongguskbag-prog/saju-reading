@@ -1,5 +1,6 @@
 // 주문 → 결제 승인 → 리포트 토큰 발급(서버 전용).
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { computeReleaseAt, isReleased, orderReleaseAt, releaseMinutes } from "./release";
 import { calculateSaju, InputError, type BirthInput, type SajuChart } from "./saju/calc";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, SALES_OPEN, sellableProducts, type Product, type ProductId } from "./product";
 import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
@@ -23,7 +24,10 @@ export interface Order {
   productId?: ProductId;
   amount: number;
   orderName: string;
-  status: "pending" | "paid";
+  status: "pending" | "paid" | "cancelled";
+  /** 결제 취소 시각·사유(관리자가 취소한 주문) */
+  cancelledAt?: string;
+  cancelReason?: string;
   createdAt: string;
   paidAt?: string;
   paymentKey?: string;
@@ -52,6 +56,8 @@ export interface Order {
   channel?: PhoneChannel;
   /** 파일(PDF·HTML)을 보내기로 예약한 시각(ISO). 있으면 완성되어도 바로 보내지 않고 이때 보낸다. */
   deliverAt?: string;
+  /** 감정서 본문을 화면에 열고 메일·문자로 보내는 시각(ISO). 결제할 때 상품별 대기 시간으로 정한다. */
+  releaseAt?: string;
   /** 회원 보관함에 든 주문이면 회원번호. 보관함의 감정서는 열람 기간 없이 계속 열 수 있다. */
   memberId?: string;
   /** AI 상담 질문권 주문(감정서가 아니다). 결제하면 회원에게 질문권을 넣어 준다. */
@@ -91,7 +97,15 @@ export function isValidEmail(email: string): boolean {
 }
 
 /** 토스 결제창·승인 키와 저장소, AI 키가 모두 있어야 결제를 연다. */
-export function checkoutConfig(): { enabled: boolean; clientKey: string | null; testMode: boolean; mobilePhone: boolean; sms: boolean; kakao: boolean } {
+export function checkoutConfig(): {
+  enabled: boolean;
+  clientKey: string | null;
+  testMode: boolean;
+  mobilePhone: boolean;
+  sms: boolean;
+  kakao: boolean;
+  release: Record<ProductId, number>;
+} {
   const clientKey = process.env.TOSS_CLIENT_KEY || null;
   const secret = process.env.TOSS_SECRET_KEY;
   const testKey = Boolean(clientKey?.startsWith("test_"));
@@ -110,6 +124,8 @@ export function checkoutConfig(): { enabled: boolean; clientKey: string | null; 
     sms: enabled && isSmsEnabled(),
     // 감정서 링크를 카카오톡 알림톡으로 받기(솔라피 + 카카오 채널·템플릿)
     kakao: enabled && isKakaoEnabled(),
+    // 상품별 공개(발송)까지 대기 시간(분). 화면 안내에 쓴다.
+    release: Object.fromEntries(Object.keys(PRODUCTS).map((id) => [id, releaseMinutes(id as ProductId)])) as Record<ProductId, number>,
   };
 }
 
@@ -264,6 +280,7 @@ export async function confirmOrder(
     },
     token: randomBytes(24).toString("base64url"),
   };
+  if (!paid.questionPack) paid.releaseAt = computeReleaseAt(productOf(paid).id, new Date(paid.paidAt!)).toISOString();
   await store.set(orderKey(order.id), paid);
   await store.set(reportKey(paid.token!), order.id);
   // 결제한 주문 목록(관리 화면·내보내기). 주문 내용(결제 정보·사주 입력·연락처)은 order:주문번호에 그대로 남는다.
@@ -274,6 +291,53 @@ export async function confirmOrder(
     await linkOrder(paid.memberId, paid.id).catch((error) => console.error("보관함에 넣지 못했습니다", error));
   }
   return { order: paid, justPaid: true };
+}
+
+export { isReleased, orderReleaseAt };
+
+/** 공개 시각을 바꾼다(관리자 '지금 보내기'). */
+export async function setReleaseAt(orderId: string, at: Date): Promise<Order | null> {
+  const order = await getOrder(orderId);
+  if (!order) return null;
+  const next: Order = { ...order, releaseAt: at.toISOString() };
+  await requireStore().set(orderKey(orderId), next);
+  return next;
+}
+
+/**
+ * 관리자 결제 취소: 토스에 전액 취소를 요청하고 주문을 '취소'로 바꾼다. 취소한 주문의 감정서는 열리지 않고 보내지 않는다.
+ * 감정서 공개(발송) 전 취소 요청은 전액 환불한다(환불 규정).
+ */
+export async function cancelOrder(orderId: string, reason: string, now = new Date()): Promise<Order> {
+  const order = await getOrder(orderId);
+  if (!order) throw new OrderError("주문을 찾지 못했습니다.", 404);
+  if (order.status === "cancelled") return order;
+  if (order.status !== "paid" || !order.paymentKey) throw new OrderError("결제가 끝난 주문만 취소할 수 있습니다.");
+  const secret = process.env.TOSS_SECRET_KEY;
+  if (!secret) throw new OrderError("결제 설정이 없습니다.", 503);
+  const base = (process.env.TOSS_API_BASE || "https://api.tosspayments.com").replace(/\/$/, "");
+  const res = await fetch(`${base}/v1/payments/${encodeURIComponent(order.paymentKey)}/cancel`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${secret}:`).toString("base64")}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": `cancel-${order.id}`,
+    },
+    body: JSON.stringify({ cancelReason: reason.slice(0, 200) || "고객 요청" }),
+    cache: "no-store",
+  });
+  const data = (await res.json().catch(() => ({}))) as { status?: string; code?: string; message?: string };
+  // 이미 취소된 결제(ALREADY_CANCELED_PAYMENT)는 우리 기록만 맞춘다.
+  if (!res.ok && data.code !== "ALREADY_CANCELED_PAYMENT") throw new OrderError(data.message || "결제를 취소하지 못했습니다.", res.status >= 500 ? 502 : 400);
+  const cancelled: Order = { ...order, status: "cancelled", cancelledAt: now.toISOString(), cancelReason: reason.slice(0, 200) };
+  await requireStore().set(orderKey(order.id), cancelled);
+  return cancelled;
+}
+
+/** PDF를 만드는 서버 브라우저만 공개 전 감정서를 열 수 있게 하는 서명 */
+export function renderSignature(token: string): string {
+  const secret = process.env.RENDER_SECRET || process.env.TOSS_SECRET_KEY || process.env.MEMBER_SESSION_SECRET || "local-render";
+  return createHmac("sha256", secret).update(`render:${token}`).digest("base64url").slice(0, 32);
 }
 
 export interface Report {

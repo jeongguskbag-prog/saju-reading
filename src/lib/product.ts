@@ -147,4 +147,4 @@ export function kakaoChatUrl(): string | null {
 }
 
 /** 약관·방침 시행일 */
-export const POLICY_EFFECTIVE_DATE = "2026년 10월 16일";
+export const POLICY_EFFECTIVE_DATE = "2026년 10월 20일";

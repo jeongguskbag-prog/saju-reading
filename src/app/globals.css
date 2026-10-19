@@ -1212,3 +1212,13 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .consult-follow p { line-height: 1.7; }
 .consult-follow-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .consult-follow-actions .link-btn { width: auto; flex: 1 1 200px; text-align: center; }
+
+/* 결제 후 공개 전: 접수 안내 + 명식 미리보기 */
+.report-hold h2 { font-family: var(--display); font-weight: 400; line-height: 1.4; margin: 0 0 10px; }
+.report-hold p { line-height: 1.7; }
+.report-hold .report-steps { text-align: left; max-width: 320px; margin: 0 auto 14px; }
+.report-preview { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 14px; }
+.report-preview > * { min-width: 0; }
+.report-preview-h { font-family: var(--display); font-weight: 400; margin: 10px 0 0; text-align: center; }
+.report-preview-lead { text-align: center; margin: 0; }
+.admin-cancel { color: var(--accent); margin-left: 8px; }

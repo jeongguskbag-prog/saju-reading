@@ -1,5 +1,6 @@
 "use client";
 
+import { DEFAULT_RELEASE_MINUTES, waitLabel } from "@/lib/release";
 import { useState } from "react";
 import type { BirthInput } from "@/lib/saju/calc";
 import { SupportBox } from "./SupportLinks";
@@ -21,6 +22,8 @@ export interface CheckoutInfo {
   sms?: boolean;
   /** 카카오톡 알림톡으로 받을 수 있는지(솔라피 + 카카오 채널·템플릿) */
   kakao?: boolean;
+  /** 상품별 공개(발송)까지 대기 시간(분) */
+  release?: Partial<Record<ProductId, number>>;
 }
 
 type PayMethod = "CARD" | "MOBILE_PHONE";
@@ -70,6 +73,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [error, setError] = useState<string | null>(null);
   const [naming, setNaming] = useState<NamingForm>(emptyNamingForm);
   const product = PRODUCTS[productId];
+  const wait = waitLabel(checkout.release?.[productId] ?? DEFAULT_RELEASE_MINUTES[productId]);
   const isNaming = productId === "naming";
   const [gunghap, setGunghap] = useState<GunghapForm>(() => emptyGunghapForm(input.gender));
   const isExtra = isExtraKind(productId);
@@ -169,8 +173,9 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
     <section className="card purchase no-print" aria-labelledby="purchase-h">
       <h2 id="purchase-h">1:1 맞춤 감정서 신청</h2>
       <p className="purchase-lead">
-        이 명식을 바탕으로 의뢰인 한 분만을 위한 감정서를 써서 책자로 엮어 드립니다. 결제하면 바로 작성을 시작해 약 3분 뒤
-        화면에 감정서가 열리고, PDF 파일과 HTML 문서로 바로 저장하실 수 있습니다. 주문번호와 결제 내역은 고르신 곳으로 보내 드립니다.
+        이 명식을 바탕으로 의뢰인 한 분만을 위한 감정서를 써서 책자로 엮어 드립니다. 결제하면 명식 미리보기를 바로 보여 드리고, 감정서
+        본문은 작성·검수를 거쳐 <b>약 {wait} 뒤</b> 고르신 곳(이메일·문자 등)으로 보내 드립니다. 그때부터 화면에서도 열리며 PDF 파일과 HTML
+        문서로 저장하실 수 있습니다.
       </p>
       <p className="purchase-basis">
         ✓ 감정서는 무작위로 쓰지 않습니다. 입력하신 생년월일시로 만세력과 명리 계산값을 정확히 구한 뒤, 그 데이터만을 근거로 작성합니다.
@@ -252,7 +257,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               ))}
             </div>
             <p className="muted">
-              결제가 끝나면 주문번호와 결제 내역을 바로 보내 드리고, 신청 3분 뒤 감정서 PDF 파일과 HTML 문서도 같은 곳으로 보내 드립니다.
+              결제가 끝나면 주문번호와 결제 내역을 바로 보내 드리고, 약 {wait} 뒤 감정서 PDF 파일과 HTML 문서도 같은 곳으로 보내 드립니다.
             </p>
           </div>
           {checkout.mobilePhone && (
@@ -273,16 +278,16 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             <span>
               위 생년월일시로 감정서를 만드는 데 동의하고,{" "}
               <a href="/terms" target="_blank" rel="noopener">이용약관</a>·<a href="/refund" target="_blank" rel="noopener">환불 규정</a>·
-              <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>을 확인했습니다. 감정서는 결제 즉시 작성되는 디지털
-              콘텐츠라 작성이 시작된 뒤에는 청약철회가 제한됩니다.
+              <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>을 확인했습니다. 감정서 본문이 공개(발송)되기 전에는
+              취소를 요청하면 전액 환불되며, 공개된 뒤에는 디지털 콘텐츠 제공이 끝난 것으로 보아 청약철회가 제한됩니다.
             </span>
           </label>
           <button className="btn-primary" type="submit" disabled={busy}>
             {busy ? "결제창을 여는 중…" : `${won(product.price)} 결제하고 감정서 신청`}
           </button>
           <p className="purchase-time">
-            ⏳ 결제 후 명식 계산, 각 부의 풀이 작성, 책자 편집을 거쳐 <b>약 3분 뒤</b> 화면에 감정서가 열립니다.
-            열리면 <b>PDF 파일 저장</b>·<b>HTML 문서 저장</b> 버튼으로 바로 내려받으세요. 신청 3분 뒤에는 고르신 곳으로도 두 파일을 보내 드립니다.
+            ⏳ 결제 직후 <b>명식 미리보기</b>를 보여 드리고, 감정서 본문은 작성·검수를 거쳐 <b>약 {wait} 뒤</b> 고르신 곳으로 PDF 파일과
+            HTML 문서를 보내 드립니다. 그때부터 화면에서도 열립니다. 밤 10시~아침 8시에 완성되는 감정서는 아침 8시에 보내 드립니다.
           </p>
           <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
           {checkout.testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}

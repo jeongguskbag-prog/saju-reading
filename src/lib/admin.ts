@@ -93,7 +93,7 @@ export function orderRow(o: Order, origin: string): OrderRow {
   return {
     결제일시: kst(o.paidAt),
     주문번호: o.id,
-    상태: o.status === "paid" ? "결제 완료" : "결제 전",
+    상태: o.status === "paid" ? "결제 완료" : o.status === "cancelled" ? `결제 취소 ${kst(o.cancelledAt)}` : "결제 전",
     상품: o.orderName,
     "결제 금액": won(o.amount),
     "결제 수단": o.method ?? "",

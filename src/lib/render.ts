@@ -3,7 +3,7 @@
 // - Vercel: @sparticuz/chromium(서버리스용 크롬)
 // - 내 컴퓨터·시험: CHROMIUM_PATH에 설치된 크롬 경로
 import type { Browser } from "puppeteer-core";
-import type { Report } from "./orders";
+import { renderSignature, type Report } from "./orders";
 
 export interface ReportFiles {
   pdf: Buffer;
@@ -43,7 +43,7 @@ export async function renderReportFiles(origin: string, report: Report): Promise
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 900, height: 1200 });
-    const url = `${origin}/r/${report.order.token}?render=1`;
+    const url = `${origin}/r/${report.order.token}?render=${renderSignature(report.order.token!)}`;
     const res = await page.goto(url, { waitUntil: "networkidle0", timeout: 60_000 });
     if (!res || !res.ok()) throw new RenderError(`감정서 화면을 열지 못했습니다(${res?.status() ?? "응답 없음"}).`);
     // 작성 중 표시(spinner)가 사라지고 파일 만들기 함수가 준비될 때까지

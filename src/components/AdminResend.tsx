@@ -13,11 +13,11 @@ const OUTCOME: Record<string, string> = {
 };
 
 /**
- * 주문 한 건의 파일(PDF·HTML)을 다시 보낸다. 감정서를 마저 쓰고 파일을 만드느라 1~3분 걸릴 수 있다.
+ * 주문 한 건의 파일(PDF·HTML)을 다시 보낸다. 공개 전 주문이면 '지금 보내기'(공개 시각을 지금으로 당겨 바로 보낸다). 감정서를 마저 쓰고 파일을 만드느라 1~3분 걸릴 수 있다.
  * 버튼이 표 오른쪽 끝에 있어 결과 글이 가려지기 쉬우므로, 화면 아래 가운데에 안내 창을 띄운다.
  * (Android 앱 WebView는 alert·confirm이 제대로 뜨지 않아 직접 그린다.)
  */
-export default function AdminResend({ orderId, name }: { orderId: string; name?: string }) {
+export default function AdminResend({ orderId, name, held = false }: { orderId: string; name?: string; held?: boolean }) {
   const [state, setState] = useState<State>(null);
   const who = name ? `${name} 님 주문` : "이 주문";
   return (
@@ -35,7 +35,7 @@ export default function AdminResend({ orderId, name }: { orderId: string; name?:
           else setState({ kind: "fail", text: `${who}: ${data.error ?? (res ? `실패(${res.status})` : "인터넷 연결을 확인해 주세요.")}` });
         }}
       >
-        {state?.kind === "busy" ? "보내는 중…" : "다시 보내기"}
+        {state?.kind === "busy" ? "보내는 중…" : held ? "지금 보내기" : "다시 보내기"}
       </button>
       {state && (
         <div className={`admin-toast ${state.kind}`} role={state.kind === "fail" ? "alert" : "status"} aria-live="polite">
