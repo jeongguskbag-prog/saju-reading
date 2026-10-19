@@ -16,6 +16,12 @@ declare global {
   }
 }
 
+/**
+ * 관리자용 천기록 앱("천기록 관리")인지. 관리자용 앱에만 앱 접근 키가 들어 있고,
+ * 사용자용 앱("천기록")은 같은 AndroidBridge(PDF·HTML 저장)를 쓰지만 키는 비어 있다.
+ */
+export const isOwnerApp = () => typeof window !== "undefined" && Boolean(window.AndroidBridge?.appKey?.());
+
 /** 파일 이름으로 쓸 수 없는 문자를 걷어 낸다. */
 export function resultFileName(name: string | undefined, solarDate: string, t: { brand: string; fileResult: string } = { brand: "천기록", fileResult: "결과" }): string {
   const who = (name ?? "").replace(/[\\/:*?"<>|\s]+/g, "").slice(0, 20) || t.fileResult;

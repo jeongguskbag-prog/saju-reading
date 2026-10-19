@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isOwnerApp } from "@/lib/export";
 
 /**
  * 운영자용 바로가기(오른쪽 위, 화면을 내려도 따라온다).
- * - home: 홈페이지에서 앱 화면·관리자로. 손님 화면이라 천기록 앱(AndroidBridge) 안에서 볼 때만 보인다.
+ * - home: 홈페이지에서 앱 화면·관리자로. 손님 화면이라 관리자용 앱(천기록 관리) 안에서 볼 때만 보인다.
  * - admin: 관리자 화면에서 홈페이지로(앱 안이면 앱 화면도). 관리자 화면은 비밀번호로 잠겨 있어 항상 보인다.
  *   로그인한 상태(loggedIn)면 로그아웃 버튼도 보인다.
  */
@@ -19,7 +20,8 @@ export default function OwnerLinks({ mode, loggedIn = false }: { mode: "home" | 
     return () => clearTimeout(timer);
   }, [armed]);
   useEffect(() => {
-    setInApp(Boolean(window.AndroidBridge));
+    // 관리자용 앱에서만(사용자용 앱·일반 브라우저에서는 손님에게 관리자 바로가기를 보이지 않는다)
+    setInApp(isOwnerApp());
   }, []);
   if (mode === "home" && !inApp) return null;
 
@@ -33,7 +35,7 @@ export default function OwnerLinks({ mode, loggedIn = false }: { mode: "home" | 
 
   return (
     <nav className="owner-links no-print" aria-label="바로가기">
-      {/* 앱 화면(/app)은 천기록 앱 안에서만 열리므로, 앱 밖(PC 등)에서는 바로가기를 숨긴다. */}
+      {/* 앱 화면(/app)은 관리자용 앱 안에서만 열리므로, 그 밖(PC·사용자용 앱 등)에서는 바로가기를 숨긴다. */}
       {inApp && <a href="/app">앱 화면</a>}
       {mode === "home" ? <a href="/admin">관리자</a> : <a href="/">홈페이지</a>}
       {mode === "admin" && loggedIn && (

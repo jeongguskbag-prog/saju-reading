@@ -4,9 +4,13 @@
 # 필요 도구: aapt2, dalvik-exchange(dx) 또는 d8, zipalign, apksigner, javac, keytool
 #   Ubuntu: sudo apt-get install aapt dalvik-exchange zipalign apksigner android-sdk-platform-23
 #
-# 앱은 천기록 웹사이트의 앱 전용 화면(/app, 결제 없음)을 띄우는 WebView 앱이다.
+# 앱은 천기록 웹사이트를 띄우는 WebView 앱이다. 같은 코드로 두 가지 앱을 만든다.
+#   관리자용(기본): "천기록 관리". 앱 전용 화면(/app, 결제 없이 무료 풀이)과 관리자 바로가기. 앱 키를 넣는다.
+#   사용자용:       "천기록". 일반 홈페이지(/)를 띄우고 결제·카카오 로그인으로 쓴다. 앱 키를 넣지 않는다.
 #
 # 환경변수:
+#   SAJU_AUDIENCE   admin(기본, 관리자용) 또는 user(사용자용, 한국어만).
+#                   패키지 이름이 달라(관리자 kr.saju.reading, 사용자 kr.saju.reading.user) 한 기기에 함께 설치된다.
 #   SAJU_LOCALE     ko(기본, 한국어 앱 → /app), zh-Hant(대만·홍콩 번체 앱 天機錄 → /app/zh),
 #                   zh-Hans(중국 대륙 간체 앱 天机录 → /app/zh-hans).
 #                   언어마다 패키지 이름이 달라(kr.saju.reading, .zh, .cn) 한 기기에 함께 설치된다.
@@ -25,14 +29,25 @@ ANDROID_JAR="${ANDROID_JAR:-/usr/lib/android-sdk/platforms/android-23/android.ja
 SAJU_SITE_URL="${SAJU_SITE_URL:-https://saju-reading-azure.vercel.app}"
 SAJU_APP_KEY="${SAJU_APP_KEY:-}"
 SAJU_LOCALE="${SAJU_LOCALE:-ko}"
-case "$SAJU_LOCALE" in
-  ko) APP_PATH="/app"; APP_NAME="천기록"; PACKAGE="kr.saju.reading"; APK_NAME="saju-reading.apk" ;;
-  zh-Hant) APP_PATH="/app/zh"; APP_NAME="天機錄"; PACKAGE="kr.saju.reading.zh"; APK_NAME="saju-reading-zh-hant.apk" ;;
-  zh-Hans) APP_PATH="/app/zh-hans"; APP_NAME="天机录"; PACKAGE="kr.saju.reading.cn"; APK_NAME="saju-reading-zh-hans.apk" ;;
+SAJU_AUDIENCE="${SAJU_AUDIENCE:-admin}"
+case "$SAJU_AUDIENCE" in
+  admin | user) ;;
+  *) echo "SAJU_AUDIENCE는 admin(관리자용) 또는 user(사용자용)이어야 합니다." >&2; exit 1 ;;
+esac
+if [ "$SAJU_AUDIENCE" = user ]; then
+  # 사용자용 앱에 앱 키가 들어가면 누구나 결제 없이 감정서를 받을 수 있게 된다.
+  [ -z "$SAJU_APP_KEY" ] || { echo "사용자용 앱(SAJU_AUDIENCE=user)에는 SAJU_APP_KEY를 넣을 수 없습니다." >&2; exit 1; }
+  [ "$SAJU_LOCALE" = ko ] || { echo "사용자용 앱은 지금 한국어(SAJU_LOCALE=ko)만 만들 수 있습니다." >&2; exit 1; }
+fi
+case "$SAJU_AUDIENCE:$SAJU_LOCALE" in
+  user:ko) APP_PATH="/"; APP_NAME="천기록"; PACKAGE="kr.saju.reading.user"; APK_NAME="saju-reading-user.apk" ;;
+  admin:ko) APP_PATH="/app"; APP_NAME="천기록 관리"; PACKAGE="kr.saju.reading"; APK_NAME="saju-reading.apk" ;;
+  admin:zh-Hant) APP_PATH="/app/zh"; APP_NAME="天機錄"; PACKAGE="kr.saju.reading.zh"; APK_NAME="saju-reading-zh-hant.apk" ;;
+  admin:zh-Hans) APP_PATH="/app/zh-hans"; APP_NAME="天机录"; PACKAGE="kr.saju.reading.cn"; APK_NAME="saju-reading-zh-hans.apk" ;;
   *) echo "SAJU_LOCALE은 ko, zh-Hant, zh-Hans 중 하나여야 합니다." >&2; exit 1 ;;
 esac
-VERSION_CODE="${VERSION_CODE:-1}"
-VERSION_NAME="${VERSION_NAME:-0.1.0}"
+VERSION_CODE="${VERSION_CODE:-2}"
+VERSION_NAME="${VERSION_NAME:-0.2.0}"
 KEYSTORE="${KEYSTORE:-$SRC/debug.keystore}"
 KEYSTORE_PASS="${KEYSTORE_PASS:-android}"
 KEY_ALIAS="${KEY_ALIAS:-saju-debug}"
@@ -64,12 +79,14 @@ final class SiteConfig {
     static final String APP_KEY = "${SAJU_APP_KEY}";
     static final String APP_PATH = "${APP_PATH}";
     static final String LANG = "${SAJU_LOCALE}";
+    /** admin(관리자용) 또는 user(사용자용) */
+    static final String AUDIENCE = "${SAJU_AUDIENCE}";
 
     private SiteConfig() {}
 }
 JAVA
 
-echo "2/6 리소스 컴파일·링크 ($SAJU_LOCALE, $APP_NAME, $PACKAGE)"
+echo "2/6 리소스 컴파일·링크 ($SAJU_AUDIENCE, $SAJU_LOCALE, $APP_NAME, $PACKAGE)"
 # 앱 이름만 언어에 맞게 바꾼 리소스 사본을 쓴다.
 cp -r "$SRC/res" "$OUT/res"
 sed -i "s#<string name=\"app_name\">[^<]*</string>#<string name=\"app_name\">${APP_NAME}</string>#" "$OUT/res/values/strings.xml"

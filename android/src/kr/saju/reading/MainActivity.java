@@ -24,7 +24,9 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 
 /**
- * 천기록 웹사이트의 앱 전용 화면(SiteConfig.SITE_URL + SiteConfig.APP_PATH)을 띄운다.
+ * 천기록 웹사이트(SiteConfig.SITE_URL + SiteConfig.APP_PATH)를 띄운다.
+ * 관리자용 앱(천기록 관리, SiteConfig.AUDIENCE = admin)은 앱 전용 화면(/app)을, 사용자용 앱(천기록, user)은 홈페이지(/)를 연다.
+ * 사용자용 앱에는 앱 접근 키가 없어(SiteConfig.APP_KEY = "") 결제·로그인으로 쓰고, 관리자 바로가기도 보이지 않는다.
  * 한국어 앱은 /app, 대만·홍콩 번체 앱은 /app/zh, 중국 대륙 간체 앱은 /app/zh-hans (SiteConfig.LANG). 결제 없이 바로 감정서를 받는 화면이다.
  * 사이트를 고치면 앱을 다시 설치하지 않아도 같은 내용이 보인다.
  *
