@@ -12,6 +12,8 @@ import { buildResultHtml } from "@/lib/export";
 import { externalOpenUrl, inAppBrowser, isMobile, type InAppKind } from "@/lib/inapp";
 import ReviewForm, { type MyReview } from "./ReviewForm";
 import ConsultFollow from "./ConsultFollow";
+import NextProducts from "./NextProducts";
+import type { ProductId } from "@/lib/product";
 import GradeCard from "./GradeCard";
 import { DaeunCard, ElementCard, PillarsCard, YearFlowCard } from "./ChartView";
 import { releaseLabel } from "@/lib/release";
@@ -21,6 +23,7 @@ interface Props {
   /** 상품에 담긴 파트 */
   partKeys: PartKey[];
   productName: string;
+  productId: ProductId;
   /** 열람 마감(ISO) */
   expiresAt: string;
   /** 회원 보관함의 감정서(열람 기간 없음) */
@@ -200,7 +203,7 @@ function whenVisible(): Promise<void> {
   });
 }
 
-export default function ReportClient({ token, partKeys, productName, expiresAt, kept = false, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, releaseAt, initialReview }: Props) {
+export default function ReportClient({ token, partKeys, productName, productId, expiresAt, kept = false, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, releaseAt, initialReview }: Props) {
   const [parts, setParts] = useState<PartStates>(() =>
     Object.fromEntries(Object.entries(initialParts).map(([k, result]) => [k, { status: "done", result }])),
   );
@@ -394,6 +397,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
         <FileButtons token={token} ready={!busy && doneCount === partKeys.length} productName={productName} personName={chart.input.name ?? ""} />
       </section>
       {!busy && doneCount === partKeys.length && <ConsultFollow kept={kept} />}
+      {!busy && doneCount === partKeys.length && <NextProducts productId={productId} />}
       {!busy && doneCount === partKeys.length && <ReviewForm token={token} initial={initialReview} />}
     </div>
   );

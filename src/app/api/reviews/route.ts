@@ -1,6 +1,8 @@
 import { clientIp } from "@/lib/rate-limit";
 import { ReviewError, submitReview } from "@/lib/reviews";
 import { getStore } from "@/lib/store";
+import { getOrder } from "@/lib/orders";
+import { grantReviewBonus } from "@/lib/member";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,10 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { token?: unknown; rating?: unknown; text?: unknown } | null;
   try {
     const review = await submitReview(String(body?.token ?? ""), body?.rating, body?.text);
-    return Response.json({ review: { name: review.name, rating: review.rating, text: review.text, createdAt: review.createdAt, hidden: Boolean(review.hidden) } });
+    // 회원 보관함의 감정서면 첫 후기에 AI 상담 무료 질문을 드린다.
+    const order = await getOrder(review.orderId);
+    const bonus = order ? await grantReviewBonus(order).catch(() => 0) : 0;
+    return Response.json({ review: { name: review.name, rating: review.rating, text: review.text, createdAt: review.createdAt, hidden: Boolean(review.hidden) }, bonus });
   } catch (error) {
     if (error instanceof ReviewError) return Response.json({ error: error.message }, { status: error.status });
     console.error(error);

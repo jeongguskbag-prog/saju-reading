@@ -16,6 +16,7 @@ import {
   sessionValue,
   setSelfProfile,
   REPORT_BONUS_QUESTIONS,
+  grantReviewBonus,
   WELCOME_QUESTIONS,
 } from "@/lib/member";
 import { safeNext } from "@/lib/kakao-login";
@@ -152,6 +153,17 @@ describe("감정서 보관함", () => {
     const { member } = await findOrCreateMember("kakao", "8", "a");
     await paidOrder(member.id);
     expect((await getMember(member.id))!.freeQuestions).toBe(WELCOME_QUESTIONS + REPORT_BONUS_QUESTIONS);
+  });
+
+  it("회원 보관함 감정서의 첫 후기에만 질문 1회를 준다", async () => {
+    const { member } = await findOrCreateMember("kakao", "9", "a");
+    const order = (await getOrder((await paidOrder(member.id)).id))!;
+    const before = (await getMember(member.id))!.freeQuestions;
+    expect(await grantReviewBonus(order)).toBe(1);
+    expect(await grantReviewBonus(order)).toBe(0);
+    expect((await getMember(member.id))!.freeQuestions).toBe(before + 1);
+    // 비회원 주문은 주지 않는다.
+    expect(await grantReviewBonus(await paidOrder())).toBe(0);
   });
 
   it("탈퇴하면 회원 정보를 지우고 보관함 감정서는 일반 열람 기간으로 돌아간다", async () => {

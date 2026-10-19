@@ -20,3 +20,6 @@ export function consultLink(reportUrl: string): string {
     return "/consult";
   }
 }
+
+/** 회원 보관함의 감정서에 처음 후기를 남기면(주문마다 한 번) 주는 AI 상담 무료 질문 수 */
+export const REVIEW_BONUS_QUESTIONS = 1;

@@ -21,6 +21,7 @@ export default function ReviewForm({ token, initial }: { token: string; initial:
   const [text, setText] = useState(initial?.text ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bonus, setBonus] = useState(0);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,6 +34,7 @@ export default function ReviewForm({ token, initial }: { token: string; initial:
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "후기를 저장하지 못했습니다.");
       setSaved(data.review);
+      if (data.bonus) setBonus(data.bonus);
       setEditing(false);
     } catch (err) {
       setError((err as Error).message);
@@ -54,12 +56,16 @@ export default function ReviewForm({ token, initial }: { token: string; initial:
           <p className="review-mine">“{saved.text}”</p>
           <p className="muted">
             {saved.name} 님의 후기가 {saved.hidden ? "접수되었습니다." : "첫 화면 '의뢰인 후기'에 실렸습니다."} 소중한 후기 감사합니다.
+            {bonus > 0 && ` 감사의 뜻으로 AI 상담 무료 질문 ${bonus}회를 넣어 드렸습니다.`}
           </p>
           <button type="button" className="btn-link" onClick={() => setEditing(true)}>후기 고치기</button>
         </>
       ) : (
         <form onSubmit={onSubmit} className="form-grid">
-          <p className="muted">감정서는 어떠셨나요? 남겨 주신 후기는 이름 가운데를 가려(예: 박*구) 첫 화면에 실립니다.</p>
+          <p className="muted">
+            감정서는 어떠셨나요? 남겨 주신 후기는 이름 가운데를 가려(예: 박*구) 첫 화면에 실립니다. 회원 보관함의 감정서에 첫 후기를 남기시면 AI 상담 무료 질문 1회를
+            드립니다.
+          </p>
           <div className="star-pick" role="radiogroup" aria-label="별점" onMouseLeave={() => setHover(0)}>
             {[1, 2, 3, 4, 5].map((n) => (
               <button

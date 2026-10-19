@@ -49,6 +49,7 @@ export default async function ReportPage({ params, searchParams }: { params: Par
         token={token}
         partKeys={report.product.parts}
         productName={report.product.name}
+        productId={report.product.id}
         expiresAt={report.expiresAt}
         kept={report.kept}
         chart={report.chart}

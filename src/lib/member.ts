@@ -8,7 +8,7 @@ import { getOrder, getSavedPart, productOf, savePart, type Order } from "./order
 import type { BirthInput } from "./saju/calc";
 import { normalizePhone } from "./sms";
 import { getStore, requireStore } from "./store";
-import { REPORT_BONUS_QUESTIONS } from "./consult-copy";
+import { REPORT_BONUS_QUESTIONS, REVIEW_BONUS_QUESTIONS } from "./consult-copy";
 
 export const MEMBER_COOKIE = "chungirok_member";
 /** 로그인 유지 기간 */
@@ -211,6 +211,16 @@ export async function linkOrder(memberId: string, orderId: string): Promise<Orde
   if (!m.orderIds.includes(order.id)) await saveMember({ ...m, orderIds: [order.id, ...m.orderIds].slice(0, 200) });
   await grantReportBonus(memberId, linked).catch((error) => console.error("감정서 보너스 질문을 넣지 못했습니다", error));
   return linked;
+}
+
+/** 회원 보관함의 감정서에 처음 후기를 남기면(주문마다 한 번) AI 상담 무료 질문을 준다. 준 수를 돌려준다. */
+export async function grantReviewBonus(order: Order, now = new Date()): Promise<number> {
+  if (!order.memberId || order.questionPack) return 0;
+  if (!(await requireStore().setIfAbsent(`review-bonus:${order.id}`, now.toISOString(), 60 * 60 * 24 * 400))) return 0;
+  const m = await getMember(order.memberId);
+  if (!m) return 0;
+  await saveMember({ ...m, freeQuestions: m.freeQuestions + REVIEW_BONUS_QUESTIONS });
+  return REVIEW_BONUS_QUESTIONS;
 }
 
 /**
