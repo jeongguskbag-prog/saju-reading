@@ -4,7 +4,7 @@
 // 필요한 설정: QSTASH_TOKEN, QSTASH_CURRENT_SIGNING_KEY, QSTASH_NEXT_SIGNING_KEY (선택: QSTASH_URL, DELIVERY_DELAY_MINUTES)
 // QStash 설정이 없으면 예전처럼 감정서가 완성되는 즉시 링크를 보낸다.
 import { sendReportEmail } from "./mail";
-import { sendReportSms } from "./sms";
+import { isSmsEnabled, phoneChannels, sendReportSms } from "./sms";
 import { getSavedParts, markMailed, setDeliverAt, unmarkMailed, type Order, type Report } from "./orders";
 import { renderReportFiles, type ReportFiles } from "./render";
 import { getStore } from "./store";
@@ -139,7 +139,15 @@ export async function deliverReport(report: Report, origin: string, render = ren
     outcome,
     files: filesNote,
     mail: mailNote,
-    phone: texted ? "보냄" : report.order.phone ? "안 보냄(문자·알림톡 설정 또는 선택 없음)" : "번호 없음",
+    phone: texted
+      ? "보냄"
+      : !report.order.phone
+        ? "번호 없음"
+        : !phoneChannels(report.order).length
+          ? "안 보냄(손님이 문자·카카오톡을 고르지 않음)"
+          : !isSmsEnabled()
+            ? "안 보냄(문자 설정 없음)"
+            : "실패(위쪽 '마지막 문자·알림톡 발송 실패' 사유 참고)",
   });
   if (outcome === "sent") return "sent";
   await unmarkMailed(report.order.id);

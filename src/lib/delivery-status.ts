@@ -54,6 +54,8 @@ export async function orderDeliveries(orders: Order[]): Promise<OrderDelivery[]>
   );
 }
 
+import { SMS_FAIL_KEY } from "./sms";
+export const lastSmsFail = async () => (await getStore()?.get<{ at: string; detail: string }>(SMS_FAIL_KEY)) ?? null;
 export const lastSignatureFail = async () => (await getStore()?.get<{ at: string; url: string }>(SIGNATURE_FAIL_KEY)) ?? null;
 
 export interface ClientError {

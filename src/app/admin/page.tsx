@@ -9,7 +9,7 @@ import AdminReviewToggle from "@/components/AdminReviewToggle";
 import { originFrom } from "@/lib/site";
 import AdminResend from "@/components/AdminResend";
 import AdminCsvButton from "@/components/AdminCsvButton";
-import { deliverySettings, lastSignatureFail, orderDeliveries, recentClientErrors } from "@/lib/delivery-status";
+import { deliverySettings, lastSignatureFail, lastSmsFail, orderDeliveries, recentClientErrors } from "@/lib/delivery-status";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +48,7 @@ export default async function AdminPage() {
   const settings = deliverySettings();
   const deliveries = await orderDeliveries(orders.slice(0, 20)).catch(() => []);
   const sigFail = await lastSignatureFail().catch(() => null);
+  const smsFail = await lastSmsFail().catch(() => null);
   const clientErrors = await recentClientErrors().catch(() => []);
   return (
     <SiteShell admin="in">
@@ -91,6 +92,11 @@ export default async function AdminPage() {
         {sigFail && (
           <p className="error">
             예약 발송 요청의 서명 확인 실패: {kstTime(sigFail.at)} ({sigFail.url})
+          </p>
+        )}
+        {smsFail && (
+          <p className="error">
+            마지막 문자·알림톡 발송 실패: {kstTime(smsFail.at)} · {smsFail.detail}
           </p>
         )}
         <div className="admin-table-wrap">

@@ -6,6 +6,12 @@ import { createHmac, randomBytes } from "node:crypto";
 import { BRAND, REPORT_VALID_DAYS } from "./product";
 import type { Order } from "./orders";
 import { josa } from "./josa";
+import { getStore } from "./store";
+
+/** 마지막 문자·알림톡 발송 실패(관리 화면에 보여 준다). 비밀값은 담지 않는다. */
+export const SMS_FAIL_KEY = "delivery-log:sms-fail";
+const noteSmsFail = (detail: string) =>
+  getStore()?.set(SMS_FAIL_KEY, { at: new Date().toISOString(), detail: detail.slice(0, 400) }, 60 * 60 * 24 * 40).catch(() => {});
 
 export type PhoneChannel = "kakao" | "sms";
 
@@ -135,12 +141,25 @@ export async function solapiSend(messages: Record<string, unknown>[]): Promise<b
       },
       body: JSON.stringify({ messages }),
     });
-    const data = (await res.json().catch(() => ({}))) as { failedMessageList?: unknown[] };
-    const failedCount = Array.isArray(data.failedMessageList) ? data.failedMessageList.length : 0;
-    if (!res.ok || failedCount) console.error("문자 발송 실패", res.status, JSON.stringify(data).slice(0, 500));
-    return res.ok && failedCount < messages.length;
+    const data = (await res.json().catch(() => ({}))) as {
+      failedMessageList?: { statusCode?: string; statusMessage?: string }[];
+      errorCode?: string;
+      errorMessage?: string;
+    };
+    const failed = Array.isArray(data.failedMessageList) ? data.failedMessageList : [];
+    if (!res.ok || failed.length) {
+      console.error("문자 발송 실패", res.status, JSON.stringify(data).slice(0, 500));
+      const reason = !res.ok
+        ? `솔라피 거절(${res.status}) ${data.errorCode ?? ""} ${data.errorMessage ?? ""}`
+        : failed.map((f) => `${f.statusCode ?? ""} ${f.statusMessage ?? ""}`.trim()).join(" / ");
+      await noteSmsFail(reason.trim());
+    } else {
+      await getStore()?.del(SMS_FAIL_KEY).catch(() => {});
+    }
+    return res.ok && failed.length < messages.length;
   } catch (error) {
     console.error("문자 발송 실패", error);
+    await noteSmsFail(`연결 실패: ${String((error as Error)?.message ?? error)}`);
     return false;
   }
 }
