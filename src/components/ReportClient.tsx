@@ -11,6 +11,7 @@ import { josa } from "@/lib/josa";
 import { buildResultHtml } from "@/lib/export";
 import { externalOpenUrl, inAppBrowser, isMobile, type InAppKind } from "@/lib/inapp";
 import ReviewForm, { type MyReview } from "./ReviewForm";
+import ConsultFollow from "./ConsultFollow";
 
 interface Props {
   token: string;
@@ -366,6 +367,7 @@ export default function ReportClient({ token, partKeys, productName, expiresAt, 
         <h2>감정서 저장</h2>
         <FileButtons token={token} ready={!busy && doneCount === partKeys.length} productName={productName} personName={chart.input.name ?? ""} />
       </section>
+      {!busy && doneCount === partKeys.length && <ConsultFollow kept={kept} />}
       {!busy && doneCount === partKeys.length && <ReviewForm token={token} initial={initialReview} />}
     </div>
   );

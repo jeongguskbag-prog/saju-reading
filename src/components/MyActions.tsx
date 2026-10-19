@@ -91,7 +91,7 @@ export function ClaimOrderForm() {
   }
   return (
     <form className="my-claim" onSubmit={submit}>
-      <p className="muted">비회원으로 산 감정서도 주문번호와 주문할 때 적은 연락처로 보관함에 넣을 수 있습니다. 보관함에 넣으면 열람 기간 없이 계속 열 수 있습니다.</p>
+      <p className="muted">비회원으로 산 감정서도 주문번호와 주문할 때 적은 연락처로 보관함에 넣을 수 있습니다. 보관함에 넣으면 열람 기간 없이 계속 열 수 있고, 감정서마다 AI 상담 무료 질문 2회를 드립니다.</p>
       <div className="field">
         <label htmlFor="claim-order">주문번호</label>
         <input id="claim-order" type="text" value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="CGR-20261017-…" autoComplete="off" />

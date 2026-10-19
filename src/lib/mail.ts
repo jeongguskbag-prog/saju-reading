@@ -2,6 +2,7 @@
 import { BRAND, REPORT_VALID_DAYS, won } from "./product";
 import type { Order } from "./orders";
 import { josa } from "./josa";
+import { consultLink, REPORT_BONUS_QUESTIONS } from "./consult-copy";
 import type { ReportFiles } from "./render";
 
 /** 함께 보낼 파일과 받기 링크(발송 예약을 쓸 때) */
@@ -36,6 +37,8 @@ export function reportEmail(order: Order, url: string, expiresAt: string, extra?
       ? "감정서를 PDF 파일과 HTML 파일로 이 메일에 첨부해 드립니다. 아래 링크에서도 감정서를 열고 파일을 받으실 수 있습니다."
       : "아래 링크에서 감정서를 열고 PDF 파일과 HTML 파일을 받으실 수 있습니다."
     : "아래 링크에서 감정서를 열고 PDF로 저장하실 수 있습니다.";
+  const consultUrl = consultLink(url);
+  const consultLine = `감정서를 읽고 궁금한 점은 AI 사주 상담으로 이어서 물어보세요. 같은 명식 계산값을 근거로 답하며, 카카오로 로그인해 이 감정서를 '마이'에 넣으면 무료 질문 ${REPORT_BONUS_QUESTIONS}회를 드립니다.`;
   const text = `[${BRAND.name}] 의뢰하신 ${name} 님의 맞춤 감정서가 완성되었습니다.
 
 ${lead} [${josa(order.orderName, "]이", "]가")} 완성되었습니다.
@@ -45,6 +48,9 @@ ${url}
 ${extra ? `\nPDF 파일 받기: ${extra.links.pdf}\nHTML 파일 받기: ${extra.links.html}\n` : ""}
 운(運)은 정해진 종착역이 아니라, 내가 가진 배의 모양과 바다의 조류(潮流)를 아는 지혜입니다.
 본 감정서가 의뢰인님의 앞날에 가장 든든한 등대이자 인생의 나침반이 되기를 진심으로 기원합니다.
+
+${consultLine}
+AI 상담: ${consultUrl}
 
 * 감정서 열람 기간: ${until}까지(결제일로부터 ${REPORT_VALID_DAYS}일). 기간 안에 PDF로 저장해 두세요.
 * 본 기록은 의뢰인 고유의 명식 데이터로 작성된 비밀 문서입니다. 링크를 아는 사람은 누구나 열 수 있으니 소중히 보관해 주세요.
@@ -63,6 +69,7 @@ ${extra ? `\nPDF 파일 받기: ${extra.links.pdf}\nHTML 파일 받기: ${extra.
   }</p>
 <p style="border-left:3px solid #b0262c;padding-left:14px;color:#57544d">운(運)은 정해진 종착역이 아니라,<br>내가 가진 배의 모양과 바다의 조류(潮流)를 아는 지혜입니다.</p>
 <p>본 감정서가 의뢰인님의 앞날에 가장 든든한 등대이자 인생의 나침반이 되기를 진심으로 기원합니다.</p>
+<p style="background:#f6f1e7;border-radius:6px;padding:12px 14px;font-size:14px">${e(consultLine)}<br><a href="${e(consultUrl)}" style="color:#b0262c;font-weight:700">AI 사주 상담 열기 →</a></p>
 <ul style="font-size:13px;color:#57544d;padding-left:18px">
 <li>감정서 열람 기간: <b>${e(until)}까지</b>(결제일로부터 ${REPORT_VALID_DAYS}일). 기간 안에 PDF로 저장해 두세요.</li>
 <li>본 기록은 의뢰인 고유의 명식 데이터로 작성된 비밀 문서입니다. 링크를 아는 사람은 누구나 열 수 있으니 소중히 보관해 주세요.</li>

@@ -8,3 +8,15 @@ export const CONSULT_WHY = {
     "천기록 AI 상담은 다릅니다. 저장해 둔 당신의 생년월일시로 만세력(절기 시각 기준)을 세우고, 오행·십신·용신·대운·세운·월별 흐름을 명리 공식으로 계산한 뒤, 그 값만을 근거로 답합니다. 답할 때 어떤 간지·십신을 근거로 했는지 밝히고, 명식에 없는 날짜나 간지는 지어내지 않습니다.",
   engine: "종합 감정서와 같은 계산 엔진을 쓰기 때문에, 감정서를 읽고 궁금한 점을 바로 이어서 물어볼 수 있습니다.",
 } as const;
+
+/** 감정서를 회원 보관함에 넣으면(주문마다 한 번) 주는 AI 상담 무료 질문 수 */
+export const REPORT_BONUS_QUESTIONS = 2;
+
+/** 감정서 주소(https://…/r/토큰)에서 같은 사이트의 AI 상담 주소를 만든다. */
+export function consultLink(reportUrl: string): string {
+  try {
+    return `${new URL(reportUrl).origin}/consult`;
+  } catch {
+    return "/consult";
+  }
+}

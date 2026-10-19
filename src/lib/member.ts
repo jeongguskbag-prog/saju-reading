@@ -8,12 +8,15 @@ import { getOrder, getSavedPart, productOf, savePart, type Order } from "./order
 import type { BirthInput } from "./saju/calc";
 import { normalizePhone } from "./sms";
 import { getStore, requireStore } from "./store";
+import { REPORT_BONUS_QUESTIONS } from "./consult-copy";
 
 export const MEMBER_COOKIE = "chungirok_member";
 /** 로그인 유지 기간 */
 export const SESSION_DAYS = 30;
 /** 저장할 수 있는 사주 수 */
 export const MAX_PROFILES = 10;
+export { REPORT_BONUS_QUESTIONS };
+
 /** 가입 혜택: AI 상담 무료 질문 수 */
 export const WELCOME_QUESTIONS = 3;
 
@@ -206,7 +209,26 @@ export async function linkOrder(memberId: string, orderId: string): Promise<Orde
   await requireStore().set(`order:${order.id}`, linked);
   await setPartsRetention(linked, true);
   if (!m.orderIds.includes(order.id)) await saveMember({ ...m, orderIds: [order.id, ...m.orderIds].slice(0, 200) });
+  await grantReportBonus(memberId, linked).catch((error) => console.error("감정서 보너스 질문을 넣지 못했습니다", error));
   return linked;
+}
+
+/**
+ * 감정서를 보관함에 처음 넣을 때(주문마다 한 번) AI 상담 무료 질문을 주고,
+ * 감정서의 사주를 저장해 두어 바로 AI 상담에서 이어 물을 수 있게 한다.
+ */
+async function grantReportBonus(memberId: string, order: Order, now = new Date()): Promise<boolean> {
+  if (order.questionPack) return false;
+  if (!(await requireStore().setIfAbsent(`report-bonus:${order.id}`, now.toISOString(), 60 * 60 * 24 * 400))) return false;
+  const m = await getMember(memberId);
+  if (!m) return false;
+  const has = m.profiles.some((p) => JSON.stringify(p.input) === JSON.stringify(order.input));
+  const profiles =
+    has || m.profiles.length >= MAX_PROFILES
+      ? m.profiles
+      : [...m.profiles, { id: randomBytes(6).toString("base64url"), input: order.input, self: m.profiles.length === 0, savedAt: now.toISOString() }];
+  await saveMember({ ...m, profiles, freeQuestions: m.freeQuestions + REPORT_BONUS_QUESTIONS });
+  return true;
 }
 
 /** 주문 조회처럼 주문번호와 연락처(이메일·휴대폰)가 맞을 때만 보관함에 넣는다. */

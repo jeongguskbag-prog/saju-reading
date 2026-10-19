@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import SiteShell from "@/components/SiteShell";
 import { AccountButtons, ClaimOrderForm, ProfileButtons, SavePendingProfile } from "@/components/MyActions";
-import { isMemberEnabled, memberSetupMissing, MAX_PROFILES, MEMBER_COOKIE, memberFromCookie, memberOrders, WELCOME_QUESTIONS, type SavedProfile } from "@/lib/member";
+import { isMemberEnabled, memberSetupMissing, MAX_PROFILES, MEMBER_COOKIE, memberFromCookie, memberOrders, REPORT_BONUS_QUESTIONS, WELCOME_QUESTIONS, type SavedProfile } from "@/lib/member";
 import { productOf } from "@/lib/orders";
 import { BRAND } from "@/lib/product";
 import { calculateSaju } from "@/lib/saju/calc";
@@ -23,7 +23,7 @@ const ERRORS: Record<string, string> = {
 
 const BENEFITS = [
   ["내 사주·가족 사주 저장", `최대 ${MAX_PROFILES}명까지 저장해 두고 다음부터 입력 없이 바로 봅니다.`],
-  ["감정서 평생 보관함", "로그인하고 산 감정서는 열람 기간 없이 언제든 다시 열 수 있습니다. 예전에 산 감정서도 넣을 수 있습니다."],
+  ["감정서 평생 보관함", `로그인하고 산 감정서는 열람 기간 없이 언제든 다시 열 수 있습니다. 예전에 산 감정서도 넣을 수 있고, 보관함에 넣은 감정서마다 AI 상담 무료 질문 ${REPORT_BONUS_QUESTIONS}회를 드립니다.`],
   ["매일 오늘의 운세", "오늘의 일진과 내 명식을 맞춰 본 하루 운세를 매일 드립니다."],
   [
     "명리 기반 AI 상담 무료 질문",

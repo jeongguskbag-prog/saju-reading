@@ -6,6 +6,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { BRAND, REPORT_VALID_DAYS } from "./product";
 import type { Order } from "./orders";
 import { josa } from "./josa";
+import { consultLink } from "./consult-copy";
 import { getStore } from "./store";
 
 /** 마지막 문자·알림톡 발송 실패(관리 화면에 보여 준다). 비밀값은 담지 않는다. */
@@ -89,7 +90,8 @@ export function reportSmsText(order: Order, url: string, expiresAt: string, link
 아래 링크에서 감정서를 열고 PDF로 저장하실 수 있습니다.
 ${url}
 ${links ? `PDF 파일: ${links.pdf}\nHTML 파일: ${links.html}\n` : ""}열람 기간: ${ymd(expiresAt)}까지(${REPORT_VALID_DAYS}일)
-링크를 아는 사람은 누구나 열 수 있으니 소중히 보관해 주세요.`;
+링크를 아는 사람은 누구나 열 수 있으니 소중히 보관해 주세요.
+궁금한 점은 AI 사주 상담으로: ${consultLink(url)}`;
 }
 
 /** 솔라피 인증 머리글: HMAC-SHA256(날짜+솔트, API 시크릿) */

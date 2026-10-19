@@ -15,6 +15,7 @@ import {
   removeProfile,
   sessionValue,
   setSelfProfile,
+  REPORT_BONUS_QUESTIONS,
   WELCOME_QUESTIONS,
 } from "@/lib/member";
 import { safeNext } from "@/lib/kakao-login";
@@ -130,6 +131,27 @@ describe("감정서 보관함", () => {
     // 다른 회원은 넣을 수 없다.
     const other = await findOrCreateMember("kakao", "5", "b");
     await expect(claimOrder(other.member.id, order.id, "a@b.co")).rejects.toThrow("다른 회원");
+  });
+
+  it("감정서를 보관함에 넣으면 주문마다 한 번 AI 상담 무료 질문을 주고 감정서 사주를 저장한다", async () => {
+    const { member } = await findOrCreateMember("kakao", "7", "a");
+    const order = await paidOrder();
+    await claimOrder(member.id, order.id, "a@b.co");
+    let m = (await getMember(member.id))!;
+    expect(m.freeQuestions).toBe(WELCOME_QUESTIONS + REPORT_BONUS_QUESTIONS);
+    expect(m.profiles.map((p) => p.input)).toEqual([input]);
+    expect(m.profiles[0].self).toBe(true);
+    // 같은 주문을 다시 넣어도 더 주지 않는다.
+    await claimOrder(member.id, order.id, "a@b.co");
+    m = (await getMember(member.id))!;
+    expect(m.freeQuestions).toBe(WELCOME_QUESTIONS + REPORT_BONUS_QUESTIONS);
+    expect(m.profiles).toHaveLength(1);
+  });
+
+  it("로그인하고 산 감정서도 결제되면 무료 질문을 받는다", async () => {
+    const { member } = await findOrCreateMember("kakao", "8", "a");
+    await paidOrder(member.id);
+    expect((await getMember(member.id))!.freeQuestions).toBe(WELCOME_QUESTIONS + REPORT_BONUS_QUESTIONS);
   });
 
   it("탈퇴하면 회원 정보를 지우고 보관함 감정서는 일반 열람 기간으로 돌아간다", async () => {

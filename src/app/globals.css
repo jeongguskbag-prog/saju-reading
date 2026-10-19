@@ -1206,3 +1206,9 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .admin-toast .spinner { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; }
 .admin-toast-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 10px; }
 .admin-toast-actions .btn-secondary, .admin-toast-actions .btn-link { width: auto; flex: none; white-space: nowrap; padding: 6px 14px; font-size: 13px; }
+
+/* 감정서 끝: AI 상담으로 이어 묻기 */
+.consult-follow h2 { margin: 0 0 8px; }
+.consult-follow p { line-height: 1.7; }
+.consult-follow-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.consult-follow-actions .link-btn { width: auto; flex: 1 1 200px; text-align: center; }
