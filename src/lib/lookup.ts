@@ -27,6 +27,9 @@ export async function lookupOrder(orderIdRaw: string, contactRaw: string, ip: st
   const matches =
     (phone && order.phone && phone === order.phone) || (order.email && contact.toLowerCase() === order.email.toLowerCase());
   if (!matches) return { ok: false, status: 404, error: NOT_FOUND };
+  if (order.status === "cancelled") return { ok: false, status: 410, error: "결제가 취소된 주문입니다." };
   if (order.status !== "paid" || !order.token) return { ok: false, status: 409, error: "결제가 끝나지 않은 주문입니다." };
+  // 선물 주문은 선물 링크 화면으로(받았으면 거기서 감정서로 이어진다).
+  if (order.gift) return { ok: true, url: `/gift/${order.gift.code}?new=1` };
   return { ok: true, url: `/r/${order.token}` };
 }

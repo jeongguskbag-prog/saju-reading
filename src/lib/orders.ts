@@ -62,6 +62,10 @@ export interface Order {
   memberId?: string;
   /** AI 상담 질문권 주문(감정서가 아니다). 결제하면 회원에게 질문권을 넣어 준다. */
   questionPack?: { id: string; count: number };
+  /** 선물 주문(감정서가 아니다). 결제하면 받는 분이 생년월일시를 넣어 감정서를 받는 선물 링크가 생긴다. */
+  gift?: { productId: ProductId; from: string; to: string; message?: string; code: string; redeemedOrderId?: string; redeemedAt?: string };
+  /** 선물로 받은 감정서면 선물 주문번호 */
+  giftOrderId?: string;
 }
 
 export class OrderError extends Error {
@@ -74,8 +78,8 @@ export class OrderError extends Error {
 }
 
 const PENDING_TTL = 60 * 60 * 48; // 결제하지 않은 주문은 이틀 뒤 지운다.
-const orderKey = (id: string) => `order:${id}`;
-const reportKey = (token: string) => `report:${token}`;
+export const orderKey = (id: string) => `order:${id}`;
+export const reportKey = (token: string) => `report:${token}`;
 const partKey = (token: string, part: PartKey) => `report:${token}:part:${part}`;
 const lockKey = (token: string, part: PartKey) => `lock:${token}:${part}`;
 
@@ -280,13 +284,17 @@ export async function confirmOrder(
     },
     token: randomBytes(24).toString("base64url"),
   };
-  if (!paid.questionPack) paid.releaseAt = computeReleaseAt(productOf(paid).id, new Date(paid.paidAt!)).toISOString();
+  if (!paid.questionPack && !paid.gift) paid.releaseAt = computeReleaseAt(productOf(paid).id, new Date(paid.paidAt!)).toISOString();
   await store.set(orderKey(order.id), paid);
   await store.set(reportKey(paid.token!), order.id);
   // 결제한 주문 목록(관리 화면·내보내기). 주문 내용(결제 정보·사주 입력·연락처)은 order:주문번호에 그대로 남는다.
   await store.listPush(PAID_INDEX, order.id);
   // 로그인한 회원이 산 감정서는 그 회원의 보관함에 넣는다(회원 모듈이 주문 모듈을 쓰므로 여기서는 필요할 때 불러온다).
-  if (paid.memberId && !paid.questionPack) {
+  if (paid.gift) {
+    // 선물 링크를 연다(선물 코드 → 선물 주문).
+    await store.set(`gift-code:${paid.gift.code}`, paid.id);
+  }
+  if (paid.memberId && !paid.questionPack && !paid.gift) {
     const { linkOrder } = await import("./member");
     await linkOrder(paid.memberId, paid.id).catch((error) => console.error("보관함에 넣지 못했습니다", error));
   }
@@ -313,6 +321,7 @@ export async function cancelOrder(orderId: string, reason: string, now = new Dat
   if (!order) throw new OrderError("주문을 찾지 못했습니다.", 404);
   if (order.status === "cancelled") return order;
   if (order.status !== "paid" || !order.paymentKey) throw new OrderError("결제가 끝난 주문만 취소할 수 있습니다.");
+  if (order.gift?.redeemedOrderId) throw new OrderError("받는 분이 이미 사용한 선물은 취소할 수 없습니다. 받은 감정서(주문번호 " + order.gift.redeemedOrderId + ")를 확인해 주세요.");
   const secret = process.env.TOSS_SECRET_KEY;
   if (!secret) throw new OrderError("결제 설정이 없습니다.", 503);
   const base = (process.env.TOSS_API_BASE || "https://api.tosspayments.com").replace(/\/$/, "");
@@ -364,8 +373,8 @@ export async function getReport(token: string, now = new Date()): Promise<Report
   if (!orderId) return null;
   const order = await getOrder(orderId);
   if (!order || order.status !== "paid" || order.token !== token) return null;
-  // 질문권 주문에는 감정서가 없다.
-  if (order.questionPack) return null;
+  // 질문권·선물 주문에는 감정서가 없다.
+  if (order.questionPack || order.gift) return null;
   const paidAt = new Date(order.paidAt ?? order.createdAt);
   const expiresAt = new Date(paidAt.getTime() + REPORT_VALID_DAYS * DAY);
   return {

@@ -1241,3 +1241,20 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .next-products a:hover { border-color: var(--accent); }
 .next-products span { font-size: 14px; color: var(--text-2); line-height: 1.6; }
 .next-products em { font-style: normal; font-weight: 700; color: var(--accent); }
+
+/* 감정서 선물하기 */
+.gift-hero h1, .gift-card h1 { font-family: var(--display); font-weight: 400; line-height: 1.4; margin: 4px 0 10px; font-size: 24px; }
+.gift-hero p { line-height: 1.75; }
+.gift-hero .eyebrow, .gift-card .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: 0.08em; margin: 0; }
+.gift-steps { padding-left: 20px; line-height: 1.8; margin: 8px 0 0; }
+.gift-card { text-align: center; background: linear-gradient(160deg, var(--surface), color-mix(in srgb, var(--accent) 7%, var(--surface))); }
+.gift-product { font-weight: 700; color: var(--accent); margin: 0 0 8px; }
+.gift-message { margin: 12px auto 0; max-width: 460px; padding: 12px 16px; border-left: 3px solid var(--accent); text-align: left; font-family: var(--display); font-size: 17px; line-height: 1.7; white-space: pre-wrap; }
+.gift-share { display: grid; gap: 10px; margin: 12px 0; }
+.gift-link { width: 100%; font-size: 14px; }
+.gift-share-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.gift-share-actions button { flex: 1 1 180px; }
+.season-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.purchase-gift { font-size: 14px; margin: 0 0 10px; }
+.purchase-gift a { color: var(--accent); font-weight: 700; }
+.gift-form textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }

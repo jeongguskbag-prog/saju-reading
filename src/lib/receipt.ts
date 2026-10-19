@@ -114,11 +114,15 @@ ${order.receiptUrl ? `<p style="font-size:13px"><a href="${e(order.receiptUrl)}"
 async function sendReceiptEmail(order: Order, links: ReceiptLinks): Promise<boolean> {
   if (!isMailEnabled() || !order.email) return false;
   const { subject, html, text } = receiptEmail(order, links);
+  return postMail(order.email, subject, html, text);
+}
+
+async function postMail(to: string, subject: string, html: string, text: string): Promise<boolean> {
   try {
     const res = await fetch(`${(process.env.RESEND_API_BASE || "https://api.resend.com").replace(/\/$/, "")}/emails`, {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [order.email], subject, html, text }),
+      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [to], subject, html, text }),
     });
     if (!res.ok) console.error("결제 확인 메일 실패", res.status, await res.text().catch(() => ""));
     return res.ok;
@@ -160,6 +164,11 @@ export async function sendReceipt(order: Order, origin: string): Promise<boolean
   const notify = order.notify ?? [];
   if (!notify.length || !order.token) return false;
   if (!(await requireStore().setIfAbsent(`receipt:${order.id}`, new Date().toISOString(), 60 * 60 * 24 * 40))) return false;
+  if (order.gift) {
+    const sent = await sendGiftReceipt(order, origin);
+    if (!sent) await requireStore().del(`receipt:${order.id}`);
+    return sent;
+  }
   const links = receiptLinks(origin, order);
   const [mailed, texted] = await Promise.all([
     notify.includes("email") ? sendReceiptEmail(order, links) : Promise.resolve(false),
@@ -169,3 +178,47 @@ export async function sendReceipt(order: Order, origin: string): Promise<boolean
   if (!ok) await requireStore().del(`receipt:${order.id}`);
   return ok;
 }
+
+// ── 선물 주문: 결제 확인 + 선물 링크(사는 분께) ──
+
+export const giftLink = (origin: string, order: Order) => `${origin}/gift/${order.gift!.code}`;
+
+export function giftReceiptText(order: Order, origin: string): string {
+  const g = order.gift!;
+  return `[${BRAND.name}] 선물 결제가 완료되었습니다.
+${receiptLines(order)
+  .map(([k, v]) => `${k}: ${v}`)
+  .join("\n")}
+받는 분: ${g.to} 님
+아래 선물 링크를 ${g.to} 님께 카카오톡·문자로 전해 주세요. 받는 분이 링크에서 생년월일시를 넣으면 감정서가 만들어집니다.
+선물 링크: ${giftLink(origin, order)}
+링크를 아는 사람은 누구나 선물을 받을 수 있으니 받는 분께만 전해 주세요.`;
+}
+
+async function sendGiftReceipt(order: Order, origin: string): Promise<boolean> {
+  const text = giftReceiptText(order, origin);
+  const subject = `[${BRAND.name}] 선물 결제가 완료되었습니다 (주문번호 ${order.id})`;
+  const tasks: Promise<boolean>[] = [];
+  if ((order.notify ?? []).includes("email") && order.email && isMailEnabled()) {
+    const e = escapeHtml;
+    const html = `<div style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.8;color:#2a2926;max-width:560px;margin:0 auto;padding:8px">
+<p style="font-size:13px;letter-spacing:.3em;color:#b0262c;margin:0 0 4px">天 機 錄</p>
+<h1 style="font-size:20px;margin:0 0 16px;font-weight:700">선물 결제가 완료되었습니다.</h1>
+<p>${e(order.gift!.to)} 님께 드릴 <b>${e(PRODUCT_NAME(order))}</b> 선물이 준비되었습니다. 아래 선물 링크를 받는 분께 카카오톡·문자로 전해 주세요. 받는 분이 링크에서 생년월일시를 넣으면 감정서가 만들어집니다.</p>
+<p style="margin:20px 0"><a href="${e(giftLink(origin, order))}" style="display:inline-block;background:#b0262c;color:#ffffff;padding:13px 24px;border-radius:4px;text-decoration:none;font-weight:700">선물 링크 열기</a></p>
+<p style="font-size:13px;color:#57544d">선물 링크: ${e(giftLink(origin, order))}<br>링크를 아는 사람은 누구나 선물을 받을 수 있으니 받는 분께만 전해 주세요.</p>
+<p style="font-size:13px;color:#57544d">${receiptLines(order).map(([k, v]) => `${e(k)}: ${e(v)}`).join("<br>")}</p>
+<p style="margin-top:20px">- 天機錄 운명연구원</p>
+</div>`;
+    tasks.push(postMail(order.email, subject, html, text));
+  }
+  if (order.phone && isSmsEnabled() && phoneChannels(order).length) {
+    // 선물 안내는 알림톡 템플릿이 없어 문자로 보낸다.
+    const from = process.env.SMS_FROM!.replace(/\D/g, "");
+    tasks.push(solapiSend([{ to: order.phone, from, text, subject: `[${BRAND.name}] 선물 결제 완료`, autoTypeDetect: true }]));
+  }
+  if (!tasks.length) return false;
+  return (await Promise.all(tasks)).some(Boolean);
+}
+
+const PRODUCT_NAME = (order: Order) => order.orderName.replace(/ 선물$/, "");

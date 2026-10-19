@@ -182,6 +182,9 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         본문은 작성·검수를 거쳐 <b>약 {wait} 뒤</b> 고르신 곳(이메일·문자 등)으로 보내 드립니다. 그때부터 화면에서도 열리며 PDF 파일과 HTML
         문서로 저장하실 수 있습니다.
       </p>
+      <p className="purchase-gift">
+        🎁 부모님·가족께 드리고 싶으세요? 생년월일시를 몰라도 <a href="/gift">감정서 선물하기</a>로 링크를 보내 드릴 수 있습니다.
+      </p>
       <p className="purchase-basis">
         ✓ 감정서는 무작위로 쓰지 않습니다. 입력하신 생년월일시로 만세력과 명리 계산값을 정확히 구한 뒤, 그 데이터만을 근거로 작성합니다.
       </p>

@@ -21,6 +21,7 @@ export default async function PaySuccess({ searchParams }: { searchParams: Param
   const { paymentKey, orderId, amount } = await searchParams;
   let token: string | null = null;
   let packDone = false;
+  let giftCode: string | null = null;
   let message = "결제 정보를 확인하지 못했습니다.";
   if (paymentKey && orderId && amount && /^\d+$/.test(amount)) {
     try {
@@ -30,7 +31,15 @@ export default async function PaySuccess({ searchParams }: { searchParams: Param
         await creditQuestionOrder(order);
         packDone = true;
       }
-      token = order.questionPack ? null : (order.token ?? null);
+      // 선물 주문: 감정서를 쓰지 않고 결제 확인과 선물 링크를 사는 분께 보낸 뒤 선물 링크 화면으로.
+      if (order.gift) {
+        giftCode = order.gift.code;
+        if (justPaid) {
+          const origin = originFrom(await headers());
+          after(() => sendReceipt(order, origin).catch((e) => console.error("선물 결제 확인 발송 실패", e)));
+        }
+      }
+      token = order.questionPack || order.gift ? null : (order.token ?? null);
       if (justPaid && token) {
         const origin = originFrom(await headers());
         const t = token;
@@ -52,6 +61,7 @@ export default async function PaySuccess({ searchParams }: { searchParams: Param
     }
   }
   if (packDone) redirect("/consult?paid=1");
+  if (giftCode) redirect(`/gift/${giftCode}?new=1`);
   if (token) redirect(`/r/${token}?new=1`);
   return (
     <SiteShell>
