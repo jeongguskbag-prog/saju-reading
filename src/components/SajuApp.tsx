@@ -13,6 +13,7 @@ import { isExtraKind, type ExtraKind } from "@/lib/extras/kinds";
 import ReportView, { type PartStates } from "./ReportView";
 import YearField from "./YearField";
 import ResultActions from "./ResultActions";
+import ShareTypeCard from "./ShareTypeCard";
 import MemberSaveBar from "./MemberSaveBar";
 import PurchaseBox, { type CheckoutInfo } from "./PurchaseBox";
 import { useLocale, useT } from "./LocaleProvider";
@@ -409,7 +410,10 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
             onRetry={(part) => lastInput.current && loadPart(lastInput.current, part, run.current)}
             afterGrade={
               checkout && !aiEnabled && lastInput.current ? (
-                <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} />
+                <>
+                  {locale === "ko" && <ShareTypeCard chart={chart} />}
+                  <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} />
+                </>
               ) : (
                 afterGrade
               )

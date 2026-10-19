@@ -1230,3 +1230,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .season-banner h2 { font-family: var(--display); font-weight: 400; margin: 0 0 10px; color: #fff; }
 .season-banner p { line-height: 1.7; margin: 0 auto 14px; max-width: 640px; }
 .season-banner .lp-cta { background: #fff6ea; color: #7a1d22; }
+
+/* 사주 유형 공유 카드 */
+.share-type .btn-secondary { width: auto; }
+.share-type-preview { display: block; width: 100%; max-width: 270px; margin: 12px auto 0; border-radius: 8px; }
