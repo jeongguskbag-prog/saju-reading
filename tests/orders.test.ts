@@ -409,3 +409,14 @@ describe("결제 취소", () => {
     expect((await getOrder(paid.id))?.status).toBe("paid");
   });
 });
+
+describe("휴대폰 번호", () => {
+  it("010은 11자리만, 옛 번호는 10~11자리", async () => {
+    const { normalizePhone } = await import("@/lib/sms");
+    expect(normalizePhone("0109170001")).toBeNull();
+    expect(normalizePhone("010-9170-0015")).toBe("01091700015");
+    expect(normalizePhone("+82 10-9170-0015")).toBe("01091700015");
+    expect(normalizePhone("011-123-4567")).toBe("0111234567");
+    expect(normalizePhone("01012345")).toBeNull();
+  });
+});

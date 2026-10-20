@@ -6,6 +6,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { BRAND, REPORT_VALID_DAYS } from "./product";
 import type { Order } from "./orders";
 import { josa } from "./josa";
+import { MOBILE_RE, phoneDigits } from "./phone";
 import { consultLink } from "./consult-copy";
 import { getStore } from "./store";
 
@@ -72,8 +73,8 @@ export const kakaoText = (vars: Record<string, string>) => KAKAO_TEMPLATE.replac
 
 /** 휴대폰 번호를 숫자만 남겨 확인한다(010·011·016~019). 아니면 null. */
 export function normalizePhone(raw: string): string | null {
-  const digits = raw.replace(/[\s-]/g, "").replace(/^\+?82/, "0");
-  return /^01[016789]\d{7,8}$/.test(digits) ? digits : null;
+  const digits = phoneDigits(raw);
+  return MOBILE_RE.test(digits) ? digits : null;
 }
 
 /** 화면에 보여 줄 때 가운데를 가린다: 010-****-5678 */

@@ -2,6 +2,7 @@
 
 import { DEFAULT_RELEASE_MINUTES, waitLabel } from "@/lib/release";
 import { useEffect, useRef, useState } from "react";
+import { isMobile as isMobilePhone } from "@/lib/phone";
 import type { BirthInput } from "@/lib/saju/calc";
 import { SupportBox } from "./SupportLinks";
 import SamplePreview from "./SamplePreview";
@@ -72,6 +73,10 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
+  // 손님이 칸을 고치면 이전 안내는 지운다(고친 뒤에도 옛 안내가 남아 헷갈리지 않게).
+  useEffect(() => {
+    setError(null);
+  }, [name, email, phone, agree]);
   // 빠진 항목 안내가 나오면 그 안내가 보이게 화면을 옮기고, 해당 입력 칸에 커서를 둔다.
   useEffect(() => {
     if (!error) return;
@@ -136,7 +141,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         : `${naming.surname.trim()}○○`
       : name.trim();
     if (!reportName) return setError("감정서에 들어갈 성함을 적어 주세요.");
-    const phoneOk = /^01[016789]\d{7,8}$/.test(phone.replace(/[\s-]/g, ""));
+    const phoneOk = isMobilePhone(phone);
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
     if (email.trim() && !emailOk) return setError("이메일 주소를 확인해 주세요.");
     if (!phone.trim()) return setError("휴대폰 번호를 적어 주세요. (필수)");

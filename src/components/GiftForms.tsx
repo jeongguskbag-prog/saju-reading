@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import YearField from "./YearField";
+import { MOBILE_RE } from "@/lib/phone";
 import { loadSdk } from "./PurchaseBox";
 
 type Target = "email" | "kakao" | "sms";
 const TARGET_LABEL: Record<Target, string> = { email: "이메일", kakao: "카카오톡", sms: "문자" };
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
-const PHONE_RE = /^01[016789]\d{7,8}$/;
+const PHONE_RE = MOBILE_RE;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export interface GiftProductOption {
