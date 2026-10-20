@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { externalOpenUrl, inAppBrowser } from "@/lib/inapp";
 import type { SajuChart } from "@/lib/saju/calc";
 import { gradeTiers } from "@/lib/saju/grade";
@@ -121,20 +121,23 @@ async function drawCard(chart: SajuChart, type: "image/png" | "image/jpeg" = "im
 }
 
 /**
- * 앱(WebView)·카카오톡 안 브라우저는 화면에서 만든 이미지를 저장하지 못한다.
- * 이미지를 서버에 10분 맡기고, 그 주소를 휴대폰 기본 브라우저로 열어 내려받게 한다.
+ * 이미지 저장: 화면에서 만든 이미지를 서버에 10분 맡기고, 그 파일 주소를 열어 휴대폰의 내려받기로 저장한다.
+ * 브라우저마다(삼성 인터넷·크롬·앱 안 브라우저) 화면 속 이미지 저장 방식이 달라, 같은 방법(파일 내려받기)으로 맞춘다.
+ * 천기록 앱(WebView)과 카카오톡 등 앱 안 브라우저는 휴대폰 기본 브라우저로 넘겨 내려받는다.
  */
-async function openInPhoneBrowser(blob: Blob): Promise<boolean> {
+async function saveViaServer(blob: Blob): Promise<boolean> {
   const res = await fetch("/api/type-card", { method: "POST", headers: { "Content-Type": blob.type }, body: blob }).catch(() => null);
   const data = ((await res?.json().catch(() => null)) ?? {}) as { path?: string };
   if (!res?.ok || !data.path) return false;
   const u = new URL(data.path, location.origin);
   const kind = inAppBrowser(navigator.userAgent);
-  if (kind === "kakao" || kind === "ios") {
-    const ext = externalOpenUrl(kind, u.href);
-    location.href = ext ?? u.href;
-  } else {
+  if (window.AndroidBridge || kind === "android") {
     location.href = `intent://${u.host}${u.pathname}#Intent;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(u.href)};end`;
+  } else if (kind === "kakao" || kind === "ios") {
+    location.href = externalOpenUrl(kind, u.href) ?? u.href;
+  } else {
+    // 일반 브라우저: 파일 주소를 열면 화면은 그대로 두고 내려받는다.
+    location.href = u.href;
   }
   return true;
 }
@@ -145,40 +148,41 @@ export default function ShareTypeCard({ chart }: { chart: SajuChart }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
+  const [canShare, setCanShare] = useState(false);
+  useEffect(() => {
+    const nav = navigator as unknown as { share?: unknown; canShare?: (d: ShareData) => boolean };
+    const probe = new File([new Blob(["x"], { type: "image/png" })], "x.png", { type: "image/png" });
+    setCanShare(!window.AndroidBridge && typeof nav.share === "function" && Boolean(nav.canShare?.({ files: [probe] })));
+  }, []);
+
+  async function save() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const jpg = await drawCard(chart, "image/jpeg");
+      setPreview(URL.createObjectURL(jpg));
+      const ok = await saveViaServer(jpg);
+      setMsg(
+        ok
+          ? "이미지를 내려받습니다. 내려받은 사진은 갤러리(또는 '내 파일 > 다운로드')에 있습니다."
+          : "이미지를 내려받지 못했습니다. 아래 이미지를 화면 캡처해 주세요.",
+      );
+    } catch {
+      setMsg("이미지를 만들지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function share() {
     setBusy(true);
     setMsg(null);
     try {
-      // 우리 앱(WebView)과 카카오톡 등 앱 안 브라우저: 휴대폰 브라우저로 넘겨 저장한다.
-      if (window.AndroidBridge || inAppBrowser(navigator.userAgent)) {
-        const jpg = await drawCard(chart, "image/jpeg");
-        setPreview(URL.createObjectURL(jpg));
-        const ok = await openInPhoneBrowser(jpg);
-        setMsg(
-          ok
-            ? "휴대폰 브라우저에서 이미지를 내려받습니다. 내려받은 사진은 갤러리(또는 '내 파일 > 다운로드')에 있습니다."
-            : "이미지를 넘기지 못했습니다. 아래 이미지를 화면 캡처해 주세요.",
-        );
-        return;
-      }
       const blob = await drawCard(chart);
       const file = new File([blob], "천기록_내사주유형.png", { type: "image/png" });
-      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-      if (nav.share && nav.canShare?.({ files: [file] })) {
-        await nav.share({ files: [file], title: "나의 사주 유형", text: "내 사주 유형 무료로 보기 → https://www.chungirok.com" });
-      } else {
-        const url = URL.createObjectURL(blob);
-        setPreview(url);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = file.name;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setMsg("이미지를 저장했습니다. 저장이 안 되면 아래 이미지를 길게 눌러 저장하세요.");
-      }
+      await navigator.share({ files: [file], title: "나의 사주 유형", text: "내 사주 유형 무료로 보기 → https://www.chungirok.com" });
     } catch (error) {
-      if ((error as Error).name !== "AbortError") setMsg("이미지를 만들지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+      if ((error as Error).name !== "AbortError") setMsg("공유하지 못했습니다. '이미지 저장'으로 받은 뒤 올려 주세요.");
     } finally {
       setBusy(false);
     }
@@ -188,9 +192,16 @@ export default function ShareTypeCard({ chart }: { chart: SajuChart }) {
     <section className="card share-type no-print" aria-labelledby="share-type-h">
       <h2 id="share-type-h">내 사주 유형 공유하기</h2>
       <p className="muted">인스타그램 스토리·카카오톡에 올리기 좋은 세로 이미지로 만들어 드립니다. 이름은 들어가지 않습니다.</p>
-      <button type="button" className="btn-secondary" onClick={share} disabled={busy}>
-        {busy ? "이미지 만드는 중…" : "유형 카드 이미지 만들기"}
-      </button>
+      <div className="share-type-actions">
+        <button type="button" className="btn-secondary" onClick={save} disabled={busy}>
+          {busy ? "이미지 만드는 중…" : "이미지 저장"}
+        </button>
+        {canShare && (
+          <button type="button" className="btn-secondary" onClick={share} disabled={busy}>
+            인스타·카톡으로 공유
+          </button>
+        )}
+      </div>
       {msg && <p className="muted">{msg}</p>}
       {preview && (
         // eslint-disable-next-line @next/next/no-img-element
