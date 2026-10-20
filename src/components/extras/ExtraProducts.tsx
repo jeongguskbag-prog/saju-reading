@@ -1,5 +1,6 @@
 // 첫 화면(한국어)의 "함께 보는 감정서": 궁합·신년 운세·택일·주역 점·자미두수. 아직 준비 중인 것은 준비 중으로만 보여 준다.
 import { EXTRA_ORDER, PRODUCTS, won, withProductYears } from "@/lib/product";
+import { releaseMinutes, waitLabel } from "@/lib/release";
 
 const DETAIL: Record<(typeof EXTRA_ORDER)[number], { hanja: string; how: string }> = {
   gunghap: { hanja: "緣分錄", how: "두 분의 생년월일시를 받아 각각 명식을 세우고, 일간·배우자 자리·띠의 합충과 오행 보완, 대운 동행을 함께 봅니다." },
@@ -23,6 +24,7 @@ export default function ExtraProducts({ years, checkoutOpen }: { years: [number,
                 {p.name.replace(/^천기록 /, "")} <small className="lp-hanja">{DETAIL[id].hanja}</small>
               </h3>
               <p className="lp-price">{won(p.price)}</p>
+              {p.available && <p className="lp-wait">⏳ 결제 후 약 {waitLabel(releaseMinutes(id))} 뒤 발송 · 미리보기는 바로</p>}
               <p className="lp-plan-sum">{withProductYears(p.summary, years)}</p>
               <p className="lp-plan-parts">{DETAIL[id].how}</p>
               {p.available ? (

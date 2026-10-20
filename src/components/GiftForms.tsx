@@ -159,6 +159,11 @@ export function GiftBuyForm({ products, offered, testMode }: { products: GiftPro
           <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>을 확인했습니다. 받는 분이 선물을 받기 전에는 취소를 요청하면 전액 환불됩니다.
         </span>
       </label>
+      {error && (
+        <p className="error purchase-error" role="alert">
+          {error}
+        </p>
+      )}
       <button className="btn-primary" type="submit" disabled={busy || !product}>
         {busy ? "결제창을 여는 중…" : product ? `${product.price.toLocaleString("ko-KR")}원 결제하고 선물하기` : "감정서를 골라 주세요"}
       </button>
@@ -167,11 +172,6 @@ export function GiftBuyForm({ products, offered, testMode }: { products: GiftPro
         열리고, 감정서 본문은 정해진 시간 뒤 받는 분께 보내 드립니다.
       </p>
       {testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
     </form>
   );
 }
@@ -338,15 +338,15 @@ export function GiftRedeemForm({ code, toName, offered }: { code: string; toName
           감정서 작성과 발송을 위해 입력한 정보를 쓰는 데 동의합니다(<a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>).
         </span>
       </label>
+      {error && (
+        <p className="error purchase-error" role="alert">
+          {error}
+        </p>
+      )}
       <button className="btn-primary" type="submit" disabled={busy}>
         {busy ? "선물을 받는 중…" : "선물 받기"}
       </button>
       <p className="muted">한 번 받은 선물은 생년월일시를 바꿀 수 없으니 정확히 넣어 주세요. 받는 즉시 명식 미리보기가 열리고, 감정서 본문은 정해진 시간 뒤 보내 드립니다.</p>
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
     </form>
   );
 }

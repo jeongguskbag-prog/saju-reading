@@ -1,7 +1,7 @@
 "use client";
 
 import { DEFAULT_RELEASE_MINUTES, waitLabel } from "@/lib/release";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BirthInput } from "@/lib/saju/calc";
 import { SupportBox } from "./SupportLinks";
 import SamplePreview from "./SamplePreview";
@@ -71,6 +71,17 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  // 빠진 항목 안내가 나오면 그 안내가 보이게 화면을 옮기고, 해당 입력 칸에 커서를 둔다.
+  useEffect(() => {
+    if (!error) return;
+    const field = /휴대폰/.test(error) ? "buy-phone" : /이메일/.test(error) ? "buy-email" : /성함/.test(error) ? "buy-name" : null;
+    const el = field ? document.getElementById(field) : null;
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.focus({ preventScroll: true });
+    } else errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [error]);
   const [naming, setNaming] = useState<NamingForm>(emptyNamingForm);
   // 첫 화면 배너 등에서 ?p=상품으로 들어오면 그 상품을 골라 둔다.
   useEffect(() => {
@@ -198,6 +209,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
                 <span className="plan-name">{p.name}</span>
                 <span className="plan-price">{won(p.price)}</span>
                 <span className="plan-sum">{withProductYears(p.summary, years)}</span>
+                <span className="plan-wait">⏳ 약 {waitLabel(checkout.release?.[p.id] ?? DEFAULT_RELEASE_MINUTES[p.id])} 뒤 발송</span>
               </label>
             ))}
             {extraProducts.length > 0 && (
@@ -209,6 +221,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
                     <span className="plan-name">{p.name}</span>
                     <span className="plan-price">{won(p.price)}</span>
                     <span className="plan-sum">{withProductYears(p.summary, years)}</span>
+                    <span className="plan-wait">⏳ 약 {waitLabel(checkout.release?.[p.id] ?? DEFAULT_RELEASE_MINUTES[p.id])} 뒤 발송</span>
                   </label>
                 ))}
               </>
@@ -290,6 +303,11 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               취소를 요청하면 전액 환불되며, 공개된 뒤에는 디지털 콘텐츠 제공이 끝난 것으로 보아 청약철회가 제한됩니다.
             </span>
           </label>
+          {error && (
+            <p ref={errorRef} className="error purchase-error" role="alert">
+              ⚠ {error}
+            </p>
+          )}
           <button className="btn-primary" type="submit" disabled={busy}>
             {busy ? "결제창을 여는 중…" : `${won(product.price)} 결제하고 감정서 신청`}
           </button>
@@ -300,11 +318,6 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
           <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
           {checkout.testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}
           <SupportBox compact />
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
         </form>
       ) : (
         <>

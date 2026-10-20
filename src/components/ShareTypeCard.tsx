@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { externalOpenUrl, inAppBrowser } from "@/lib/inapp";
 import type { SajuChart } from "@/lib/saju/calc";
 import { gradeTiers } from "@/lib/saju/grade";
 import { BRANCH_ANIMAL, ELEMENT_KO, type Branch } from "@/lib/saju/constants";
@@ -29,7 +30,7 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, width: number): strin
 }
 
 /** 사주 유형 공유 카드(인스타 스토리 9:16)를 그린다. 이름은 넣지 않는다. */
-async function drawCard(chart: SajuChart): Promise<Blob> {
+async function drawCard(chart: SajuChart, type: "image/png" | "image/jpeg" = "image/png"): Promise<Blob> {
   await document.fonts?.ready;
   const canvas = document.createElement("canvas");
   canvas.width = W;
@@ -116,7 +117,26 @@ async function drawCard(chart: SajuChart): Promise<Blob> {
   ctx.font = `bold 44px ${SANS}`;
   ctx.fillText("chungirok.com", W / 2, 1806);
 
-  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("이미지를 만들지 못했습니다."))), "image/png"));
+  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("이미지를 만들지 못했습니다."))), type, 0.92));
+}
+
+/**
+ * 앱(WebView)·카카오톡 안 브라우저는 화면에서 만든 이미지를 저장하지 못한다.
+ * 이미지를 서버에 10분 맡기고, 그 주소를 휴대폰 기본 브라우저로 열어 내려받게 한다.
+ */
+async function openInPhoneBrowser(blob: Blob): Promise<boolean> {
+  const res = await fetch("/api/type-card", { method: "POST", headers: { "Content-Type": blob.type }, body: blob }).catch(() => null);
+  const data = ((await res?.json().catch(() => null)) ?? {}) as { path?: string };
+  if (!res?.ok || !data.path) return false;
+  const u = new URL(data.path, location.origin);
+  const kind = inAppBrowser(navigator.userAgent);
+  if (kind === "kakao" || kind === "ios") {
+    const ext = externalOpenUrl(kind, u.href);
+    location.href = ext ?? u.href;
+  } else {
+    location.href = `intent://${u.host}${u.pathname}#Intent;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(u.href)};end`;
+  }
+  return true;
 }
 
 /** 무료 결과의 사주 유형을 인스타 스토리·카톡용 이미지로 저장·공유 */
@@ -129,6 +149,18 @@ export default function ShareTypeCard({ chart }: { chart: SajuChart }) {
     setBusy(true);
     setMsg(null);
     try {
+      // 우리 앱(WebView)과 카카오톡 등 앱 안 브라우저: 휴대폰 브라우저로 넘겨 저장한다.
+      if (window.AndroidBridge || inAppBrowser(navigator.userAgent)) {
+        const jpg = await drawCard(chart, "image/jpeg");
+        setPreview(URL.createObjectURL(jpg));
+        const ok = await openInPhoneBrowser(jpg);
+        setMsg(
+          ok
+            ? "휴대폰 브라우저에서 이미지를 내려받습니다. 내려받은 사진은 갤러리(또는 '내 파일 > 다운로드')에 있습니다."
+            : "이미지를 넘기지 못했습니다. 아래 이미지를 화면 캡처해 주세요.",
+        );
+        return;
+      }
       const blob = await drawCard(chart);
       const file = new File([blob], "천기록_내사주유형.png", { type: "image/png" });
       const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };

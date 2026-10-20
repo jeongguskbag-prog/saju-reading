@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import ExtraProducts from "./extras/ExtraProducts";
 import SeasonBanner from "./SeasonBanner";
+import { releaseMinutes, waitLabel } from "@/lib/release";
 import ConsultIntro from "./ConsultIntro";
 import { BRAND, PRODUCT_ORDER, PRODUCTS, withProductYears, won } from "@/lib/product";
 import { CHAPTER_KEYS, withYears } from "@/lib/report-shared";
@@ -193,6 +194,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
                 <h3>{text.name}</h3>
                 {/* 해외 화면은 현지 화폐 가격이 정해질 때까지 가격을 적지 않는다 */}
                 {sales && <p className="lp-price">{won(p.price)}</p>}
+                {site === "ko" && available && <p className="lp-wait">⏳ 결제 후 약 {waitLabel(releaseMinutes(id))} 뒤 발송 · 명식 미리보기는 바로</p>}
                 <p className="lp-plan-sum">{withProductYears(text.summary, years)}</p>
                 {available ? (
                   <p className="lp-plan-parts">
