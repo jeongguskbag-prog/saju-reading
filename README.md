@@ -130,7 +130,7 @@ API 키는 서버에서만 읽으며 브라우저로 전달되지 않습니다. 
 | 여는 화면 | 앱 전용 화면 `/app` (결제 없이 감정서) | 홈페이지 `/` (결제·카카오 로그인) |
 | 앱 접근 키 | 넣음 (`SAJU_APP_KEY`) | 넣을 수 없음(빌드가 막는다) |
 | 관리자 바로가기 | 보임 | 안 보임 |
-| 패키지 · 결과물 | `kr.saju.reading` · `saju-reading.apk` | `kr.saju.reading.user` · `saju-reading-user.apk` |
+| 패키지 · 결과물 | `kr.saju.reading` · `Cheongirok-admin.apk` | `kr.saju.reading.user` · `Cheongirok.apk` |
 
 패키지가 달라 한 기기에 함께 설치됩니다. 관리자용인지는 웹 화면이 앱 접근 키가 있는지로 알아봅니다(`isOwnerApp`).
 화면은 사이트에서 가져오므로, 사이트를 고쳐 배포하면 앱을 다시 설치하지 않아도 반영됩니다. Gradle 없이 SDK 명령줄 도구만으로 빌드합니다.
@@ -148,7 +148,7 @@ SAJU_AUDIENCE=user npm run build:android
 # 다른 주소(예: 자체 도메인)를 띄우려면 SAJU_SITE_URL=https://내-도메인 을 함께 지정
 ```
 
-결과물: `android/build/saju-reading.apk` (minSdk 23 / targetSdk 34, Android 6.0 이상). 인터넷 연결이 필요합니다.
+결과물: `android/build/Cheongirok-admin.apk`(관리자용), `android/build/Cheongirok.apk`(사용자용) (minSdk 23 / targetSdk 34, Android 6.0 이상). 인터넷 연결이 필요합니다.
 
 - **무료 풀이(앱 전용):** 웹은 감정서를 구매해야 풀이가 나오지만, 앱은 접근 키(`SAJU_APP_KEY`)를 `x-app-key` 헤더로 보내 결제 없이 풀이를 받습니다. 서버의 `APP_ACCESS_KEY`(16자 이상)와 같을 때만 허용되고, 키가 없거나 다르면 명식·등급 계산까지만 보입니다. 일반 브라우저로 `/app`을 열어도 키가 없어 풀이는 나오지 않습니다.
   - 키는 APK 안에 들어 있어 완전한 비밀은 아닙니다. 키가 새면 Vercel의 `APP_ACCESS_KEY`를 바꾼 뒤 새 키로 앱을 다시 빌드하세요.

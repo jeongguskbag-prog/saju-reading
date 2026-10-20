@@ -40,8 +40,8 @@ if [ "$SAJU_AUDIENCE" = user ]; then
   [ "$SAJU_LOCALE" = ko ] || { echo "사용자용 앱은 지금 한국어(SAJU_LOCALE=ko)만 만들 수 있습니다." >&2; exit 1; }
 fi
 case "$SAJU_AUDIENCE:$SAJU_LOCALE" in
-  user:ko) APP_PATH="/"; APP_NAME="천기록"; PACKAGE="kr.saju.reading.user"; APK_NAME="saju-reading-user.apk" ;;
-  admin:ko) APP_PATH="/app"; APP_NAME="천기록 관리"; PACKAGE="kr.saju.reading"; APK_NAME="saju-reading.apk" ;;
+  user:ko) APP_PATH="/"; APP_NAME="천기록"; PACKAGE="kr.saju.reading.user"; APK_NAME="Cheongirok.apk" ;;
+  admin:ko) APP_PATH="/app"; APP_NAME="천기록 관리"; PACKAGE="kr.saju.reading"; APK_NAME="Cheongirok-admin.apk" ;;
   admin:zh-Hant) APP_PATH="/app/zh"; APP_NAME="天機錄"; PACKAGE="kr.saju.reading.zh"; APK_NAME="saju-reading-zh-hant.apk" ;;
   admin:zh-Hans) APP_PATH="/app/zh-hans"; APP_NAME="天机录"; PACKAGE="kr.saju.reading.cn"; APK_NAME="saju-reading-zh-hans.apk" ;;
   *) echo "SAJU_LOCALE은 ko, zh-Hant, zh-Hans 중 하나여야 합니다." >&2; exit 1 ;;
