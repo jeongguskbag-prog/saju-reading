@@ -16,7 +16,6 @@ import NextProducts from "./NextProducts";
 import type { ProductId } from "@/lib/product";
 import GradeCard from "./GradeCard";
 import { DaeunCard, ElementCard, PillarsCard, YearFlowCard } from "./ChartView";
-import { releaseLabel } from "@/lib/release";
 
 interface Props {
   token: string;
@@ -38,8 +37,8 @@ interface Props {
   deliverAt: string | null;
   /** 화면에 감정서를 펼치기까지 남은 시간(ms). 상품별 대기 시간이 지나야 본문을 연다. 0이면 바로 보여 준다. */
   revealInMs: number;
-  /** 본문을 여는(보내는) 시각(ISO) */
-  releaseAt: string;
+  /** 결제 후 보내기까지 걸리는 시간(예: "1시간") */
+  waitText: string;
   /** 이 주문으로 남긴 후기(없으면 null) */
   initialReview: MyReview | null;
 }
@@ -203,7 +202,7 @@ function whenVisible(): Promise<void> {
   });
 }
 
-export default function ReportClient({ token, partKeys, productName, productId, expiresAt, kept = false, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, releaseAt, initialReview }: Props) {
+export default function ReportClient({ token, partKeys, productName, productId, expiresAt, kept = false, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, waitText, initialReview }: Props) {
   const [parts, setParts] = useState<PartStates>(() =>
     Object.fromEntries(Object.entries(initialParts).map(([k, result]) => [k, { status: "done", result }])),
   );
@@ -313,47 +312,26 @@ export default function ReportClient({ token, partKeys, productName, productId, 
   );
 
   if (waiting) {
-    const sec = Math.ceil(waitMs / 1000);
-    const hh = Math.floor(sec / 3600);
-    const mm = Math.floor((sec % 3600) / 60);
-    const ss = sec % 60;
-    const left = hh ? `${hh}시간 ${String(mm).padStart(2, "0")}분` : `${mm}분 ${String(ss).padStart(2, "0")}초`;
-    const when = releaseLabel(releaseAt);
     const isNewyear = partKeys.includes("newyear");
     const withDaeun = !partKeys.some(isExtraKind) || partKeys.includes("ziwei");
-    const steps: { label: string; state: "done" | "now" | "next" }[] = [
-      { label: "결제 확인", state: "done" },
-      { label: "명식 계산(아래 미리보기)", state: "done" },
-      { label: "감정서 본문 작성·검수", state: "now" },
-      { label: `${when} 전후 발송·열람`, state: "next" },
-    ];
     return (
       <div id="result">
         <section className="card report-waiting report-hold no-print" aria-live="polite">
-          <p className="eyebrow">{justPaid ? "신청이 접수되었습니다" : "감정서를 준비하고 있습니다"}</p>
-          <h2>{josa(productName, "은", "는")} {when} 전후에 받아 보실 수 있습니다</h2>
+          <p className="eyebrow">감정서 신청이 접수되었습니다</p>
+          <h2>
+            {josa(productName, "은", "는")} 약 {waitText} 후 보내 드립니다
+          </h2>
           <p>
-            의뢰인의 명식을 계산해 두었고, 이를 바탕으로 감정서 본문을 작성·검수하고 있습니다.{" "}
             {sendTo ? (
               <>
-                완성되면 <b>{sendTo}</b>(으)로 감정서와 PDF·HTML 파일을 보내 드리며, 그때부터 이 화면에서도 열립니다.
+                선택하신 <b>{sendTo}</b>(으)로 감정서와 PDF·HTML 파일을 보내 드리며, 그때부터 이 화면에서도 열립니다.
               </>
             ) : (
-              <>완성되면 이 화면에서 열립니다. 아래 버튼으로 이 화면 주소를 꼭 복사해 두세요.</>
+              <>그때부터 이 화면에서 열립니다. 아래 버튼으로 이 화면 주소를 꼭 복사해 두세요.</>
             )}
           </p>
-          <p className="report-waiting-time">남은 시간 {left}</p>
-          <ol className="report-steps">
-            {steps.map((st) => (
-              <li key={st.label} className={st.state}>
-                <i aria-hidden>{st.state === "done" ? "✓" : st.state === "now" ? <span className="spinner" /> : "·"}</i>
-                {st.label}
-              </li>
-            ))}
-          </ol>
           <p className="muted">
-            밤 10시~아침 8시에 완성되는 감정서는 아침 8시에 보내 드립니다. 이 창을 닫아도 준비는 이어지며, 사이트 아래 &apos;주문 조회&apos;에서 주문번호와 연락처로 언제든 다시
-            찾을 수 있습니다. 주문번호 {orderId}
+            이 창은 닫으셔도 됩니다. 사이트 아래 &apos;주문 조회&apos;에서 주문번호와 연락처로 언제든 다시 찾을 수 있습니다. 주문번호 {orderId}
           </p>
           <button type="button" className="btn-secondary" onClick={copyLink}>
             {copied ? "감정서 주소를 복사했습니다" : "감정서 주소 복사"}

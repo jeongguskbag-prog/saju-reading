@@ -1,6 +1,6 @@
 // /r/토큰/pdf, /r/토큰/html: 문자·메일의 "파일 받기" 링크. 열 때마다 감정서 화면을 파일로 만들어 내려준다.
-import { getReport, getSavedParts, isReleased, markSaved, orderReleaseAt } from "./orders";
-import { releaseLabel } from "./release";
+import { getReport, getSavedParts, isReleased, markSaved } from "./orders";
+import { orderWaitLabel } from "./release";
 import { attachmentHeader, renderReportFiles } from "./render";
 import { originFrom } from "./site";
 
@@ -26,7 +26,7 @@ export async function fileResponse(request: Request, token: string, ext: "pdf" |
   const report = await getReport(token);
   if (!report) return text("감정서를 찾을 수 없습니다.", 404);
   if (report.expired) return text("감정서 열람 기간이 지났습니다.", 410);
-  if (!isReleased(report.order)) return text(`감정서를 준비하고 있습니다. ${releaseLabel(orderReleaseAt(report.order))} 전후부터 받으실 수 있습니다.`, 425);
+  if (!isReleased(report.order)) return text(`감정서 신청이 접수되었습니다. 결제 후 약 ${orderWaitLabel(report.order)} 뒤 선택하신 곳으로 보내 드리며, 그때부터 받으실 수 있습니다.`, 425);
   const saved = await getSavedParts(token, report.product.parts);
   if (report.product.parts.some((p) => !saved[p])) {
     return text("감정서를 아직 작성하고 있습니다. 완성된 뒤에 다시 받아 주세요.", 409);

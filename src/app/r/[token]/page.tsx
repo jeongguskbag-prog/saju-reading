@@ -9,6 +9,7 @@ import SiteShell from "@/components/SiteShell";
 import { isMailEnabled } from "@/lib/mail";
 import { isKakaoEnabled, isSmsEnabled, maskPhone, phoneChannels } from "@/lib/sms";
 import { getReport, getSavedParts, isReleased, orderReleaseAt, renderSignature } from "@/lib/orders";
+import { orderWaitLabel } from "@/lib/release";
 import { getReviewByOrder } from "@/lib/reviews";
 import { BRAND, BUSINESS, REPORT_VALID_DAYS } from "@/lib/product";
 
@@ -84,7 +85,7 @@ export default async function ReportPage({ params, searchParams }: { params: Par
         }
         // 상품별 대기 시간이 지나야 화면에 감정서를 펼친다. 파일 만들기(서명된 render)는 기다리지 않는다.
         revealInMs={open ? 0 : Math.max(1000, releaseAt.getTime() - Date.now())}
-        releaseAt={releaseAt.toISOString()}
+        waitText={orderWaitLabel(report.order)}
       />
     </SiteShell>
   );

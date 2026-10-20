@@ -1,6 +1,5 @@
 // 감정서 공개·발송 시각(서버·화면 공용, 비밀값 없음).
 // 결제 직후에는 명식 미리보기만 보여 주고, 감정서 본문은 상품별로 정한 시간이 지난 뒤 화면에 열고 메일·문자로 보낸다.
-// 공개 시각이 한국 시간 밤 10시~아침 8시에 걸리면 아침 8시로 미룬다.
 // 상품별 시간은 RELEASE_MINUTES 설정으로 바꿀 수 있다. 예: "iching=30,newyear=60,full=120" (적지 않은 상품은 기본값)
 import type { ProductId } from "./product";
 
@@ -43,9 +42,9 @@ export function avoidQuietHours(at: Date): Date {
   return h >= QUIET_START ? new Date(morning.getTime() + 86_400_000) : morning;
 }
 
-/** 결제 시각과 상품으로 감정서 공개·발송 시각을 정한다. */
+/** 결제 시각과 상품으로 감정서 공개·발송 시각을 정한다(안내한 "약 ○시간 후" 그대로, 밤에도 미루지 않는다). */
 export function computeReleaseAt(productId: ProductId, paidAt: Date, raw?: string): Date {
-  return avoidQuietHours(new Date(paidAt.getTime() + releaseMinutes(productId, raw) * 60_000));
+  return new Date(paidAt.getTime() + releaseMinutes(productId, raw) * 60_000);
 }
 
 /** 손님에게 보여 줄 공개 시각 문구. 예: "오늘 오후 3:10", "내일 오전 8:00", "10월 21일 오전 8:00" */
@@ -83,3 +82,10 @@ export function orderReleaseAt(order: Timed): Date {
 }
 
 export const isReleased = (order: Timed, now = new Date()) => now.getTime() >= orderReleaseAt(order).getTime();
+
+/** 손님 안내용 대기 시간: "약 1시간 후"의 "1시간" (결제~공개 사이, 30분 단위로 반올림) */
+export function orderWaitLabel(order: Timed): string {
+  const paid = new Date(order.paidAt ?? order.createdAt).getTime();
+  const min = Math.max(0, Math.round((orderReleaseAt(order).getTime() - paid) / 60_000));
+  return waitLabel(min < 60 ? Math.max(10, Math.round(min / 10) * 10) : Math.round(min / 30) * 30);
+}

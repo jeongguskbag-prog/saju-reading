@@ -1,5 +1,5 @@
 // 감정서 파일(PDF·HTML) 발송(서버 전용).
-// 결제 직후 Upstash QStash에 "공개 시각(상품별 대기 시간, 밤이면 아침 8시)에 /api/deliver를 불러 달라"고 예약해 두고, 그때 파일을 만들어 보낸다.
+// 결제 직후 Upstash QStash에 "공개 시각(상품별 대기 시간)에 /api/deliver를 불러 달라"고 예약해 두고, 그때 파일을 만들어 보낸다.
 // 손님 화면에도 같은 시각부터 감정서 본문이 열린다(그 전에는 명식 미리보기만). 시각은 release.ts에서 정한다.
 // 필요한 설정: QSTASH_TOKEN, QSTASH_CURRENT_SIGNING_KEY, QSTASH_NEXT_SIGNING_KEY (선택: QSTASH_URL, DELIVERY_DELAY_MINUTES)
 // QStash 설정이 없으면 예전처럼 감정서가 완성되는 즉시 링크를 보낸다.
@@ -68,7 +68,7 @@ export async function scheduleDelivery(order: Order, origin: string, now = new D
     await noteSchedule(order.id, "예약 설정(QSTASH) 없음: 감정서 완성 즉시 발송");
     return null;
   }
-  // 상품별 공개 시각(밤이면 아침 8시)에 보낸다. 이미 지났으면 곧바로.
+  // 상품별 공개 시각에 보낸다. 이미 지났으면 곧바로.
   const deliverAt = new Date(Math.max(orderReleaseAt(order).getTime(), now.getTime() + 30_000));
   await setDeliverAt(order.id, deliverAt.toISOString());
   try {

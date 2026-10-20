@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BirthInput } from "@/lib/saju/calc";
 import { cancelOrder, checkoutConfig, confirmOrder, createOrder, getOrder, getReport, getSavedPart, isReleased, lockPart, OrderError, orderReleaseAt, savePart, setReleaseAt, unlockPart } from "@/lib/orders";
-import { avoidQuietHours, computeReleaseAt, releaseLabel, releaseMinutes } from "@/lib/release";
+import { avoidQuietHours, computeReleaseAt, orderWaitLabel, releaseLabel, releaseMinutes } from "@/lib/release";
 import { PRODUCTS } from "@/lib/product";
 import { createMemoryStore, setStoreForTest } from "@/lib/store";
 import { reportEmail } from "@/lib/mail";
@@ -335,15 +335,21 @@ describe("공개·발송 시각", () => {
     expect(releaseMinutes("full", "full=abc")).toBe(120);
   });
 
-  it("밤 10시~아침 8시(한국 시간)에 걸리면 아침 8시로 미룬다", () => {
+  it("avoidQuietHours 계산과, 공개 시각은 안내한 시간 그대로", () => {
     // 한국 14:00 → 그대로
     expect(avoidQuietHours(new Date("2026-10-20T05:00:00Z")).toISOString()).toBe("2026-10-20T05:00:00.000Z");
     // 한국 22:30 → 다음 날 08:00
     expect(avoidQuietHours(new Date("2026-10-20T13:30:00Z")).toISOString()).toBe("2026-10-20T23:00:00.000Z");
     // 한국 02:00 → 그날 08:00
     expect(avoidQuietHours(new Date("2026-10-20T17:00:00Z")).toISOString()).toBe("2026-10-20T23:00:00.000Z");
-    // 한국 21:00 결제 + 2시간 → 23:00 → 다음 날 08:00
-    expect(computeReleaseAt("full", new Date("2026-10-20T12:00:00Z")).toISOString()).toBe("2026-10-20T23:00:00.000Z");
+    // 공개 시각은 밤에도 미루지 않는다: 한국 21:00 결제 + 2시간 → 23:00
+    expect(computeReleaseAt("full", new Date("2026-10-20T12:00:00Z")).toISOString()).toBe("2026-10-20T14:00:00.000Z");
+  });
+
+  it("손님 안내용 대기 시간", () => {
+    expect(orderWaitLabel({ createdAt: "x", paidAt: "2026-10-20T05:00:00Z", releaseAt: "2026-10-20T06:00:00Z" })).toBe("1시간");
+    expect(orderWaitLabel({ createdAt: "x", paidAt: "2026-10-20T05:00:00Z", releaseAt: "2026-10-20T05:30:00Z" })).toBe("30분");
+    expect(orderWaitLabel({ createdAt: "x", paidAt: "2026-10-20T05:00:00Z", releaseAt: "2026-10-20T08:00:00Z" })).toBe("3시간");
   });
 
   it("공개 시각 문구", () => {
