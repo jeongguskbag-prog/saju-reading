@@ -122,7 +122,7 @@ export const BUSINESS = {
   mailOrderNumber: "", // 통신판매업 신고번호 제0000-지역-0000호
   address: "", // 사업장 주소
   phone: "", // 고객센터 전화
-  email: "pjk6322@gmail.com", // 고객센터 이메일(기타 문의)
+  email: "help@chungirok.com", // 고객센터 이메일(기타 문의). ImprovMX로 운영자 Gmail에 전달된다.
   privacyOfficer: "", // 개인정보 보호책임자(이름)
 };
 
