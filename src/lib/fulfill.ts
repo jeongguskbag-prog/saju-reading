@@ -6,6 +6,7 @@ import { getReport, getSavedPart, isReleased, lockPart, savePart, unlockPart, ty
 import { generatePart, ReadingError } from "./reading";
 import type { ReportPartKey as PartKey, PartResult } from "./report-shared";
 import { isExtraKind, type ExtraKind } from "./extras/kinds";
+import { withUsageContext } from "./ai-usage";
 
 export type EnsureResult = { status: "done"; result: PartResult } | { status: "pending" };
 
@@ -19,8 +20,9 @@ export async function ensurePart(report: Report, part: PartKey, origin?: string)
     // 잠금을 잡는 사이 다른 곳에서 막 저장했을 수 있다.
     const again = await getSavedPart(token, part);
     if (again) return { status: "done", result: again };
-    const result =
-      part === "naming" ? await writeNaming(report) : isExtraKind(part) ? await writeExtra(report, part) : await generatePart(report.chart, part);
+    const result = await withUsageContext({ orderId: report.order.id, kind: "report" }, async () =>
+      part === "naming" ? await writeNaming(report) : isExtraKind(part) ? await writeExtra(report, part) : await generatePart(report.chart, part),
+    );
     await savePart(token, part, result, report.kept ? undefined : report.expiresAt);
     await sendCompletionIfReady(report, origin);
     return { status: "done", result };
@@ -83,4 +85,22 @@ export async function completeReport(token: string, origin: string, deadlineMs =
   );
   await sendCompletionIfReady(report, origin);
   return true;
+}
+
+/**
+ * 관리자 '다시 쓰기': 저장된 풀이를 새로 써서 바꾼다. 새로 쓰기에 실패하면 원래 풀이를 그대로 둔다.
+ * 다른 곳에서 같은 파트를 쓰는 중이면 건너뛴다(false).
+ */
+export async function rewritePart(report: Report, part: PartKey): Promise<boolean> {
+  const token = report.order.token!;
+  if (!(await lockPart(token, part))) return false;
+  try {
+    const result = await withUsageContext({ orderId: report.order.id, kind: "rewrite" }, async () =>
+      part === "naming" ? await writeNaming(report) : isExtraKind(part) ? await writeExtra(report, part) : await generatePart(report.chart, part),
+    );
+    await savePart(token, part, result, report.kept ? undefined : report.expiresAt);
+    return true;
+  } finally {
+    await unlockPart(token, part);
+  }
 }

@@ -2,6 +2,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { z } from "zod";
 import { DEFAULT_MODEL, ReadingError, isAiEnabled } from "../reading";
+import { recordUsage } from "../ai-usage";
 
 /** 모든 추가 상품에 공통으로 붙는 원칙 */
 export const COMMON_RULES = `공통 원칙:
@@ -32,6 +33,7 @@ export async function writeJson<T>(opts: { system: string; user: string; schema:
     if (error instanceof Anthropic.APIError) throw new ReadingError(`AI 호출 오류(${error.status ?? "네트워크"}).`, 502);
     throw error;
   }
+  await recordUsage(message.usage, message.model, "free");
   if (message.stop_reason === "refusal") throw new ReadingError(`AI가 ${opts.label} 문장을 생성하지 못했습니다.`, 502);
   if (message.stop_reason === "max_tokens") throw new ReadingError("문장이 너무 길어 중간에 끊겼습니다. 다시 시도해 주세요.", 502);
   const text = message.content

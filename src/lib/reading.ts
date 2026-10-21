@@ -5,6 +5,7 @@ import { gradeTiers } from "./saju/grade";
 import { ELEMENT_KO } from "./saju/constants";
 import { ELEMENT_EN, ELEMENT_ZH, TEN_GOD_EN, TEN_GOD_MODERN_EN, TEN_GOD_HANS, TEN_GOD_MODERN_HANS, TEN_GOD_MODERN_ZH, TEN_GOD_ZH, type Locale } from "./saju/locale";
 import type { LuckPillar, Pillar, SajuChart } from "./saju/calc";
+import { recordUsage } from "./ai-usage";
 import {
   chaptersFor,
   chapterSchema,
@@ -498,6 +499,7 @@ ${JSON.stringify(chartForPrompt(chart), null, 2)}`;
     if (error instanceof Anthropic.APIError) throw new ReadingError(E.api(String(error.status ?? E.network)), 502);
     throw error;
   }
+  await recordUsage(message.usage, message.model, "free");
 
   if (message.stop_reason === "refusal") throw new ReadingError(E.refusal, 502);
   if (message.stop_reason === "max_tokens") throw new ReadingError(E.maxTokens, 502);

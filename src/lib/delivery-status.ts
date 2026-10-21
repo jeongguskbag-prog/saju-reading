@@ -4,6 +4,7 @@ import { isMailEnabled } from "./mail";
 import { isReleased, orderReleaseAt, type Order } from "./orders";
 import { isKakaoEnabled, isSmsEnabled, SMS_FAIL_KEY } from "./sms";
 import { getStore } from "./store";
+import { orderUsage } from "./ai-usage";
 
 export function deliverySettings(): { name: string; ok: boolean; note: string }[] {
   const mailFrom = process.env.MAIL_FROM ?? "";
@@ -26,6 +27,9 @@ export function deliverySettings(): { name: string; ok: boolean; note: string }[
 
 export interface OrderDelivery {
   orderId: string;
+  token?: string;
+  /** AI 사용량·추정 비용 */
+  ai: { calls: number; tokens: number; krw: number } | null;
   name: string;
   paidAt?: string;
   email: string;
@@ -50,6 +54,8 @@ export async function orderDeliveries(orders: Order[]): Promise<OrderDelivery[]>
   return Promise.all(
     orders.map(async (o) => ({
       orderId: o.id,
+      token: o.token,
+      ai: await orderUsage(o.id).catch(() => null),
       name: o.input.name ?? "",
       paidAt: o.paidAt,
       email: o.notify && !o.notify.includes("email") ? "" : o.email,

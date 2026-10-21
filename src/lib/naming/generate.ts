@@ -5,6 +5,7 @@ import { ELEMENT_KO, type Element } from "../saju/constants";
 import { DEFAULT_MODEL, ReadingError, isAiEnabled } from "../reading";
 import { namingTextSchema, type NamingResultData } from "../report-shared";
 import { computeNaming, FEELING_LABEL, type NameAnalysis, type NamingRequest } from "./engine";
+import { recordUsage } from "../ai-usage";
 
 const SYSTEM = `당신은 정통 성명학(수리·자원오행·발음오행)과 명리학에 밝은 품격 있는 작명가입니다. 유료 작명 감정서(A4 책자) "길운 개운 작명록"의 문장을 씁니다.
 
@@ -117,6 +118,7 @@ ${JSON.stringify(namingPrompt(chart, req, computed), null, 2)}`;
     if (error instanceof Anthropic.APIError) throw new ReadingError(`AI 호출 오류(${error.status ?? "네트워크"}).`, 502);
     throw error;
   }
+  await recordUsage(message.usage, message.model, "free");
   if (message.stop_reason === "refusal") throw new ReadingError("AI가 작명록 문장을 생성하지 못했습니다.", 502);
   if (message.stop_reason === "max_tokens") throw new ReadingError("문장이 너무 길어 중간에 끊겼습니다. 다시 시도해 주세요.", 502);
   const text = message.content

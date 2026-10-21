@@ -16,6 +16,7 @@ import { getMember, memberFromRequest, type Member } from "@/lib/member";
 import { isAiEnabled, isAppRequest } from "@/lib/reading";
 import { calculateSaju } from "@/lib/saju/calc";
 import { getStore } from "@/lib/store";
+import { recordUsage } from "@/lib/ai-usage";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
           }
         }
         const final = await ai.finalMessage();
+        await recordUsage(final.usage, final.model, "consult");
         if (final.stop_reason === "refusal" || !answer.trim()) {
           await refund();
           send({ t: "error", message: "이 질문에는 답을 드리기 어렵습니다. 질문권은 되돌려 드렸습니다. 사주와 관련된 다른 질문을 해 주세요." });

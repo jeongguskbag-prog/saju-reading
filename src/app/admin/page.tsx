@@ -12,6 +12,9 @@ import AdminCancel from "@/components/AdminCancel";
 import { FUNNEL_LABEL, FUNNEL_STEPS, funnelDays } from "@/lib/funnel";
 import AdminCsvButton from "@/components/AdminCsvButton";
 import AdminCoupons from "@/components/AdminCoupons";
+import AdminRewrite from "@/components/AdminRewrite";
+import { renderSignature } from "@/lib/orders";
+import { usageDays } from "@/lib/ai-usage";
 import { describeCoupon, listCoupons } from "@/lib/coupon";
 import { PRODUCTS, sellableProducts } from "@/lib/product";
 import { deliverySettings, lastSignatureFail, lastSmsFail, orderDeliveries, recentClientErrors } from "@/lib/delivery-status";
@@ -58,6 +61,9 @@ export default async function AdminPage() {
   const sum = Object.fromEntries(FUNNEL_STEPS.map((st) => [st, funnel.reduce((a, d) => a + d.counts[st], 0)])) as Record<(typeof FUNNEL_STEPS)[number], number>;
   const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 1000) / 10}%` : "-");
   const clientErrors = await recentClientErrors().catch(() => []);
+  const aiDays = await usageDays(7).catch(() => []);
+  const aiSum = aiDays.reduce((a, d) => a + d.total, 0);
+  const AI_KIND: Record<string, string> = { report: "감정서", rewrite: "다시 쓰기", consult: "AI 상담", free: "무료·앱 풀이", other: "기타" };
   const coupons = (await listCoupons().catch(() => [])).map((c) => ({
     code: c.code,
     label: describeCoupon(c),
@@ -93,6 +99,39 @@ export default async function AdminPage() {
                   {FUNNEL_STEPS.map((st) => (
                     <td key={st}>{d.counts[st]}</td>
                   ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section className="card admin-orders">
+        <h2>AI 비용 (최근 7일, 추정 {aiSum.toLocaleString("ko-KR")}원)</h2>
+        <p className="muted">
+          AI가 쓴 글자 양(토큰)으로 계산한 추정치입니다. 실제 청구액은 Anthropic 콘솔에서 확인하세요. 단가는 AI_PRICE_USD(백만 토큰당 입력,출력 달러, 기본 4,20), 환율은
+          AI_KRW_PER_USD(기본 1400)로 바꿀 수 있습니다.
+        </p>
+        <div className="admin-table-wrap">
+          <table className="table admin-table">
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th>합계</th>
+                <th>호출</th>
+                <th>용도별</th>
+              </tr>
+            </thead>
+            <tbody>
+              {aiDays.map((d) => (
+                <tr key={d.day}>
+                  <td>{d.day}</td>
+                  <td>{d.total.toLocaleString("ko-KR")}원</td>
+                  <td>{d.calls}</td>
+                  <td>
+                    {Object.entries(d.byKind)
+                      .map(([k, v]) => `${AI_KIND[k] ?? k} ${v.toLocaleString("ko-KR")}원`)
+                      .join(" · ") || "-"}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -151,7 +190,7 @@ export default async function AdminPage() {
           <table className="table admin-table">
             <thead>
               <tr>
-                <th>결제일시</th><th>주문번호</th><th>성함</th><th>이메일</th><th>결제 확인</th><th>공개·발송 시각</th><th>발송 예약</th><th>파일 발송</th><th>마지막 시도</th><th></th>
+                <th>결제일시</th><th>주문번호</th><th>성함</th><th>이메일</th><th>결제 확인</th><th>공개·발송 시각</th><th>발송 예약</th><th>파일 발송</th><th>마지막 시도</th><th>AI 비용(추정)</th><th>점검</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -177,6 +216,17 @@ export default async function AdminPage() {
                   <td>{d.schedule ? d.schedule.note : d.deliverAt ? `예약 ${kstTime(d.deliverAt)}` : "기록 없음"}</td>
                   <td>{d.mailed ? `보냄 ${kstTime(d.mailed)}` : "안 보냄"}</td>
                   <td>{d.log ? `${kstTime(d.log.at)} · 파일 ${d.log.files} · 메일 ${d.log.mail} · 휴대폰 ${d.log.phone}` : "시도 기록 없음"}</td>
+                  <td>{d.ai ? `${d.ai.krw.toLocaleString("ko-KR")}원 (${d.ai.calls}회)` : "-"}</td>
+                  <td>
+                    {!d.cancelled && d.kind !== "gift" && d.token && (
+                      <>
+                        <a href={`/r/${d.token}?render=${renderSignature(d.token)}`} target="_blank" rel="noopener noreferrer">
+                          {d.released ? "감정서 보기" : "공개 전 미리 보기"}
+                        </a>
+                        {!d.released && <AdminRewrite orderId={d.orderId} name={d.name} />}
+                      </>
+                    )}
+                  </td>
                   <td>
                     {!d.cancelled && d.kind !== "gift" && <AdminResend orderId={d.orderId} name={d.name} held={!d.released} />}
                     {!d.cancelled && d.kind !== "giftReport" && !(d.kind === "gift" && d.redeemed) && (
