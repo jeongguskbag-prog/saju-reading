@@ -9,6 +9,7 @@ import { creditQuestionOrder } from "@/lib/consult";
 import { confirmOrder, OrderError } from "@/lib/orders";
 import { originFrom } from "@/lib/site";
 import { StoreError } from "@/lib/store";
+import { trackStep } from "@/lib/funnel";
 
 export const dynamic = "force-dynamic";
 // 결제 승인 뒤 감정서 전체 작성(최대 몇 분)을 이 요청 뒤에 이어서 돌린다.
@@ -26,6 +27,7 @@ export default async function PaySuccess({ searchParams }: { searchParams: Param
   if (paymentKey && orderId && amount && /^\d+$/.test(amount)) {
     try {
       const { order, justPaid } = await confirmOrder({ paymentKey, orderId, amount: Number(amount) });
+      if (justPaid && !order.questionPack) await trackStep("paid");
       // AI 상담 질문권: 감정서를 쓰지 않고 회원에게 질문권만 넣는다(새로고침해도 한 번만).
       if (order.questionPack) {
         await creditQuestionOrder(order);

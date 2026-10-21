@@ -13,6 +13,7 @@ import { isExtraKind, type ExtraKind } from "@/lib/extras/kinds";
 import ReportView, { type PartStates } from "./ReportView";
 import YearField from "./YearField";
 import ResultActions from "./ResultActions";
+import { trackClient } from "@/lib/track-client";
 import ShareTypeCard from "./ShareTypeCard";
 import MemberSaveBar from "./MemberSaveBar";
 import PurchaseBox, { type CheckoutInfo } from "./PurchaseBox";
@@ -203,6 +204,7 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
       const computed = await serverChart(input, t);
       lastInput.current = input;
       setChart(computed);
+      if (checkout && !window.AndroidBridge) trackClient("chart");
       requestAnimationFrame(() => document.getElementById("result")?.scrollIntoView({ behavior: "smooth" }));
       if (productChoice) setShownProduct(productId);
       if (isNaming) {

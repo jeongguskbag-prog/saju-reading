@@ -3,6 +3,7 @@
 import { DEFAULT_RELEASE_MINUTES, waitLabel } from "@/lib/release";
 import { useEffect, useRef, useState } from "react";
 import { isMobile as isMobilePhone } from "@/lib/phone";
+import { trackClient } from "@/lib/track-client";
 import type { BirthInput } from "@/lib/saju/calc";
 import { SupportBox } from "./SupportLinks";
 import SamplePreview from "./SamplePreview";
@@ -90,6 +91,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [naming, setNaming] = useState<NamingForm>(emptyNamingForm);
   // 첫 화면 배너 등에서 ?p=상품으로 들어오면 그 상품을 골라 둔다.
   useEffect(() => {
+    if (!window.AndroidBridge) trackClient("choose");
     const want = new URLSearchParams(location.search).get("p");
     if (want && sellableProducts().some((p) => p.id === want)) setProductId(want as ProductId);
   }, []);

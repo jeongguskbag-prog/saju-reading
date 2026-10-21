@@ -5,6 +5,7 @@ import { memberFromRequest } from "@/lib/member";
 import { checkoutConfig, createOrder, OrderError } from "@/lib/orders";
 import { InputError } from "@/lib/saju/calc";
 import { StoreError } from "@/lib/store";
+import { trackStep } from "@/lib/funnel";
 
 /** 주문 생성: 입력(생년월일시)과 이메일을 받아 토스 결제창에 넘길 값을 돌려준다. */
 export async function POST(request: Request) {
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
     // 로그인한 회원이 사면 결제 후 그 회원의 감정서 보관함에 넣는다.
     const member = await memberFromRequest(request).catch(() => null);
     const order = await createOrder(parsed.value, email, body?.productId, new Date(), naming, phone, targets, body?.extra, member?.id);
+    await trackStep("checkout");
     return NextResponse.json({
       orderId: order.id,
       orderName: order.orderName,

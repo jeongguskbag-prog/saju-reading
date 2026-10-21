@@ -9,6 +9,7 @@ import AdminReviewToggle from "@/components/AdminReviewToggle";
 import { originFrom } from "@/lib/site";
 import AdminResend from "@/components/AdminResend";
 import AdminCancel from "@/components/AdminCancel";
+import { FUNNEL_LABEL, FUNNEL_STEPS, funnelDays } from "@/lib/funnel";
 import AdminCsvButton from "@/components/AdminCsvButton";
 import { deliverySettings, lastSignatureFail, lastSmsFail, orderDeliveries, recentClientErrors } from "@/lib/delivery-status";
 
@@ -50,9 +51,41 @@ export default async function AdminPage() {
   const deliveries = await orderDeliveries(orders.slice(0, 20)).catch(() => []);
   const sigFail = await lastSignatureFail().catch(() => null);
   const smsFail = await lastSmsFail().catch(() => null);
+  const funnel = await funnelDays(14).catch(() => []);
+  const sum = Object.fromEntries(FUNNEL_STEPS.map((st) => [st, funnel.reduce((a, d) => a + d.counts[st], 0)])) as Record<(typeof FUNNEL_STEPS)[number], number>;
+  const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 1000) / 10}%` : "-");
   const clientErrors = await recentClientErrors().catch(() => []);
   return (
     <SiteShell admin="in">
+      <section className="card admin-orders">
+        <h2>방문·결제 흐름 (최근 14일)</h2>
+        <p className="muted">
+          같은 사람은 하루 한 번만 셉니다(사장님 앱 제외). 괄호는 바로 앞 단계 대비 남은 비율입니다. 14일 합계: 방문 {sum.visit} → 무료 사주 {sum.chart} ({pct(sum.chart, sum.visit)}) →
+          감정서 고르기 {sum.choose} ({pct(sum.choose, sum.chart)}) → 결제창 {sum.checkout} ({pct(sum.checkout, sum.choose)}) → 결제 완료 {sum.paid} ({pct(sum.paid, sum.checkout)})
+        </p>
+        <div className="admin-table-wrap">
+          <table className="table admin-table">
+            <thead>
+              <tr>
+                <th>날짜</th>
+                {FUNNEL_STEPS.map((st) => (
+                  <th key={st}>{FUNNEL_LABEL[st]}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {funnel.map((d) => (
+                <tr key={d.day}>
+                  <td>{d.day.slice(5).replace("-", "/")}</td>
+                  {FUNNEL_STEPS.map((st) => (
+                    <td key={st}>{d.counts[st]}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
       {clientErrors.length > 0 && (
         <section className="card admin-orders">
           <h2>화면 오류 ({clientErrors.length}건)</h2>

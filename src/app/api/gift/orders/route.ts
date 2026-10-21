@@ -3,6 +3,7 @@ import { createGiftOrder } from "@/lib/gift";
 import { memberFromRequest } from "@/lib/member";
 import { checkoutConfig, OrderError } from "@/lib/orders";
 import { StoreError } from "@/lib/store";
+import { trackStep } from "@/lib/funnel";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
   try {
     const member = await memberFromRequest(request).catch(() => null);
     const order = await createGiftOrder({ productId: body?.productId, from: body?.from, to: body?.to, message: body?.message, email, phone, targets, memberId: member?.id });
+    await trackStep("checkout");
     return NextResponse.json({
       orderId: order.id,
       orderName: order.orderName,
