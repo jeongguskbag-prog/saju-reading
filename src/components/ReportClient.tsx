@@ -16,6 +16,7 @@ import NextProducts from "./NextProducts";
 import type { ProductId } from "@/lib/product";
 import GradeCard from "./GradeCard";
 import { DaeunCard, ElementCard, PillarsCard, YearFlowCard } from "./ChartView";
+import KakaoChannelAdd from "./KakaoChannelAdd";
 
 interface Props {
   token: string;
@@ -348,6 +349,7 @@ export default function ReportClient({ token, partKeys, productName, productId, 
           {withDaeun && <DaeunCard chart={chart} />}
           {isNewyear && <YearFlowCard chart={chart} />}
         </section>
+        <KakaoChannelAdd text="채널을 추가해 두시면 감정서 문의와 신년 운세·할인 소식을 카카오톡으로 받으실 수 있습니다." />
       </div>
     );
   }
@@ -376,6 +378,7 @@ export default function ReportClient({ token, partKeys, productName, productId, 
       </section>
       {!busy && doneCount === partKeys.length && <ConsultFollow kept={kept} />}
       {!busy && doneCount === partKeys.length && <NextProducts productId={productId} />}
+      {!busy && doneCount === partKeys.length && <KakaoChannelAdd />}
       {!busy && doneCount === partKeys.length && <ReviewForm token={token} initial={initialReview} />}
     </div>
   );

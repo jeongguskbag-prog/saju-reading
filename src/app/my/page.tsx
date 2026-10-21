@@ -8,6 +8,9 @@ import { BRAND } from "@/lib/product";
 import { calculateSaju } from "@/lib/saju/calc";
 import { dailyFortune } from "@/lib/saju/daily";
 import { questionsLeft } from "@/lib/consult";
+import { familyRows, revisitNotices } from "@/lib/revisit";
+import { newyearSeason } from "@/lib/season";
+import KakaoChannelAdd from "@/components/KakaoChannelAdd";
 
 export const metadata: Metadata = { title: `마이 — ${BRAND.name}`, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -94,6 +97,8 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   const self = member.profiles.find((p) => p.self);
   const fortune = self ? dailyFortune(calculateSaju(self.input)) : null;
   const orders = await memberOrders(member).catch(() => []);
+  const notices = revisitNotices(orders, newyearSeason());
+  const family = member.profiles.length >= 2 ? familyRows(member.profiles) : [];
 
   return (
     <SiteShell nav="my">
@@ -105,6 +110,16 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
           AI 상담 질문 {questionsLeft(member)}회 남음 · <a href="/consult">AI 상담하기</a>
         </p>
       </section>
+
+      {notices.map((n) => (
+        <section key={n.key} className="card my-notice">
+          <h2>{n.title}</h2>
+          <p>{n.text}</p>
+          <a className="btn-primary link-btn" href={n.href}>
+            {n.cta}
+          </a>
+        </section>
+      ))}
 
       <section className="card my-fortune" aria-labelledby="fortune-h">
         <h2 id="fortune-h">오늘의 운세</h2>
@@ -154,6 +169,49 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
         </p>
       </section>
 
+      {family.length >= 2 && (
+        <section className="card" aria-labelledby="family-h">
+          <h2 id="family-h">가족 사주 한눈에</h2>
+          <p className="muted">저장한 사주를 한 표로 모았습니다. &apos;나와의 관계&apos;는 내 사주와 태어난 날 기둥(일주)의 합·충을 본 것입니다.</p>
+          <div className="admin-table-wrap">
+            <table className="table family-table">
+              <thead>
+                <tr>
+                  <th>이름</th>
+                  <th>띠 · 일간</th>
+                  <th>용신</th>
+                  <th>오늘</th>
+                  <th>나와의 관계</th>
+                </tr>
+              </thead>
+              <tbody>
+                {family.map((r) => (
+                  <tr key={r.id}>
+                    <td>
+                      <b>{r.name}</b>
+                      {r.self && <small>내 사주</small>}
+                    </td>
+                    <td>
+                      {r.animal}
+                      <small>{r.dayMaster}</small>
+                    </td>
+                    <td>{r.yongsin}</td>
+                    <td>
+                      <span className={`mark mark-${r.todayMark}`}>{r.todayMark}</span>
+                      <small>{r.todayTitle}</small>
+                    </td>
+                    <td>{r.withMe ? <span className={`rel-${r.withMe.tone}`}>{r.withMe.label}</span> : "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="muted small">
+            서로의 성향과 잘 맞는 점·조심할 점을 자세히 보려면 <a href="/?p=gunghap#saju-form">궁합 감정서</a>를 이용해 보세요. 이 표는 참고용입니다.
+          </p>
+        </section>
+      )}
+
       <section className="card" aria-labelledby="orders-h">
         <h2 id="orders-h">감정서 보관함</h2>
         {orders.length ? (
@@ -179,6 +237,8 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
         )}
         <ClaimOrderForm />
       </section>
+
+      <KakaoChannelAdd />
 
       <section className="card">
         <AccountButtons />

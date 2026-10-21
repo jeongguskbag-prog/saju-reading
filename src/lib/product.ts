@@ -146,5 +146,11 @@ export function kakaoChatUrl(): string | null {
   return u.endsWith("/chat") ? u : `${u}/chat`;
 }
 
+/** 카카오톡 채널 친구 추가 주소(채널 주소 뒤에 /friend) */
+export function kakaoFriendUrl(): string | null {
+  const chat = kakaoChatUrl();
+  return chat ? chat.replace(/\/chat$/, "/friend") : null;
+}
+
 /** 약관·방침 시행일 */
 export const POLICY_EFFECTIVE_DATE = "2026년 10월 20일";

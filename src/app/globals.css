@@ -1287,3 +1287,17 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .coupon-field .btn-link { padding: 0; }
 .admin-coupon-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: end; }
 .admin-coupon-form label { display: grid; gap: 4px; font-size: 13px; }
+
+/* 카카오톡 채널 추가 */
+.kakao-channel { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.kakao-channel p { margin: 0; display: grid; gap: 2px; font-size: 14px; }
+.kakao-channel-btn { flex: 0 0 auto; background: #fee500; color: #191919; font-weight: 700; border-radius: 10px; padding: 10px 16px; text-decoration: none; font-size: 14px; }
+
+/* 마이: 가족 사주 한눈에, 다시 보기 안내 */
+.my-notice { border-left: 4px solid var(--accent, #b0262c); }
+.my-notice h2 { font-size: 17px; margin: 0 0 6px; }
+.family-table td small { display: block; color: var(--muted, #7a7266); }
+.rel-good { color: #2f6b2f; }
+.rel-care { color: #a2392d; }
+.rel-mixed { color: #8a6a1f; }
+.family-table td:first-child b, .family-table td:last-child span { white-space: nowrap; }
