@@ -5,16 +5,23 @@ import FontLinks from "@/components/FontLinks";
 import { headers } from "next/headers";
 import { SITES, type SiteLocale } from "@/lib/site-copy";
 
-// 공유 미리보기 이미지(opengraph-image.png)의 절대 주소를 만들 기준 주소.
-const siteUrl =
-  process.env.SITE_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000");
+import { CANONICAL_ORIGIN } from "@/lib/canonical";
+
+// 공유 미리보기 이미지와 대표 주소(canonical)의 기준 주소. 검색엔진에 한 주소(www)만 알리도록 고정한다.
+const siteUrl = CANONICAL_ORIGIN;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: `${BRAND.name} — ${BRAND.tagline}`,
-  description: "절기를 분 단위로 맞춘 만세력으로 사주를 세우고, 다섯 유형 가운데 내 사주의 자리와 100년의 대운 흐름을 알려 드립니다.",
+  title: `${BRAND.name} — 무료 사주 풀이·100년 종합 사주 감정서`,
+  description:
+    "생년월일시만 넣으면 절기를 분 단위로 맞춘 만세력으로 사주팔자를 세워 내 사주 유형과 오행·대운을 무료로 보여 드립니다. 궁합, 2027 신년 운세, 택일, 자미두수, 작명까지 명리 계산값을 근거로 쓴 1:1 감정서.",
+  keywords: ["사주", "무료 사주", "사주 풀이", "만세력", "궁합", "신년 운세", "2027 운세", "택일", "자미두수", "작명", "오늘의 운세", "대운"],
   openGraph: { siteName: BRAND.name, locale: "ko_KR", type: "website" },
+  // 네이버 서치어드바이저·구글 서치콘솔 소유 확인(Vercel 설정값으로 넣는다)
+  verification: {
+    ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
+    ...(process.env.NAVER_SITE_VERIFICATION ? { other: { "naver-site-verification": process.env.NAVER_SITE_VERIFICATION } } : {}),
+  },
 };
 
 export const viewport: Viewport = {

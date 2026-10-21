@@ -22,6 +22,13 @@ export default function SiteFooter({ site = "ko" }: { site?: SiteLocale }) {
           </a>
           <a href="/refund">{f.refund}</a>
           <a href="/order">{f.lookup}</a>
+          {site === "ko" && (
+            <>
+              <a href="/today">오늘의 일진</a>
+              <a href="/guide">사주 기초 용어</a>
+              <a href="/gift">사주 선물하기</a>
+            </>
+          )}
         </nav>
         <dl className="site-footer-biz">
           <div><dt>{f.biz.companyName}</dt><dd>{pending(b.companyName)}</dd></div>
