@@ -1,5 +1,6 @@
 // 주문 → 결제 승인 → 리포트 토큰 발급(서버 전용).
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { claimCouponUse, CouponError, previewCoupon, releaseCouponUse, type CouponApplied } from "./coupon";
 import { computeReleaseAt, isReleased, orderReleaseAt, releaseMinutes } from "./release";
 import { calculateSaju, InputError, type BirthInput, type SajuChart } from "./saju/calc";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, SALES_OPEN, sellableProducts, type Product, type ProductId } from "./product";
@@ -66,6 +67,8 @@ export interface Order {
   gift?: { productId: ProductId; from: string; to: string; message?: string; code: string; redeemedOrderId?: string; redeemedAt?: string };
   /** 선물로 받은 감정서면 선물 주문번호 */
   giftOrderId?: string;
+  /** 쓴 할인 쿠폰(amount는 할인 뒤 금액) */
+  coupon?: CouponApplied;
 }
 
 export class OrderError extends Error {
@@ -145,6 +148,7 @@ export async function createOrder(
   targets: NotifyTarget[] = [...(email ? (["email"] as const) : []), ...(phone ? (["sms"] as const) : [])],
   extraRequest?: unknown,
   memberId?: string,
+  couponCode?: unknown,
 ): Promise<Order> {
   const product = sellableProducts().find((p) => p.id === productId);
   if (!product) throw new OrderError("지금은 신청할 수 없는 상품입니다.");
@@ -188,6 +192,16 @@ export async function createOrder(
     }
     extra = { kind: product.id, request: parsedExtra.value };
   }
+  let coupon: CouponApplied | undefined;
+  if (couponCode) {
+    try {
+      const { label: _label, ...applied } = await previewCoupon(couponCode, product.id, product.price, now);
+      coupon = applied;
+    } catch (error) {
+      if (error instanceof CouponError) throw new OrderError(error.message);
+      throw error;
+    }
+  }
   const ymd = now.toISOString().slice(0, 10).replace(/-/g, "");
   const order: Order = {
     id: `CGR-${ymd}-${randomBytes(8).toString("hex")}`,
@@ -195,8 +209,9 @@ export async function createOrder(
     input,
     email,
     productId: product.id,
-    amount: product.price,
+    amount: product.price - (coupon?.discount ?? 0),
     orderName: product.name,
+    ...(coupon ? { coupon } : {}),
     ...(product.parts.includes("naming") && naming ? { naming } : {}),
     ...(extra ? { extra } : {}),
     notify,
@@ -264,7 +279,22 @@ export async function confirmOrder(
   // 결제창을 거치며 금액이 바뀌지 않았는지 서버에 저장한 금액과 비교한다.
   if (params.amount !== order.amount) throw new OrderError("결제 금액이 주문 금액과 다릅니다.");
 
-  const payment = await tossConfirm(params.paymentKey, order.id, order.amount);
+  // 쿠폰 사용 횟수는 결제 승인 직전에 센다(한도를 넘으면 결제하지 않는다). 승인이 실패하면 되돌린다.
+  if (order.coupon) {
+    try {
+      await claimCouponUse(order.coupon.code);
+    } catch (error) {
+      if (error instanceof CouponError) throw new OrderError(error.message, 409);
+      throw error;
+    }
+  }
+  let payment: TossPayment;
+  try {
+    payment = await tossConfirm(params.paymentKey, order.id, order.amount);
+  } catch (error) {
+    if (order.coupon) await releaseCouponUse(order.coupon.code).catch(() => undefined);
+    throw error;
+  }
   if (payment.status !== "DONE" || payment.totalAmount !== order.amount || payment.orderId !== order.id) {
     throw new OrderError("결제 승인 결과가 주문과 맞지 않습니다. 고객센터로 문의해 주세요.", 502);
   }
@@ -343,6 +373,7 @@ export async function cancelOrder(orderId: string, reason: string, now = new Dat
   // 이미 취소된 결제(ALREADY_CANCELED_PAYMENT)는 우리 기록만 맞춘다.
   if (!res.ok && data.code !== "ALREADY_CANCELED_PAYMENT") throw new OrderError(data.message || "결제를 취소하지 못했습니다.", res.status >= 500 ? 502 : 400);
   const cancelled: Order = { ...order, status: "cancelled", cancelledAt: now.toISOString(), cancelReason: reason.slice(0, 200) };
+  if (order.coupon) await releaseCouponUse(order.coupon.code).catch(() => undefined);
   await requireStore().set(orderKey(order.id), cancelled);
   return cancelled;
 }

@@ -1278,3 +1278,12 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .guide-term h2 { font-size: 18px; margin: 0 0 8px; }
 .guide-term p { line-height: 1.75; }
 @media (min-width: 720px) { .today-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* 할인 쿠폰 */
+.coupon-row { display: flex; gap: 8px; }
+.coupon-row input { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
+.coupon-row .btn-secondary { flex: 0 0 auto; margin-top: 0; width: auto; padding-left: 18px; padding-right: 18px; }
+.coupon-ok { color: #2f6b2f; font-size: 14px; margin: 6px 0 0; }
+.coupon-field .btn-link { padding: 0; }
+.admin-coupon-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: end; }
+.admin-coupon-form label { display: grid; gap: 4px; font-size: 13px; }

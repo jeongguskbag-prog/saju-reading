@@ -73,6 +73,18 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 할인 쿠폰: 주소의 ?coupon=코드 로 미리 채울 수 있다.
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; discount: number; amount: number; label: string; productId: ProductId } | null>(null);
+  const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get("coupon");
+    if (q) {
+      setCouponCode(q.slice(0, 24));
+      setCouponOpen(true);
+    }
+  }, []);
   const errorRef = useRef<HTMLParagraphElement>(null);
   // 손님이 칸을 고치면 이전 안내는 지운다(고친 뒤에도 옛 안내가 남아 헷갈리지 않게).
   useEffect(() => {
@@ -151,6 +163,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
     if (!picked.length) return setError("주문 내역과 감정서 파일을 받을 곳을 하나 이상 골라 주세요.");
     if (picked.includes("email") && !email.trim()) return setError("이메일로 받으시려면 이메일 주소를 적어 주세요.");
     if (picked.some((t) => t !== "email") && !phone.trim()) return setError("카카오톡·문자로 받으시려면 휴대폰 번호를 적어 주세요.");
+    if (couponOpen && couponCode.trim() && !activeCoupon) return setError("쿠폰 코드 옆의 '적용'을 눌러 할인을 확인해 주세요. 쓰지 않으시려면 코드를 지워 주세요.");
     if (!agree) return setError("주문 내용과 청약철회 안내에 동의해 주세요.");
     setBusy(true);
     try {
@@ -166,6 +179,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
           productId,
           ...(isNaming ? { naming: namingReq } : {}),
           ...(isExtra ? { extra: extraReq ?? {} } : {}),
+          ...(activeCoupon ? { coupon: activeCoupon.code } : {}),
         }),
       });
       const order = await res.json().catch(() => ({}));
@@ -189,6 +203,26 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       setError(code === "USER_CANCEL" || code === "PAY_PROCESS_CANCELED" ? "결제를 취소했습니다." : (err as Error).message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  const [couponBusy, setCouponBusy] = useState(false);
+  // 상품을 바꾸면 그 상품에 다시 적용해야 한다.
+  const activeCoupon = coupon && coupon.productId === productId ? coupon : null;
+  async function applyCoupon() {
+    setCouponBusy(true);
+    setCouponMsg(null);
+    try {
+      const res = await fetch("/api/coupon", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: couponCode, productId }) });
+      const data = ((await res.json().catch(() => null)) ?? {}) as { error?: string; code?: string; discount?: number; amount?: number; label?: string };
+      if (!res.ok || !data.code) {
+        setCoupon(null);
+        setCouponMsg(data.error ?? "쿠폰을 확인하지 못했습니다.");
+      } else setCoupon({ code: data.code, discount: data.discount!, amount: data.amount!, label: data.label!, productId });
+    } catch {
+      setCouponMsg("쿠폰을 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+    } finally {
+      setCouponBusy(false);
     }
   }
 
@@ -301,6 +335,49 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
               </div>
             </div>
           )}
+          <div className="field coupon-field">
+            {couponOpen ? (
+              <>
+                <label className="label" htmlFor="coupon-code">
+                  할인 쿠폰 코드
+                </label>
+                <div className="coupon-row">
+                  <input
+                    id="coupon-code"
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value);
+                      setCoupon(null);
+                      setCouponMsg(null);
+                    }}
+                    placeholder="예: WELCOME10"
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    maxLength={24}
+                  />
+                  <button type="button" className="btn-secondary" onClick={applyCoupon} disabled={!couponCode.trim() || couponBusy}>
+                    {couponBusy ? "확인 중…" : "적용"}
+                  </button>
+                </div>
+                {activeCoupon ? (
+                  <p className="coupon-ok" role="status">
+                    ✓ {activeCoupon.label} 적용: {won(product.price)} → <b>{won(activeCoupon.amount)}</b> ({won(activeCoupon.discount)} 할인)
+                  </p>
+                ) : (
+                  couponMsg && (
+                    <p className="error" role="alert">
+                      {couponMsg}
+                    </p>
+                  )
+                )}
+              </>
+            ) : (
+              <button type="button" className="btn-link" onClick={() => setCouponOpen(true)}>
+                할인 쿠폰 코드가 있으신가요?
+              </button>
+            )}
+          </div>
           <label className="check purchase-agree">
             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
             <span>
@@ -316,7 +393,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             </p>
           )}
           <button className="btn-primary" type="submit" disabled={busy}>
-            {busy ? "결제창을 여는 중…" : `${won(product.price)} 결제하고 감정서 신청`}
+            {busy ? "결제창을 여는 중…" : `${won(activeCoupon ? activeCoupon.amount : product.price)} 결제하고 감정서 신청`}
           </button>
           <p className="purchase-time">
             ⏳ 결제 직후 <b>명식 미리보기</b>를 보여 드리고, 감정서 본문은 작성·검수를 거쳐 <b>약 {wait} 뒤</b> 고르신 곳으로 PDF 파일과

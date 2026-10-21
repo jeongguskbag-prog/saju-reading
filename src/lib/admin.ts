@@ -95,7 +95,7 @@ export function orderRow(o: Order, origin: string): OrderRow {
     주문번호: o.id,
     상태: o.status === "paid" ? "결제 완료" : o.status === "cancelled" ? `결제 취소 ${kst(o.cancelledAt)}` : "결제 전",
     상품: o.orderName,
-    "결제 금액": won(o.amount),
+    "결제 금액": o.coupon ? `${won(o.amount)} (쿠폰 ${o.coupon.code} -${won(o.coupon.discount)})` : won(o.amount),
     "결제 수단": o.method ?? "",
     "카드·간편결제": [pay?.card?.company, pay?.card?.number, pay?.easyPay].filter(Boolean).join(" "),
     할부: pay?.card ? (pay.card.installmentPlanMonths ? `${pay.card.installmentPlanMonths}개월` : "일시불") : "",

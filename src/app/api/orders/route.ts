@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const targets = raw.filter((c): c is "email" | "kakao" | "sms" => c === "email" || c === "kakao" || c === "sms");
     // 로그인한 회원이 사면 결제 후 그 회원의 감정서 보관함에 넣는다.
     const member = await memberFromRequest(request).catch(() => null);
-    const order = await createOrder(parsed.value, email, body?.productId, new Date(), naming, phone, targets, body?.extra, member?.id);
+    const order = await createOrder(parsed.value, email, body?.productId, new Date(), naming, phone, targets, body?.extra, member?.id, body?.coupon || undefined);
     await trackStep("checkout");
     return NextResponse.json({
       orderId: order.id,

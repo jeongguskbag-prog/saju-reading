@@ -11,6 +11,9 @@ import AdminResend from "@/components/AdminResend";
 import AdminCancel from "@/components/AdminCancel";
 import { FUNNEL_LABEL, FUNNEL_STEPS, funnelDays } from "@/lib/funnel";
 import AdminCsvButton from "@/components/AdminCsvButton";
+import AdminCoupons from "@/components/AdminCoupons";
+import { describeCoupon, listCoupons } from "@/lib/coupon";
+import { PRODUCTS, sellableProducts } from "@/lib/product";
 import { deliverySettings, lastSignatureFail, lastSmsFail, orderDeliveries, recentClientErrors } from "@/lib/delivery-status";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +58,16 @@ export default async function AdminPage() {
   const sum = Object.fromEntries(FUNNEL_STEPS.map((st) => [st, funnel.reduce((a, d) => a + d.counts[st], 0)])) as Record<(typeof FUNNEL_STEPS)[number], number>;
   const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 1000) / 10}%` : "-");
   const clientErrors = await recentClientErrors().catch(() => []);
+  const coupons = (await listCoupons().catch(() => [])).map((c) => ({
+    code: c.code,
+    label: describeCoupon(c),
+    products: c.productIds?.length ? c.productIds.map((id) => PRODUCTS[id]?.name ?? id).join(", ") : "모든 감정서",
+    expires: c.expiresAt ? kstTime(c.expiresAt).split(" ")[0] + "까지" : "없음",
+    uses: c.uses,
+    maxUses: c.maxUses,
+    note: c.note,
+    disabled: c.disabled,
+  }));
   return (
     <SiteShell admin="in">
       <section className="card admin-orders">
@@ -86,6 +99,7 @@ export default async function AdminPage() {
           </table>
         </div>
       </section>
+      <AdminCoupons rows={coupons} products={sellableProducts().map((p) => ({ id: p.id, name: p.name }))} />
       {clientErrors.length > 0 && (
         <section className="card admin-orders">
           <h2>화면 오류 ({clientErrors.length}건)</h2>
