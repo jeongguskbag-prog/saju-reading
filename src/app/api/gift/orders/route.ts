@@ -4,12 +4,13 @@ import { memberFromRequest } from "@/lib/member";
 import { checkoutConfig, OrderError } from "@/lib/orders";
 import { StoreError } from "@/lib/store";
 import { trackStep } from "@/lib/funnel";
+import { isAdminViewer } from "@/lib/checkout-access";
 
 export const dynamic = "force-dynamic";
 
 /** 선물 주문: { productId, from, to, message, email, phone, targets, agree } → 토스 결제창에 넘길 값 */
 export async function POST(request: Request) {
-  const config = checkoutConfig();
+  const config = checkoutConfig({ admin: await isAdminViewer() });
   if (!config.enabled) return NextResponse.json({ error: "결제가 아직 열리지 않았습니다." }, { status: 503 });
   const body = await request.json().catch(() => null);
   if (body?.agree !== true) return NextResponse.json({ error: "주문 내용과 환불 안내에 동의해 주세요." }, { status: 400 });

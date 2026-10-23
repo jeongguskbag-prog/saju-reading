@@ -6,6 +6,7 @@ import { getGift } from "@/lib/gift";
 import { checkoutConfig, getOrder } from "@/lib/orders";
 import { BRAND, PRODUCTS } from "@/lib/product";
 import { originFrom } from "@/lib/site";
+import { isAdminViewer } from "@/lib/checkout-access";
 
 export const dynamic = "force-dynamic";
 // 선물 링크는 검색에 노출하지 않는다.
@@ -82,7 +83,7 @@ export default async function GiftCodePage({ params, searchParams }: { params: P
   }
 
   // 받는 분: 생년월일시 넣고 받기
-  const { sms, kakao } = checkoutConfig();
+  const { sms, kakao } = checkoutConfig({ admin: await isAdminViewer() });
   const offered = ["email", ...(kakao ? ["kakao"] : []), ...(sms ? ["sms"] : [])] as ("email" | "kakao" | "sms")[];
   return (
     <SiteShell>

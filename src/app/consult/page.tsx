@@ -9,6 +9,7 @@ import { isMemberEnabled, MEMBER_COOKIE, memberFromCookie, type SavedProfile } f
 import { checkoutConfig } from "@/lib/orders";
 import { BRAND } from "@/lib/product";
 import { isAiEnabled } from "@/lib/reading";
+import { isAdminViewer } from "@/lib/checkout-access";
 
 export const metadata: Metadata = { title: `AI 사주 상담 — ${BRAND.name}`, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -71,7 +72,7 @@ export default async function ConsultPage({ searchParams }: { searchParams: Prom
     );
   }
 
-  const { enabled, testMode } = checkoutConfig();
+  const { enabled, testMode } = checkoutConfig({ admin: await isAdminViewer() });
   const profiles: ConsultProfile[] = member.profiles.map((p) => ({ id: p.id, name: p.input.name ?? "이름 없음", line: line(p), self: p.self }));
   return (
     <SiteShell nav="consult">

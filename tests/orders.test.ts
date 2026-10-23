@@ -305,16 +305,19 @@ describe("휴대폰 결제 설정", () => {
 });
 
 describe("실제 사이트의 테스트 결제", () => {
-  it("Production에서도 test_ 키로 결제를 열고, BLOCK_TEST_PAYMENTS=1이면 닫는다", () => {
+  it("Production의 test_ 키 결제는 관리자에게만 열고, 손님에게는 닫는다", () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant-x");
     vi.stubEnv("TOSS_SECRET_KEY", "test_sk_x");
     vi.stubEnv("TOSS_CLIENT_KEY", "test_ck_x");
     vi.stubEnv("VERCEL_ENV", "production");
-    vi.stubEnv("BLOCK_TEST_PAYMENTS", "");
-    expect(checkoutConfig().enabled).toBe(true);
-    expect(checkoutConfig().testMode).toBe(true);
-    vi.stubEnv("BLOCK_TEST_PAYMENTS", "1");
+    vi.stubEnv("ALLOW_PUBLIC_TEST_PAYMENTS", "");
     expect(checkoutConfig().enabled).toBe(false);
+    expect(checkoutConfig().clientKey).toBeNull();
+    expect(checkoutConfig({ admin: true }).enabled).toBe(true);
+    expect(checkoutConfig({ admin: true }).testMode).toBe(true);
+    vi.stubEnv("ALLOW_PUBLIC_TEST_PAYMENTS", "1");
+    expect(checkoutConfig().enabled).toBe(true);
+    vi.stubEnv("ALLOW_PUBLIC_TEST_PAYMENTS", "");
     vi.stubEnv("VERCEL_ENV", "preview");
     expect(checkoutConfig().enabled).toBe(true); // 미리보기는 늘 테스트 가능
     vi.stubEnv("VERCEL_ENV", "production");

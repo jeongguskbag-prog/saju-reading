@@ -104,7 +104,7 @@ export function isValidEmail(email: string): boolean {
 }
 
 /** 토스 결제창·승인 키와 저장소, AI 키가 모두 있어야 결제를 연다. */
-export function checkoutConfig(): {
+export function checkoutConfig(opts: { admin?: boolean } = {}): {
   enabled: boolean;
   clientKey: string | null;
   testMode: boolean;
@@ -116,10 +116,11 @@ export function checkoutConfig(): {
   const clientKey = process.env.TOSS_CLIENT_KEY || null;
   const secret = process.env.TOSS_SECRET_KEY;
   const testKey = Boolean(clientKey?.startsWith("test_"));
-  // 테스트 키여도 결제 화면을 연다(화면에 "테스트 결제 모드" 안내가 나온다). 돈이 나가지 않는 결제로 감정서를
-  // 받아 갈 수 있으므로, 실제 사이트에서 테스트 결제를 막으려면 Vercel에 BLOCK_TEST_PAYMENTS=1을 넣는다.
-  // live_ 키로 바꾸면 실제 결제가 된다.
-  const testBlocked = testKey && process.env.VERCEL_ENV === "production" && process.env.BLOCK_TEST_PAYMENTS === "1";
+  // 테스트 키는 돈이 나가지 않는 결제라 누구나 감정서를 받아 갈 수 있다. 그래서 실제 사이트(production)에서는
+  // 관리 화면에 로그인한 브라우저(관리자)에게만 테스트 결제를 열고, 손님에게는 '결제 준비 중'으로 보인다.
+  // 손님에게도 테스트 결제를 열려면 Vercel에 ALLOW_PUBLIC_TEST_PAYMENTS=1. live_ 키로 바꾸면 누구나 실제 결제를 한다.
+  const testBlocked =
+    testKey && process.env.VERCEL_ENV === "production" && process.env.ALLOW_PUBLIC_TEST_PAYMENTS !== "1" && !opts.admin;
   const enabled = SALES_OPEN && !testBlocked && Boolean(clientKey && secret && getStore() && isAiEnabled());
   return {
     enabled,

@@ -2,12 +2,13 @@ import { createQuestionOrder, isPackId } from "@/lib/consult";
 import { memberFromRequest } from "@/lib/member";
 import { checkoutConfig } from "@/lib/orders";
 import { StoreError } from "@/lib/store";
+import { isAdminViewer } from "@/lib/checkout-access";
 
 export const dynamic = "force-dynamic";
 
 /** 질문권 주문: { packId, profileId } → 토스 결제창에 넘길 값 */
 export async function POST(request: Request) {
-  const config = checkoutConfig();
+  const config = checkoutConfig({ admin: await isAdminViewer() });
   if (!config.enabled) return Response.json({ error: "결제가 아직 열리지 않았습니다." }, { status: 503 });
   const m = await memberFromRequest(request).catch(() => null);
   if (!m) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });

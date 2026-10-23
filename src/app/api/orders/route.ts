@@ -6,10 +6,11 @@ import { checkoutConfig, createOrder, OrderError } from "@/lib/orders";
 import { InputError } from "@/lib/saju/calc";
 import { StoreError } from "@/lib/store";
 import { trackStep } from "@/lib/funnel";
+import { isAdminViewer } from "@/lib/checkout-access";
 
 /** 주문 생성: 입력(생년월일시)과 이메일을 받아 토스 결제창에 넘길 값을 돌려준다. */
 export async function POST(request: Request) {
-  const config = checkoutConfig();
+  const config = checkoutConfig({ admin: await isAdminViewer() });
   if (!config.enabled) return NextResponse.json({ error: "결제가 아직 열리지 않았습니다." }, { status: 503 });
   const body = await request.json().catch(() => null);
   const parsed = parseBirthInput(body?.input);
