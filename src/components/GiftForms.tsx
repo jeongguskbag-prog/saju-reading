@@ -157,7 +157,8 @@ export function GiftBuyForm({ products, offered, testMode }: { products: GiftPro
         <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
         <span>
           <a href="/terms" target="_blank" rel="noopener">이용약관</a>·<a href="/refund" target="_blank" rel="noopener">환불 규정</a>·
-          <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>을 확인했습니다. 받는 분이 선물을 받기 전에는 취소를 요청하면 전액 환불됩니다.
+          <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>을 확인했습니다. 받는 분이 선물을 받기 전에는 취소를 요청하면 전액 환불되며,
+          받는 분에게 감정서가 발송된 뒤에는 환불되지 않는다는 데 동의합니다.
         </span>
       </label>
       {error && (

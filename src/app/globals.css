@@ -1301,3 +1301,4 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .rel-care { color: #a2392d; }
 .rel-mixed { color: #8a6a1f; }
 .family-table td:first-child b, .family-table td:last-child span { white-space: nowrap; }
+.refund-key { background: #fbf1ef; border-left: 4px solid var(--accent, #b0262c); padding: 10px 12px; border-radius: 6px; }

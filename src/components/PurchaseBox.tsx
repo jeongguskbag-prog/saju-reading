@@ -383,8 +383,9 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             <span>
               위 생년월일시로 감정서를 만드는 데 동의하고,{" "}
               <a href="/terms" target="_blank" rel="noopener">이용약관</a>·<a href="/refund" target="_blank" rel="noopener">환불 규정</a>·
-              <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>을 확인했습니다. 감정서 본문이 공개(발송)되기 전에는
-              취소를 요청하면 전액 환불되며, 공개된 뒤에는 디지털 콘텐츠 제공이 끝난 것으로 보아 청약철회가 제한됩니다.
+              <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>을 확인했습니다. 감정서를 보내 드리기 전에는
+              취소를 요청하면 전액 환불되며, <b>이메일·문자·카카오톡으로 감정서를 보내 드린 뒤에는 디지털 콘텐츠 제공이 끝난 것으로 보아 환불되지
+              않는다</b>는 데 동의합니다.
             </span>
           </label>
           {error && (
