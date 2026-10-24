@@ -48,8 +48,8 @@ describe("할인 쿠폰", () => {
     await createCoupon({ code: "ONE", percent: 20, maxUses: 1 }, NOW);
     const a = await createOrder(input, "a@b.co", "full", NOW, undefined, "010-1234-5678", ["email"], undefined, undefined, "one");
     const b = await createOrder(input, "a@b.co", "full", NOW, undefined, "010-1234-5678", ["email"], undefined, undefined, "ONE");
-    expect(a.amount).toBe(49000 - 9800);
-    expect(a.coupon).toEqual({ code: "ONE", discount: 9800, listPrice: 49000 });
+    expect(a.amount).toBe(19900 - 3980);
+    expect(a.coupon).toEqual({ code: "ONE", discount: 3980, listPrice: 19900 });
     vi.stubGlobal("fetch", toss({ orderId: a.id, status: "DONE", totalAmount: a.amount }));
     await confirmOrder({ paymentKey: "pk_a", orderId: a.id, amount: a.amount });
     expect(await couponUses("ONE")).toBe(1);

@@ -5,14 +5,14 @@ import type { ProductId } from "./product";
 
 /** 상품별 기본 대기 시간(분) */
 export const DEFAULT_RELEASE_MINUTES: Record<ProductId, number> = {
-  iching: 30,
-  newyear: 60,
-  core: 60,
-  taekil: 60,
-  gunghap: 120,
-  ziwei: 120,
-  full: 120,
-  naming: 180,
+  iching: 10,
+  newyear: 30,
+  core: 30,
+  taekil: 30,
+  gunghap: 60,
+  ziwei: 60,
+  full: 60,
+  naming: 90,
 };
 
 const KST = 9 * 3_600_000;

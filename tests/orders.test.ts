@@ -194,10 +194,10 @@ describe("상품·열람 기간·완성 메일", () => {
     await expect(createOrder({ ...input, name: " " }, "a@b.co", "full", now)).rejects.toThrow("성함");
   });
 
-  it("작명록 주문은 70,000원이고 신청서를 함께 저장한다", async () => {
+  it("작명록 주문은 29,000원이고 신청서를 함께 저장한다", async () => {
     const naming = { mode: "baby" as const, surname: "김", surnameHanja: "金", feelings: ["지혜" as const] };
     const order = await createOrder({ ...input, name: "김○○" }, "a@b.co", "naming", now, naming);
-    expect(order.amount).toBe(70000);
+    expect(order.amount).toBe(29000);
     expect(order.naming).toEqual(naming);
     // 인명용이 아닌 돌림자는 결제 전에 거절
     await expect(
@@ -205,9 +205,9 @@ describe("상품·열람 기간·완성 메일", () => {
     ).rejects.toThrow("돌림자");
   });
 
-  it("핵심 명식록은 29,000원, 발간사·1부·5부만", async () => {
+  it("핵심 명식록은 12,900원, 발간사·1부·5부만", async () => {
     const order = await createOrder(input, "a@b.co", "core", now);
-    expect(order.amount).toBe(29000);
+    expect(order.amount).toBe(12900);
     expect(PRODUCTS.core.parts).toEqual(["intro", "part1", "part5"]);
   });
 
@@ -330,12 +330,12 @@ describe("실제 사이트의 테스트 결제", () => {
 
 describe("공개·발송 시각", () => {
   it("상품별 대기 시간과 설정 덮어쓰기", () => {
-    expect(releaseMinutes("iching")).toBe(30);
-    expect(releaseMinutes("full")).toBe(120);
-    expect(releaseMinutes("naming")).toBe(180);
+    expect(releaseMinutes("iching")).toBe(10);
+    expect(releaseMinutes("full")).toBe(60);
+    expect(releaseMinutes("naming")).toBe(90);
     expect(releaseMinutes("full", "full=45, iching=10")).toBe(45);
-    expect(releaseMinutes("core", "full=45")).toBe(60);
-    expect(releaseMinutes("full", "full=abc")).toBe(120);
+    expect(releaseMinutes("core", "full=45")).toBe(30);
+    expect(releaseMinutes("full", "full=abc")).toBe(60);
   });
 
   it("avoidQuietHours 계산과, 공개 시각은 안내한 시간 그대로", () => {
@@ -345,8 +345,8 @@ describe("공개·발송 시각", () => {
     expect(avoidQuietHours(new Date("2026-10-20T13:30:00Z")).toISOString()).toBe("2026-10-20T23:00:00.000Z");
     // 한국 02:00 → 그날 08:00
     expect(avoidQuietHours(new Date("2026-10-20T17:00:00Z")).toISOString()).toBe("2026-10-20T23:00:00.000Z");
-    // 공개 시각은 밤에도 미루지 않는다: 한국 21:00 결제 + 2시간 → 23:00
-    expect(computeReleaseAt("full", new Date("2026-10-20T12:00:00Z")).toISOString()).toBe("2026-10-20T14:00:00.000Z");
+    // 공개 시각은 밤에도 미루지 않는다: 한국 21:30 결제 + 1시간 → 22:30
+    expect(computeReleaseAt("full", new Date("2026-10-20T12:30:00Z")).toISOString()).toBe("2026-10-20T13:30:00.000Z");
   });
 
   it("손님 안내용 대기 시간", () => {
@@ -366,9 +366,9 @@ describe("공개·발송 시각", () => {
     const order = await createOrder(input, "a@b.co", "full", now);
     vi.stubGlobal("fetch", tossReply({ orderId: order.id, status: "DONE", totalAmount: order.amount, approvedAt: "2026-10-20T14:00:00+09:00" }));
     const { order: paid } = await confirmOrder({ paymentKey: "pk", orderId: order.id, amount: order.amount });
-    expect(paid.releaseAt).toBe("2026-10-20T07:00:00.000Z"); // 한국 16:00
-    expect(isReleased(paid, new Date("2026-10-20T06:59:00Z"))).toBe(false);
-    expect(isReleased(paid, new Date("2026-10-20T07:00:00Z"))).toBe(true);
+    expect(paid.releaseAt).toBe("2026-10-20T06:00:00.000Z"); // 한국 15:00
+    expect(isReleased(paid, new Date("2026-10-20T05:59:00Z"))).toBe(false);
+    expect(isReleased(paid, new Date("2026-10-20T06:00:00Z"))).toBe(true);
     const old = { ...paid, releaseAt: undefined };
     expect(orderReleaseAt(old).toISOString()).toBe("2026-10-20T05:03:00.000Z");
   });

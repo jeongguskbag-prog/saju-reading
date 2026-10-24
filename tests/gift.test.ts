@@ -36,7 +36,7 @@ describe("감정서 선물", () => {
 
   it("결제하면 선물 링크가 열리고, 선물 주문에는 감정서가 없다", async () => {
     const paid = await paidGift();
-    expect(paid.amount).toBe(49000);
+    expect(paid.amount).toBe(19900);
     expect(paid.releaseAt).toBeUndefined();
     expect(await getReport(paid.token!)).toBeNull();
     const gift = await getGift(paid.gift!.code);

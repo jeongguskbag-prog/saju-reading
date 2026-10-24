@@ -48,6 +48,6 @@ describe("택일 주문", () => {
   it("기간이 이상하면 주문을 만들지 않는다", async () => {
     await expect(createOrder(me, "a@b.co", "taekil", now, undefined, "01012345678", ["email"], { purpose: "move", start: "2026-10-10", end: "2026-10-20" })).rejects.toBeInstanceOf(OrderError);
     const o = await createOrder(me, "a@b.co", "taekil", now, undefined, "01012345678", ["email"], { purpose: "move", start: "2026-11-01", end: "2026-11-30" });
-    expect(o.amount).toBe(29000);
+    expect(o.amount).toBe(16900);
   });
 });

@@ -40,7 +40,7 @@ describe("결제 확인 발송", () => {
     const links = receiptLinks("https://x.test", o);
     const sms = receiptSmsText(o, links);
     expect(sms).toContain(`주문번호: ${o.id}`);
-    expect(sms).toContain("결제 금액: 29,000원 (카드)");
+    expect(sms).toContain("결제 금액: 12,900원 (카드)");
     expect(sms).toContain("결제 일시: 2026.10.15 12:05");
     expect(sms).toContain(`https://x.test/r/${o.token}`);
     expect(sms).toContain("https://x.test/order");
@@ -103,7 +103,7 @@ describe("주문 기록(관리)", async () => {
     const row = orderRow(list[1], "https://x.test");
     expect(row).toMatchObject({
       주문번호: a.id,
-      "결제 금액": "29,000원",
+      "결제 금액": "12,900원",
       "결제 수단": "카드",
       성함: "홍길동",
       성별: "여",

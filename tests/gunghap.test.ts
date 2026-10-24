@@ -67,7 +67,7 @@ describe("연분록 주문", () => {
 
   it("신청서를 주문에 저장하고 관리 표에 한 줄로 보인다", async () => {
     const order = await createOrder(me, "a@b.co", "gunghap", now, undefined, "01012345678", ["email"], { relation: "married", partner });
-    expect(order.amount).toBe(39000);
+    expect(order.amount).toBe(16900);
     expect(order.extra?.kind).toBe("gunghap");
     const row = orderRow(order, "https://x.test");
     expect(row["추가 신청"]).toContain("부부");

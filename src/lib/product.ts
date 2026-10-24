@@ -34,7 +34,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   core: {
     id: "core",
     name: "천기록 핵심 명식록",
-    price: 29000,
+    price: 12900,
     parts: ["intro", "part1", "part5"],
     summary: "타고난 본질과 오행 균형, {Y1}~{Y2} 세운과 월별 흐름 집중 분석",
     available: true,
@@ -42,7 +42,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   full: {
     id: "full",
     name: "천기록 종합 감정서",
-    price: 49000,
+    price: 19900,
     parts: ["intro", "part1", "part2", "part3", "part4", "part5"],
     summary: "평생 대운의 흐름, 타고난 재물 그릇, 커리어·사업운, 인연운, 맞춤 개운법",
     available: true,
@@ -50,7 +50,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   naming: {
     id: "naming",
     name: "길운 개운 작명록",
-    price: 70000,
+    price: 29000,
     parts: ["naming"],
     summary: "사주의 부족한 오행을 보완하는 수리·자원오행 맞춤 작명·개명 추천",
     available: true,
@@ -58,7 +58,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   gunghap: {
     id: "gunghap",
     name: "천기록 연분록(궁합)",
-    price: 39000,
+    price: 16900,
     parts: ["gunghap"],
     summary: "두 사람의 명식으로 보는 일간·배우자 자리·오행 보완·대운 동행 궁합 감정서",
     available: true,
@@ -66,7 +66,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   newyear: {
     id: "newyear",
     name: "천기록 신년 운세록",
-    price: 19000,
+    price: 9900,
     parts: ["newyear"],
     summary: "한 해의 간지가 내 명식·대운에 들어오는 모습과 삼재, 열두 달 월운과 달마다 할 일",
     available: true,
@@ -74,7 +74,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   taekil: {
     id: "taekil",
     name: "천기록 택일록",
-    price: 29000,
+    price: 16900,
     parts: ["taekil"],
     summary: "결혼·이사·개업·계약 등 큰일에 맞는 길일을 내 사주와 날의 간지로 골라 드립니다",
     available: true,
@@ -82,7 +82,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   iching: {
     id: "iching",
     name: "천기록 주역 점",
-    price: 9900,
+    price: 3900,
     parts: ["iching"],
     summary: "한 가지 물음에 대해 시초점 방식으로 괘를 얻고 본괘·변효·지괘로 풀어 드립니다",
     available: true,
@@ -90,7 +90,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
   ziwei: {
     id: "ziwei",
     name: "천기록 자미두수 명반",
-    price: 39000,
+    price: 16900,
     parts: ["ziwei"],
     summary: "열두 궁에 별을 배치한 자미두수 명반으로 보는 타고난 성향과 10년 대한",
     available: true,
