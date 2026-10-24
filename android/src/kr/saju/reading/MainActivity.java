@@ -100,9 +100,19 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** 우리 사이트 주소인지. www가 붙든 안 붙든(www.chungirok.com, chungirok.com) 같은 사이트로 본다. */
+    private boolean isSiteHost(String host) {
+        return host != null && bareHost(siteHost).equals(bareHost(host));
+    }
+
+    private static String bareHost(String host) {
+        String h = host == null ? "" : host.toLowerCase();
+        return h.startsWith("www.") ? h.substring(4) : h;
+    }
+
     private boolean isOurSite() {
         String url = webView.getUrl();
-        return url != null && siteHost.equals(Uri.parse(url).getHost());
+        return url != null && isSiteHost(Uri.parse(url).getHost());
     }
 
     /** 현재 화면을 시스템 인쇄 창으로 보낸다. 인쇄 창에서 "PDF로 저장"을 고르면 PDF 파일이 된다. */
@@ -158,7 +168,7 @@ public class MainActivity extends Activity {
         /** 앱 전용 화면의 무료 풀이용 접근 키. 우리 사이트가 떠 있을 때만 돌려준다. */
         @JavascriptInterface
         public String appKey() {
-            return siteHost.equals(currentHost) ? SiteConfig.APP_KEY : "";
+            return isSiteHost(currentHost) ? SiteConfig.APP_KEY : "";
         }
 
         @JavascriptInterface

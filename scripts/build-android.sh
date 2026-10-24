@@ -46,8 +46,8 @@ case "$SAJU_AUDIENCE:$SAJU_LOCALE" in
   admin:zh-Hans) APP_PATH="/app/zh-hans"; APP_NAME="天机录"; PACKAGE="kr.saju.reading.cn"; APK_NAME="saju-reading-zh-hans.apk" ;;
   *) echo "SAJU_LOCALE은 ko, zh-Hant, zh-Hans 중 하나여야 합니다." >&2; exit 1 ;;
 esac
-VERSION_CODE="${VERSION_CODE:-3}"
-VERSION_NAME="${VERSION_NAME:-0.3.0}"
+VERSION_CODE="${VERSION_CODE:-4}"
+VERSION_NAME="${VERSION_NAME:-0.3.1}"
 KEYSTORE="${KEYSTORE:-$SRC/debug.keystore}"
 KEYSTORE_PASS="${KEYSTORE_PASS:-android}"
 KEY_ALIAS="${KEY_ALIAS:-saju-debug}"
