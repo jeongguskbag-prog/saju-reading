@@ -6,6 +6,7 @@ import { LocaleProvider } from "./LocaleProvider";
 import AppLanguage from "./AppLanguage";
 import type { Locale, Region } from "@/lib/saju/locale";
 import { isOwnerApp } from "@/lib/export";
+import OwnerAppRegister from "./OwnerAppRegister";
 
 /** 앱 밖(PC·휴대폰 브라우저)에서 /app을 열면 보낼 홈페이지(화면 언어별) */
 const HOME: Record<Locale, string> = { ko: "/", "zh-Hant": "/zh-tw", "zh-Hans": "/zh-tw", en: "/en" };
@@ -29,6 +30,8 @@ export default function AppEntry({ serverAi, locale = "ko", regions }: { serverA
   if (!inApp) return null;
   return (
     <LocaleProvider locale={locale}>
+      {/* 관리 화면을 열 수 있게 관리자용 앱 표시 쿠키를 미리 받아 둔다 */}
+      <OwnerAppRegister />
       <AppLanguage current={locale} />
       {/* 웹처럼 감정서(핵심 명식록·종합 감정서)를 고른다. 결제는 없다. 작명록은 한국어 웹에서만 신청한다. */}
       <SajuApp aiEnabled={serverAi} regions={regions} productChoice />

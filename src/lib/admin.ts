@@ -42,6 +42,23 @@ const same = (a: string, b: string) => {
   return x.length === y.length && timingSafeEqual(x, y);
 };
 
+/**
+ * 관리자용 앱(천기록 관리) 표시 쿠키. 관리 화면은 이 쿠키가 있는 곳(관리자용 앱)에서만 열린다.
+ * 앱이 우리 사이트에만 넘겨주는 앱 접근 키(APP_ACCESS_KEY)를 확인하고 서버가 준다. 웹 브라우저는 받을 수 없다.
+ */
+export const OWNER_APP_COOKIE = "chungirok_owner_app";
+
+export function ownerAppCookieValue(): string | null {
+  const key = process.env.APP_ACCESS_KEY ?? "";
+  if (key.length < 16) return null;
+  return createHash("sha256").update(`chungirok-owner-app:${key}`).digest("hex");
+}
+
+export const checkOwnerApp = (cookie: string | undefined) => {
+  const v = ownerAppCookieValue();
+  return Boolean(v && cookie && same(cookie, v));
+};
+
 export const checkAdminPassword = (password: string) => isAdminEnabled() && same(password, process.env.ADMIN_PASSWORD!);
 export const checkAdminSession = (cookie: string | undefined) => {
   const v = adminSessionValue();

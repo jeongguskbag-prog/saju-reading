@@ -1,4 +1,5 @@
-import { ADMIN_COOKIE, adminSessionValue, checkAdminPassword, isAdminEnabled } from "@/lib/admin";
+import { cookies } from "next/headers";
+import { ADMIN_COOKIE, adminSessionValue, checkAdminPassword, checkOwnerApp, isAdminEnabled, OWNER_APP_COOKIE } from "@/lib/admin";
 import { clientIp } from "@/lib/rate-limit";
 import { getStore } from "@/lib/store";
 
@@ -7,6 +8,8 @@ export const dynamic = "force-dynamic";
 /** 관리 화면 로그인: 비밀번호가 맞으면 12시간짜리 쿠키. 같은 IP에서 1시간에 10번까지. */
 export async function POST(request: Request) {
   if (!isAdminEnabled()) return Response.json({ error: "관리 화면이 꺼져 있습니다(ADMIN_PASSWORD 설정 필요)." }, { status: 503 });
+  // 관리자 로그인은 관리자용 앱(천기록 관리) 안에서만
+  if (!checkOwnerApp((await cookies()).get(OWNER_APP_COOKIE)?.value)) return Response.json({ error: "찾을 수 없습니다." }, { status: 404 });
   const store = getStore();
   const hour = new Date().toISOString().slice(0, 13);
   if (store && (await store.incr(`admin-login:${clientIp(request.headers)}:${hour}`, 3600)) > 10) {
