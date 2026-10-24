@@ -483,3 +483,41 @@ export async function lockPart(token: string, part: PartKey): Promise<boolean> {
 export async function unlockPart(token: string, part: PartKey): Promise<void> {
   await requireStore().del(lockKey(token, part));
 }
+
+/** 감정서 링크(토큰)로 주문을 찾는다. 취소된 주문도 돌려준다(취소 안내 화면용). */
+export async function orderByToken(token: string): Promise<Order | null> {
+  if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
+  const orderId = await requireStore().get<string>(reportKey(token));
+  const order = orderId ? await getOrder(orderId) : null;
+  return order && order.token === token ? order : null;
+}
+
+/** 손님이 감정서 발송 전에 직접 취소할 수 있는 주문인지(선물로 받은 0원 감정서는 보낸 분이 고객센터로 취소). */
+export function canCustomerCancel(order: Order, now = new Date()): boolean {
+  return order.status === "paid" && !order.gift && !order.questionPack && !order.giftOrderId && order.amount > 0 && !isReleased(order, now);
+}
+
+/**
+ * 손님의 발송 전 취소: 감정서 링크를 가진 사람(주문한 손님)이 공개·발송 시각 전에 신청을 취소하면 결제를 전액 취소한다.
+ * 발송과 동시에 일어나지 않도록 발송 표시(mailed)를 먼저 잡는다. 결제 취소가 실패하면 표시를 풀어 정상 발송되게 한다.
+ */
+export async function customerCancel(token: string, now = new Date()): Promise<Order> {
+  const order = await orderByToken(token);
+  if (!order) throw new OrderError("주문을 찾지 못했습니다.", 404);
+  if (order.status === "cancelled") return order;
+  if (!canCustomerCancel(order, now)) {
+    throw new OrderError(
+      order.giftOrderId || order.gift
+        ? "선물 감정서는 보내신 분이 고객센터로 취소를 요청해 주세요."
+        : "이미 감정서를 보내 드린 주문은 취소·환불할 수 없습니다.",
+      409,
+    );
+  }
+  if (!(await markMailed(order.id))) throw new OrderError("이미 감정서를 보내 드린 주문은 취소·환불할 수 없습니다.", 409);
+  try {
+    return await cancelOrder(order.id, "고객 직접 취소(발송 전)", now);
+  } catch (error) {
+    await unmarkMailed(order.id).catch(() => undefined);
+    throw error;
+  }
+}

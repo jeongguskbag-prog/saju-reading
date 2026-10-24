@@ -17,6 +17,7 @@ import type { ProductId } from "@/lib/product";
 import GradeCard from "./GradeCard";
 import { DaeunCard, ElementCard, PillarsCard, YearFlowCard } from "./ChartView";
 import KakaoChannelAdd from "./KakaoChannelAdd";
+import CustomerCancel from "./CustomerCancel";
 
 interface Props {
   token: string;
@@ -42,6 +43,8 @@ interface Props {
   waitText: string;
   /** 이 주문으로 남긴 후기(없으면 null) */
   initialReview: MyReview | null;
+  /** 발송 전 손님이 직접 취소할 수 있으면 결제 금액 문구(예: "19,900원"), 아니면 null */
+  cancelAmount?: string | null;
 }
 
 /** 서버가 만든 감정서 파일(PDF·HTML)을 내려받는 버튼. 만드는 데 몇 초 걸려 그동안 버튼에 표시한다. */
@@ -203,7 +206,7 @@ function whenVisible(): Promise<void> {
   });
 }
 
-export default function ReportClient({ token, partKeys, productName, productId, expiresAt, kept = false, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, waitText, initialReview }: Props) {
+export default function ReportClient({ token, partKeys, productName, productId, expiresAt, kept = false, chart, initialParts, justPaid, sendTo, orderId, deliverAt, revealInMs, waitText, initialReview, cancelAmount = null }: Props) {
   const [parts, setParts] = useState<PartStates>(() =>
     Object.fromEntries(Object.entries(initialParts).map(([k, result]) => [k, { status: "done", result }])),
   );
@@ -337,6 +340,7 @@ export default function ReportClient({ token, partKeys, productName, productId, 
           <button type="button" className="btn-secondary" onClick={copyLink}>
             {copied ? "감정서 주소를 복사했습니다" : "감정서 주소 복사"}
           </button>
+          {cancelAmount && <CustomerCancel token={token} amountText={cancelAmount} />}
         </section>
         <section className="report-preview" aria-labelledby="preview-h">
           <h2 id="preview-h" className="report-preview-h">

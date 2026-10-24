@@ -8,10 +8,10 @@ import ReportClient from "@/components/ReportClient";
 import SiteShell from "@/components/SiteShell";
 import { isMailEnabled } from "@/lib/mail";
 import { isKakaoEnabled, isSmsEnabled, maskPhone, phoneChannels } from "@/lib/sms";
-import { getReport, getSavedParts, isReleased, orderReleaseAt, renderSignature } from "@/lib/orders";
+import { canCustomerCancel, getReport, getSavedParts, isReleased, orderByToken, orderReleaseAt, renderSignature } from "@/lib/orders";
 import { orderWaitLabel } from "@/lib/release";
 import { getReviewByOrder } from "@/lib/reviews";
-import { BRAND, BUSINESS, REPORT_VALID_DAYS } from "@/lib/product";
+import { BRAND, BUSINESS, REPORT_VALID_DAYS, won } from "@/lib/product";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,23 @@ export default async function ReportPage({ params, searchParams }: { params: Par
   const { token } = await params;
   const { new: fresh, render } = await searchParams;
   const report = await getReport(token);
-  if (!report) notFound();
+  if (!report) {
+    // 취소된 주문은 안내를 보여 준다.
+    const cancelled = await orderByToken(token).catch(() => null);
+    if (cancelled?.status !== "cancelled") notFound();
+    return (
+      <SiteShell>
+        <section className="card pay-result">
+          <h2>취소된 신청입니다</h2>
+          <p>이 감정서 신청은 취소되었고 결제도 전액 취소되었습니다. 카드사에 따라 영업일 기준 3~7일 안에 반영됩니다.</p>
+          <p className="muted">주문번호 {cancelled.id}</p>
+          <a className="btn-secondary link-btn" href="/">
+            처음으로
+          </a>
+        </section>
+      </SiteShell>
+    );
+  }
   if (report.expired) {
     const contact = [BUSINESS.phone, BUSINESS.email].filter(Boolean).join(" / ");
     return (
@@ -86,6 +102,7 @@ export default async function ReportPage({ params, searchParams }: { params: Par
         // 상품별 대기 시간이 지나야 화면에 감정서를 펼친다. 파일 만들기(서명된 render)는 기다리지 않는다.
         revealInMs={open ? 0 : Math.max(1000, releaseAt.getTime() - Date.now())}
         waitText={orderWaitLabel(report.order)}
+        cancelAmount={!renderer && canCustomerCancel(report.order) ? won(report.order.amount) : null}
       />
     </SiteShell>
   );

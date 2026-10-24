@@ -1302,3 +1302,9 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .rel-mixed { color: #8a6a1f; }
 .family-table td:first-child b, .family-table td:last-child span { white-space: nowrap; }
 .refund-key { background: #fbf1ef; border-left: 4px solid var(--accent, #b0262c); padding: 10px 12px; border-radius: 6px; }
+
+/* 손님 발송 전 취소 */
+.customer-cancel { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line, #e5ddcf); }
+.customer-cancel .btn-link { padding: 0; color: var(--muted, #7a7266); text-decoration: underline; }
+.btn-danger { background: var(--accent, #b0262c); color: #fff; border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
+.customer-cancel.done p { color: #2f6b2f; }
