@@ -32,22 +32,9 @@ export const metadata: Metadata = { title: "관리 — 주문 내역", robots: {
 
 /** 관리 화면: 결제한 주문(주문번호·결제 정보·사주 입력·연락처)을 최근 순으로 본다. */
 export default async function AdminPage() {
-  // 관리 화면은 관리자용 앱(천기록 관리) 안에서만 연다. 웹 브라우저에는 없는 페이지처럼 보인다.
+  // 관리 화면은 관리자용 앱(천기록 관리) 안에서만 연다. 웹 브라우저로 열면 아무것도 보여 주지 않고 첫 화면으로 보낸다.
   // 앱에서 처음 들어오면 OwnerAppRegister가 앱 표시 쿠키를 받고 화면을 다시 연다.
-  if (!checkOwnerApp((await cookies()).get(OWNER_APP_COOKIE)?.value)) {
-    return (
-      <SiteShell>
-        <OwnerAppRegister reload />
-        <section className="card">
-          <h2>페이지를 찾을 수 없습니다</h2>
-          <p className="muted">주소를 다시 확인해 주세요.</p>
-          <a className="btn-secondary link-btn" href="/">
-            홈으로
-          </a>
-        </section>
-      </SiteShell>
-    );
-  }
+  if (!checkOwnerApp((await cookies()).get(OWNER_APP_COOKIE)?.value)) return <OwnerAppRegister reload />;
   if (!isAdminEnabled()) {
     return (
       <SiteShell admin>

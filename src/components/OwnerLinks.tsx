@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { isOwnerApp } from "@/lib/export";
+import OwnerAppRegister from "./OwnerAppRegister";
 
 /**
  * 운영자용 바로가기(오른쪽 위, 화면을 내려도 따라온다).
@@ -35,6 +36,8 @@ export default function OwnerLinks({ mode, loggedIn = false }: { mode: "home" | 
 
   return (
     <nav className="owner-links no-print" aria-label="바로가기">
+      {/* 관리자 바로가기를 누르기 전에 관리자용 앱 표시 쿠키를 받아 둔다 */}
+      <OwnerAppRegister />
       {/* 앱 화면(/app)은 관리자용 앱 안에서만 열리므로, 그 밖(PC·사용자용 앱 등)에서는 바로가기를 숨긴다. */}
       {inApp && <a href="/app">앱 화면</a>}
       {mode === "home" ? <a href="/admin">관리자</a> : <a href="/">홈페이지</a>}
