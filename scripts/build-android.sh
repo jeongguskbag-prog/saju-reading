@@ -14,7 +14,7 @@
 #   SAJU_LOCALE     ko(기본, 한국어 앱 → /app), zh-Hant(대만·홍콩 번체 앱 天機錄 → /app/zh),
 #                   zh-Hans(중국 대륙 간체 앱 天机录 → /app/zh-hans).
 #                   언어마다 패키지 이름이 달라(kr.saju.reading, .zh, .cn) 한 기기에 함께 설치된다.
-#   SAJU_SITE_URL   앱이 띄울 사이트 주소 (기본: https://saju-reading-azure.vercel.app)
+#   SAJU_SITE_URL   앱이 띄울 사이트 주소 (기본: https://www.chungirok.com)
 #   SAJU_APP_KEY    무료 풀이용 앱 접근 키(16자 이상). Vercel 환경변수 APP_ACCESS_KEY와 같아야 한다.
 #                   비우면 앱에서도 명식·등급 계산까지만 보인다.
 #   ANDROID_JAR     android.jar 경로 (기본: /usr/lib/android-sdk/platforms/android-23/android.jar)
@@ -26,7 +26,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/android"
 OUT="$SRC/build"
 ANDROID_JAR="${ANDROID_JAR:-/usr/lib/android-sdk/platforms/android-23/android.jar}"
-SAJU_SITE_URL="${SAJU_SITE_URL:-https://saju-reading-azure.vercel.app}"
+SAJU_SITE_URL="${SAJU_SITE_URL:-https://www.chungirok.com}"
 SAJU_APP_KEY="${SAJU_APP_KEY:-}"
 SAJU_LOCALE="${SAJU_LOCALE:-ko}"
 SAJU_AUDIENCE="${SAJU_AUDIENCE:-admin}"
@@ -46,8 +46,8 @@ case "$SAJU_AUDIENCE:$SAJU_LOCALE" in
   admin:zh-Hans) APP_PATH="/app/zh-hans"; APP_NAME="天机录"; PACKAGE="kr.saju.reading.cn"; APK_NAME="saju-reading-zh-hans.apk" ;;
   *) echo "SAJU_LOCALE은 ko, zh-Hant, zh-Hans 중 하나여야 합니다." >&2; exit 1 ;;
 esac
-VERSION_CODE="${VERSION_CODE:-2}"
-VERSION_NAME="${VERSION_NAME:-0.2.0}"
+VERSION_CODE="${VERSION_CODE:-3}"
+VERSION_NAME="${VERSION_NAME:-0.3.0}"
 KEYSTORE="${KEYSTORE:-$SRC/debug.keystore}"
 KEYSTORE_PASS="${KEYSTORE_PASS:-android}"
 KEY_ALIAS="${KEY_ALIAS:-saju-debug}"
