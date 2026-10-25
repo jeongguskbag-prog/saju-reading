@@ -11,6 +11,9 @@ import { questionsLeft } from "@/lib/consult";
 import { familyRows, revisitNotices } from "@/lib/revisit";
 import { newyearSeason } from "@/lib/season";
 import KakaoChannelAdd from "@/components/KakaoChannelAdd";
+import MyMonth from "@/components/MyMonth";
+import MyMonthlyMail from "@/components/MyMonthlyMail";
+import { isPurpose } from "@/lib/saju/monthly-fortune";
 
 export const metadata: Metadata = { title: `마이 — ${BRAND.name}`, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -27,7 +30,7 @@ const ERRORS: Record<string, string> = {
 const BENEFITS = [
   ["내 사주·가족 사주 저장", `최대 ${MAX_PROFILES}명까지 저장해 두고 다음부터 입력 없이 바로 봅니다.`],
   ["감정서 평생 보관함", `로그인하고 산 감정서는 열람 기간 없이 언제든 다시 열 수 있습니다. 예전에 산 감정서도 넣을 수 있고, 보관함에 넣은 감정서마다 AI 상담 무료 질문 ${REPORT_BONUS_QUESTIONS}회를 드립니다.`],
-  ["매일 오늘의 운세", "오늘의 일진과 내 명식을 맞춰 본 하루 운세를 매일 드립니다."],
+  ["매일 오늘의 운세 · 이달의 길일 달력", "오늘의 일진과 내 명식을 맞춰 본 하루 운세, 이달의 운세와 이사·계약 등 목적별 길일 달력을 드립니다. 원하시면 매월 1일 이달의 운세를 메일로 보내 드립니다."],
   [
     "명리 기반 AI 상담 무료 질문",
     `일반 AI처럼 누구에게나 맞을 법한 상투적인 말로 답하지 않습니다. 먼저 내 생년월일시로 만세력을 세워 오행·십신·용신·대운·세운을 명리 공식으로 계산·조회하고, 대운·세운·월별 흐름까지 계산한 방대한 명식 자료와 명리 이론을 근거로 유료 고성능 AI가 답합니다. 가입하면 무료 질문 ${WELCOME_QUESTIONS}회를 드립니다.`,
@@ -45,7 +48,7 @@ function profileLine(p: SavedProfile): string {
   return `${i.gender === "male" ? "남" : "여"} · ${i.calendar === "lunar" ? `음력${i.isLeapMonth ? "(윤)" : ""}` : "양력"} ${i.year}.${i.month}.${i.day} · ${time}`;
 }
 
-export default async function MyPage({ searchParams }: { searchParams: Promise<{ error?: string; welcome?: string; bye?: string }> }) {
+export default async function MyPage({ searchParams }: { searchParams: Promise<{ error?: string; welcome?: string; bye?: string; cal?: string; purpose?: string }> }) {
   const q = await searchParams;
   const enabled = isMemberEnabled();
   const member = enabled ? await memberFromCookie((await cookies()).get(MEMBER_COOKIE)?.value).catch(() => null) : null;
@@ -95,7 +98,22 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   }
 
   const self = member.profiles.find((p) => p.self);
-  const fortune = self ? dailyFortune(calculateSaju(self.input)) : null;
+  const selfChart = self ? calculateSaju(self.input) : null;
+  const fortune = selfChart ? dailyFortune(selfChart) : null;
+  // 이달의 운세·길일 달력: ?cal=YYYY-MM(앞뒤 12달까지), ?purpose=move 등
+  const kNow = new Date(Date.now() + 9 * 3_600_000);
+  const todayYmd = kNow.toISOString().slice(0, 10);
+  let calY = kNow.getUTCFullYear();
+  let calM = kNow.getUTCMonth() + 1;
+  const askedCal = /^(\d{4})-(\d{2})$/.exec(q.cal ?? "");
+  if (askedCal) {
+    const diff = (Number(askedCal[1]) - calY) * 12 + (Number(askedCal[2]) - calM);
+    if (Number(askedCal[2]) >= 1 && Number(askedCal[2]) <= 12 && Math.abs(diff) <= 12) {
+      calY = Number(askedCal[1]);
+      calM = Number(askedCal[2]);
+    }
+  }
+  const calPurpose = isPurpose(q.purpose) ? q.purpose : null;
   const orders = await memberOrders(member).catch(() => []);
   const notices = revisitNotices(orders, newyearSeason());
   const family = member.profiles.length >= 2 ? familyRows(member.profiles) : [];
@@ -144,6 +162,9 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
           </p>
         )}
       </section>
+
+      {selfChart && self && <MyMonth chart={selfChart} name={self.input.name ?? "내"} year={calY} month={calM} purpose={calPurpose} today={todayYmd} />}
+      {self && <MyMonthlyMail initialEmail={member.monthlyMail?.email ?? null} />}
 
       <section className="card" aria-labelledby="profiles-h">
         <h2 id="profiles-h">

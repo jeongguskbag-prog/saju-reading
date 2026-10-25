@@ -5,6 +5,8 @@ import { externalOpenUrl, inAppBrowser } from "@/lib/inapp";
 import type { SajuChart } from "@/lib/saju/calc";
 import { gradeTiers } from "@/lib/saju/grade";
 import { BRANCH_ANIMAL, ELEMENT_KO, type Branch } from "@/lib/saju/constants";
+import { markOf } from "@/lib/saju/analysis";
+import ShareEventNote from "./ShareEventNote";
 
 const W = 1080;
 const H = 1920;
@@ -30,7 +32,19 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, width: number): strin
 }
 
 /** 사주 유형 공유 카드(인스타 스토리 9:16)를 그린다. 이름은 넣지 않는다. */
-async function drawCard(chart: SajuChart, type: "image/png" | "image/jpeg" = "image/png"): Promise<Blob> {
+/** 카드에 더 넣을 것(감정서 화면): 키워드와 올해 흐름 */
+export interface CardExtra {
+  keywords?: string[];
+  withYear?: boolean;
+}
+
+/** 올해 세운의 용신 부합도로 본 한 줄: "2026 丙午년 · 좋음" */
+export function thisYearLine(chart: SajuChart): string | null {
+  const y = chart.analysis.yearScores?.[0];
+  return y ? `${y.year} ${y.ganzhi}년 · ${markOf(y.score)}` : null;
+}
+
+async function drawCard(chart: SajuChart, type: "image/png" | "image/jpeg" = "image/png", extra: CardExtra = {}): Promise<Blob> {
   await document.fonts?.ready;
   const canvas = document.createElement("canvas");
   canvas.width = W;
@@ -82,9 +96,41 @@ async function drawCard(chart: SajuChart, type: "image/png" | "image/jpeg" = "im
   ctx.font = `46px ${SANS}`;
   ctx.fillText(tier.name, W / 2, 960);
 
-  ctx.fillStyle = "#d8d3c6";
-  ctx.font = `36px ${SANS}`;
-  wrap(ctx, tier.desc, W - 260).forEach((l, i) => ctx.fillText(l, W / 2, 1050 + i * 56));
+  const keywords = (extra.keywords ?? []).map((k) => k.trim()).filter(Boolean).slice(0, 3);
+  if (keywords.length) {
+    // 키워드 칩: 가운데 정렬로 한 줄(넘치면 두 줄)
+    ctx.font = `bold 38px ${SANS}`;
+    const pad = 34;
+    const widths = keywords.map((k) => ctx.measureText(`#${k}`).width + pad * 2);
+    const rows: number[][] = [[]];
+    let rowW = 0;
+    widths.forEach((w, i) => {
+      if (rowW + w > W - 200 && rows[rows.length - 1].length) {
+        rows.push([]);
+        rowW = 0;
+      }
+      rows[rows.length - 1].push(i);
+      rowW += w + 20;
+    });
+    rows.forEach((row, r) => {
+      const total = row.reduce((a, i) => a + widths[i], 0) + (row.length - 1) * 20;
+      let x = (W - total) / 2;
+      const yTop = 1010 + r * 96;
+      row.forEach((i) => {
+        ctx.fillStyle = "rgba(217,183,122,0.18)";
+        ctx.fillRect(x, yTop, widths[i], 72);
+        ctx.fillStyle = GOLD;
+        ctx.textAlign = "center";
+        ctx.fillText(`#${keywords[i]}`, x + widths[i] / 2, yTop + 50);
+        x += widths[i] + 20;
+      });
+    });
+    ctx.textAlign = "center";
+  } else {
+    ctx.fillStyle = "#d8d3c6";
+    ctx.font = `36px ${SANS}`;
+    wrap(ctx, tier.desc, W - 260).forEach((l, i) => ctx.fillText(l, W / 2, 1050 + i * 56));
+  }
 
   // 숫자 칸
   const branch = chart.pillars.year.branch as Branch;
@@ -93,7 +139,9 @@ async function drawCard(chart: SajuChart, type: "image/png" | "image/jpeg" = "im
     ["같은 조합", `${(g.rarity.oneIn >= 1000 ? Math.round(g.rarity.oneIn / 100) * 100 : g.rarity.oneIn).toLocaleString("ko-KR")}명 중 1명`],
     ["일간 · 띠", `${chart.dayMaster.stem} ${ELEMENT_KO[chart.dayMaster.element]} · ${BRANCH_ANIMAL[branch]}띠`],
   ];
-  const boxY = 1250;
+  const year = extra.withYear ? thisYearLine(chart) : null;
+  if (year) facts.push(["올해 흐름", year]);
+  const boxY = year ? 1150 : 1250;
   facts.forEach(([k, v], i) => {
     const by = boxY + i * 130;
     ctx.fillStyle = "rgba(255,255,255,0.06)";
@@ -143,7 +191,7 @@ async function saveViaServer(blob: Blob): Promise<boolean> {
 }
 
 /** 무료 결과의 사주 유형을 인스타 스토리·카톡용 이미지로 저장·공유 */
-export default function ShareTypeCard({ chart }: { chart: SajuChart }) {
+export default function ShareTypeCard({ chart, extra, embedded = false }: { chart: SajuChart; extra?: CardExtra; embedded?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -159,7 +207,7 @@ export default function ShareTypeCard({ chart }: { chart: SajuChart }) {
     setBusy(true);
     setMsg(null);
     try {
-      const jpg = await drawCard(chart, "image/jpeg");
+      const jpg = await drawCard(chart, "image/jpeg", extra);
       setPreview(URL.createObjectURL(jpg));
       const ok = await saveViaServer(jpg);
       setMsg(
@@ -178,7 +226,7 @@ export default function ShareTypeCard({ chart }: { chart: SajuChart }) {
     setBusy(true);
     setMsg(null);
     try {
-      const blob = await drawCard(chart);
+      const blob = await drawCard(chart, "image/png", extra);
       const file = new File([blob], "천기록_내사주유형.png", { type: "image/png" });
       await navigator.share({ files: [file], title: "나의 사주 유형", text: "내 사주 유형 무료로 보기 → https://www.chungirok.com" });
     } catch (error) {
@@ -188,10 +236,8 @@ export default function ShareTypeCard({ chart }: { chart: SajuChart }) {
     }
   }
 
-  return (
-    <section className="card share-type no-print" aria-labelledby="share-type-h">
-      <h2 id="share-type-h">내 사주 유형 공유하기</h2>
-      <p className="muted">인스타그램 스토리·카카오톡에 올리기 좋은 세로 이미지로 만들어 드립니다. 이름은 들어가지 않습니다.</p>
+  const actions = (
+    <>
       <div className="share-type-actions">
         <button type="button" className="btn-secondary" onClick={save} disabled={busy}>
           {busy ? "이미지 만드는 중…" : "이미지 저장"}
@@ -207,6 +253,15 @@ export default function ShareTypeCard({ chart }: { chart: SajuChart }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img className="share-type-preview" src={preview} alt="나의 사주 유형 카드" />
       )}
+      <ShareEventNote />
+    </>
+  );
+  if (embedded) return <div className="share-type no-print">{actions}</div>;
+  return (
+    <section className="card share-type no-print" aria-labelledby="share-type-h">
+      <h2 id="share-type-h">내 사주 유형 공유하기</h2>
+      <p className="muted">인스타그램 스토리·카카오톡에 올리기 좋은 세로 이미지로 만들어 드립니다. 이름은 들어가지 않습니다.</p>
+      {actions}
     </section>
   );
 }

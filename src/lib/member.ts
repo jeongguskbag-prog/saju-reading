@@ -41,6 +41,8 @@ export interface Member {
   freeQuestions: number;
   /** 산 AI 상담 질문권 남은 수 */
   paidQuestions?: number;
+  /** 매월 1일 '이달의 운세' 메일 수신 동의(받을 이메일과 동의 시각). 없으면 받지 않음. */
+  monthlyMail?: { email: string; consentAt: string };
 }
 
 export class MemberError extends Error {
@@ -147,6 +149,28 @@ export async function findOrCreateMember(provider: "kakao", providerId: string, 
   }
   await saveMember(member);
   return { member, created: true };
+}
+
+// ── 이달의 운세 메일 수신 동의 ──
+
+export const MONTHLY_SUBS = "monthly-subs";
+
+/** 이달의 운세 메일 수신 동의(email) 또는 철회(null). 철회하면 이메일도 지운다. */
+export async function setMonthlyMail(memberId: string, email: string | null, now = new Date()): Promise<Member> {
+  const m = await getMember(memberId);
+  if (!m) throw new MemberError("로그인이 필요합니다.", 401);
+  if (email === null) {
+    const { monthlyMail: _drop, ...rest } = m;
+    void _drop;
+    await saveMember(rest);
+    return rest;
+  }
+  const clean = email.trim().slice(0, 120);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clean)) throw new MemberError("이메일 주소를 확인해 주세요.");
+  const next = { ...m, monthlyMail: { email: clean, consentAt: now.toISOString() } };
+  await saveMember(next);
+  if (!m.monthlyMail) await requireStore().listPush(MONTHLY_SUBS, m.id);
+  return next;
 }
 
 // ── 저장한 사주 ──

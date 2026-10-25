@@ -2,14 +2,15 @@ import { PRODUCTS, sellableProducts, withProductYears, won, type ProductId } fro
 
 /** 이 감정서를 본 분께 함께 권하는 감정서 */
 const NEXT: Record<ProductId, ProductId[]> = {
-  core: ["full", "gunghap"],
+  core: ["full", "love"],
   full: ["gunghap", "newyear"],
   naming: ["full", "newyear"],
   gunghap: ["full", "taekil"],
   newyear: ["full", "gunghap"],
   taekil: ["gunghap", "newyear"],
-  iching: ["newyear", "full"],
+  iching: ["love", "newyear"],
   ziwei: ["full", "gunghap"],
+  love: ["gunghap", "full"],
 };
 
 /** 감정서 끝: 다음에 보면 좋은 감정서(판매 중인 것만). 누르면 첫 화면에서 그 상품을 골라 둔다. */

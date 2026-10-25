@@ -87,6 +87,14 @@ export const PRODUCTS: Record<ProductId, Product> = {
     summary: "한 가지 물음에 대해 시초점 방식으로 괘를 얻고 본괘·변효·지괘로 풀어 드립니다",
     available: true,
   },
+  love: {
+    id: "love",
+    name: "천기록 연애운 숏 감정서",
+    price: 6900,
+    parts: ["love"],
+    summary: "배우자성·배우자 자리·도화로 보는 나의 연애 성향, 앞으로 3년 인연이 드는 해와 달, 잘 맞는 상대",
+    available: true,
+  },
   ziwei: {
     id: "ziwei",
     name: "천기록 자미두수 명반",
@@ -100,7 +108,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
 /** 화면에 보여 줄 순서(사주 감정서 줄) */
 export const PRODUCT_ORDER: CoreProductId[] = ["core", "full", "naming"];
 /** 추가 상품 줄 */
-export const EXTRA_ORDER: ExtraKind[] = ["gunghap", "newyear", "taekil", "iching", "ziwei"];
+export const EXTRA_ORDER: ExtraKind[] = ["love", "gunghap", "newyear", "taekil", "iching", "ziwei"];
 export const DEFAULT_PRODUCT: ProductId = "full";
 export const sellableProducts = () => [...PRODUCT_ORDER, ...EXTRA_ORDER].map((id) => PRODUCTS[id]).filter((p) => p.available);
 /** 사주 감정서 줄만(앱·외국어 화면처럼 추가 상품을 아직 열지 않은 곳) */

@@ -16,6 +16,8 @@ import AdminCoupons from "@/components/AdminCoupons";
 import AdminRewrite from "@/components/AdminRewrite";
 import { renderSignature } from "@/lib/orders";
 import { usageDays } from "@/lib/ai-usage";
+import { monthlyStatus } from "@/lib/monthly-mail";
+import AdminMonthlySend from "@/components/AdminMonthlySend";
 import { describeCoupon, listCoupons } from "@/lib/coupon";
 import { PRODUCTS, sellableProducts } from "@/lib/product";
 import { deliverySettings, lastSignatureFail, lastSmsFail, orderDeliveries, recentClientErrors } from "@/lib/delivery-status";
@@ -66,6 +68,7 @@ export default async function AdminPage() {
   const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 1000) / 10}%` : "-");
   const clientErrors = await recentClientErrors().catch(() => []);
   const aiDays = await usageDays(7).catch(() => []);
+  const monthly = await monthlyStatus().catch(() => null);
   const aiSum = aiDays.reduce((a, d) => a + d.total, 0);
   const AI_KIND: Record<string, string> = { report: "감정서", rewrite: "다시 쓰기", consult: "AI 상담", free: "무료·앱 풀이", other: "기타" };
   const coupons = (await listCoupons().catch(() => [])).map((c) => ({
@@ -141,6 +144,19 @@ export default async function AdminPage() {
             </tbody>
           </table>
         </div>
+      </section>
+      <section className="card admin-orders">
+        <h2>이달의 운세 메일</h2>
+        <p>
+          수신 동의 회원 {monthly?.subscribers ?? 0}명 · 매월 1일 오전 9시(한국 시간)에 자동 발송
+          {process.env.CRON_SECRET ? "" : " — ⚠ Vercel에 CRON_SECRET이 없어 자동 발송이 꺼져 있습니다"}
+        </p>
+        <p className="muted">
+          {monthly?.last
+            ? `마지막 발송: ${kstTime(monthly.last.at)} (${monthly.last.ym}) · 보냄 ${monthly.last.sent} · 건너뜀 ${monthly.last.skipped} · 실패 ${monthly.last.failed}${monthly.last.done ? "" : " · 다 못 보냄(아래 버튼으로 이어서 보내기)"}`
+            : "아직 발송 기록이 없습니다."}
+        </p>
+        <AdminMonthlySend />
       </section>
       <AdminCoupons rows={coupons} products={sellableProducts().map((p) => ({ id: p.id, name: p.name }))} />
       {clientErrors.length > 0 && (

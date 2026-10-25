@@ -18,6 +18,7 @@ import GradeCard from "./GradeCard";
 import { DaeunCard, ElementCard, PillarsCard, YearFlowCard } from "./ChartView";
 import KakaoChannelAdd from "./KakaoChannelAdd";
 import CustomerCancel from "./CustomerCancel";
+import ReportSummaryCard from "./ReportSummaryCard";
 
 interface Props {
   token: string;
@@ -359,8 +360,11 @@ export default function ReportClient({ token, partKeys, productName, productId, 
   }
 
   const extraKind = partKeys.find(isExtraKind);
+  const introResult = parts.intro?.status === "done" ? parts.intro.result : null;
+  const coverKeywords = introResult && "intro" in introResult ? introResult.intro.coverKeywords : [];
   return (
     <div id="result">
+      {!extraKind && !partKeys.includes("naming") && <ReportSummaryCard chart={chart} keywords={coverKeywords} />}
       {extraKind ? (
         <ExtraReport kind={extraKind} chart={chart} parts={parts} onRetry={() => load(extraKind)} notice={notice} title={productName} />
       ) : partKeys.includes("naming") ? (
