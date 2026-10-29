@@ -5,7 +5,7 @@ import { sendMonthlyMails } from "@/lib/monthly-mail";
 import { originFrom } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 800; // Vercel Pro 최대(13분 20초)
 
 /**
  * 매월 1일 이달의 운세 메일 발송. Vercel Cron(vercel.json)이 부르며 CRON_SECRET으로 확인한다.

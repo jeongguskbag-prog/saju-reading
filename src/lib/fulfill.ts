@@ -65,7 +65,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * 결제 직후 서버에서 감정서 전체를 쓴다. 파트들은 동시에 쓰고, 다른 곳(손님 화면)이 쓰는 중인 파트는 끝날 때까지 기다린다.
  * 한 파트가 실패해도 나머지는 계속 쓴다. 실패한 파트는 손님이 리포트 화면을 열 때 다시 쓴다.
  */
-export async function completeReport(token: string, origin: string, deadlineMs = 280_000): Promise<boolean> {
+export async function completeReport(token: string, origin: string, deadlineMs = 720_000): Promise<boolean> {
   const report = await getReport(token);
   if (!report || report.expired) return false;
   const until = Date.now() + deadlineMs;

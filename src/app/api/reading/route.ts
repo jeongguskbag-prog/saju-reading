@@ -15,7 +15,7 @@ import { parseExtraRequest } from "@/lib/extras/requests";
 import { generateNaming } from "@/lib/naming/generate";
 
 // 파트 하나 생성에 1~2분 걸릴 수 있다.
-export const maxDuration = 300;
+export const maxDuration = 800; // Vercel Pro 최대(13분 20초)
 
 const ROUTE_ERRORS = {
   ko: {

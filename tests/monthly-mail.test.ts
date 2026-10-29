@@ -39,8 +39,11 @@ describe("이달의 운세 메일", () => {
     expect(body.subject).toMatch(/^\(광고\) \[천기록\] 11월의 운세/);
     expect(body.text).toContain(`https://x.test/api/monthly/unsubscribe?m=${a.id}`);
     expect(body.headers["List-Unsubscribe"]).toContain("unsubscribe");
-    // 같은 달 다시 돌려도 보내지 않는다
-    expect((await sendMonthlyMails("https://x.test", NOW)).sent).toBe(0);
+    // 같은 달 다시 돌려도(10시·11시 이어 보내기) 새로 보내지 않고, 기록은 이번 달 합계로 남는다
+    sent.mockClear();
+    const again = await sendMonthlyMails("https://x.test", NOW);
+    expect(sent).not.toHaveBeenCalled();
+    expect(again).toMatchObject({ ym: "2026-11", sent: 1, failed: 0 });
     expect((await monthlyStatus()).subscribers).toBe(1);
     void b;
   });

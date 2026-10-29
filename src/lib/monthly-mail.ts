@@ -106,7 +106,7 @@ export interface MonthlyRun {
 export const MONTHLY_RUN_KEY = "monthly-run:last";
 
 /** 이번 달 메일을 아직 안 받은 동의 회원에게 보낸다. 시간 안에 다 못 보내면 다음 호출이 이어서 보낸다. */
-export async function sendMonthlyMails(origin: string, now = new Date(), deadlineMs = 240_000): Promise<MonthlyRun> {
+export async function sendMonthlyMails(origin: string, now = new Date(), deadlineMs = 720_000): Promise<MonthlyRun> {
   const store = requireStore();
   const ym = kstYm(now);
   const run: MonthlyRun = { ym, at: now.toISOString(), sent: 0, skipped: 0, failed: 0, done: true };
@@ -140,8 +140,11 @@ export async function sendMonthlyMails(origin: string, now = new Date(), deadlin
       await store.del(`monthly-sent:${ym}:${id}`);
     }
   }
-  await store.set(MONTHLY_RUN_KEY, run, 60 * 60 * 24 * 60);
-  return run;
+  // 같은 달에 이어 보낸 경우(1일 9시·10시·11시 자동 실행, 지금 보내기) 보낸·실패 수를 합쳐 기록한다.
+  const prev = await store.get<MonthlyRun>(MONTHLY_RUN_KEY);
+  const total = prev?.ym === ym ? { ...run, sent: prev.sent + run.sent, failed: prev.failed + run.failed } : run;
+  await store.set(MONTHLY_RUN_KEY, total, 60 * 60 * 24 * 60);
+  return total;
 }
 
 /** 관리 화면: 수신 동의 회원 수와 마지막 발송 결과 */

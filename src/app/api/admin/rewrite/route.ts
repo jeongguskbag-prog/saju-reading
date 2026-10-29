@@ -5,7 +5,7 @@ import { rewritePart } from "@/lib/fulfill";
 import { getOrder, getReport, isReleased } from "@/lib/orders";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 800; // Vercel Pro 최대(13분 20초)
 
 /**
  * 관리 화면의 '다시 쓰기': 공개(발송) 전 감정서의 풀이를 AI로 새로 쓴다. { orderId, part? } part가 없으면 모든 파트.

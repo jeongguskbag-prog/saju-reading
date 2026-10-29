@@ -12,7 +12,7 @@ import { getStore } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 // 받은 뒤 감정서 전체 작성을 이 요청 뒤에 이어서 돌린다.
-export const maxDuration = 300;
+export const maxDuration = 800; // Vercel Pro 최대(13분 20초)
 
 /** 선물 받기: { code, input, email, phone, targets, agree } → 감정서 주소 */
 export async function POST(request: Request) {

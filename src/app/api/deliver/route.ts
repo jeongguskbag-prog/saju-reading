@@ -7,7 +7,7 @@ import { getReport } from "@/lib/orders";
 import { originFrom } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 800; // Vercel Pro 최대(13분 20초)
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   // 아직 덜 쓴 파트가 있으면 마저 쓴다(파일 만들 시간을 남겨 둔다).
   const outcome0 = await deliverReport(report, origin);
   if (outcome0 !== "incomplete") return result(outcome0);
-  await completeReport(token, origin, 170_000);
+  await completeReport(token, origin, 600_000);
   report = await getReport(token);
   if (!report) return Response.json({ status: "skipped" });
   return result(await deliverReport(report, origin));

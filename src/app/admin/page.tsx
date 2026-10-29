@@ -148,7 +148,7 @@ export default async function AdminPage() {
       <section className="card admin-orders">
         <h2>이달의 운세 메일</h2>
         <p>
-          수신 동의 회원 {monthly?.subscribers ?? 0}명 · 매월 1일 오전 9시(한국 시간)에 자동 발송
+          수신 동의 회원 {monthly?.subscribers ?? 0}명 · 매월 1일 오전 9시(한국 시간)에 자동 발송, 다 못 보내면 10시·11시에 이어서 발송
           {process.env.CRON_SECRET ? "" : " — ⚠ Vercel에 CRON_SECRET이 없어 자동 발송이 꺼져 있습니다"}
         </p>
         <p className="muted">

@@ -13,7 +13,7 @@ import { trackStep } from "@/lib/funnel";
 
 export const dynamic = "force-dynamic";
 // 결제 승인 뒤 감정서 전체 작성(최대 몇 분)을 이 요청 뒤에 이어서 돌린다.
-export const maxDuration = 300;
+export const maxDuration = 800; // Vercel Pro 최대(13분 20초)
 
 type Params = Promise<{ paymentKey?: string; orderId?: string; amount?: string }>;
 
