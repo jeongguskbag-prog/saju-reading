@@ -14,6 +14,7 @@ import { newyearChoices } from "@/lib/extras/requests";
 import IchingFields, { emptyIchingForm, toIchingRequest, type IchingForm } from "./extras/IchingFields";
 import TaekilFields, { emptyTaekilForm, toTaekilRequest, type TaekilForm } from "./extras/TaekilFields";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withProductYears, won, type ProductId } from "@/lib/product";
+import OpeningSoon from "./OpeningSoon";
 
 export interface CheckoutInfo {
   enabled: boolean;
@@ -406,7 +407,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
         </form>
       ) : (
         <>
-          <p className="muted">감정서 결제는 준비 중입니다. 열리면 이 자리에서 바로 신청할 수 있습니다.</p>
+          <OpeningSoon />
           {/* 결제가 닫혀 있어도 견본은 먼저 볼 수 있게 한다. */}
           <SamplePreview />
           <SupportBox compact />

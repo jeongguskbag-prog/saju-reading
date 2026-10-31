@@ -5,6 +5,7 @@ import { GIFT_PRODUCTS, isGiftProduct } from "@/lib/gift";
 import { checkoutConfig } from "@/lib/orders";
 import { BRAND, PRODUCTS, withProductYears } from "@/lib/product";
 import { isAdminViewer } from "@/lib/checkout-access";
+import OpeningSoon from "@/components/OpeningSoon";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: `감정서 선물하기 — ${BRAND.name}`, description: "부모님·가족·친구에게 천기록 감정서를 선물하세요. 받는 분이 생년월일시를 넣으면 감정서가 만들어집니다." };
@@ -39,7 +40,7 @@ export default async function GiftPage() {
         {enabled && products.length ? (
           <GiftBuyForm products={products} offered={offered} testMode={testMode} />
         ) : (
-          <p className="muted">선물하기 결제를 준비하고 있습니다.</p>
+          <OpeningSoon what="감정서 선물하기" />
         )}
       </section>
     </SiteShell>

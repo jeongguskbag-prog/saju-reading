@@ -1358,3 +1358,9 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .share-event { margin-top: 12px; background: #fff7e0; border: 1px dashed #d9b77a; border-radius: 10px; padding: 10px 12px; }
 .share-event p { margin: 4px 0 8px; font-size: 14px; }
 .share-event .kakao-channel-btn { display: inline-block; }
+
+/* 정식 오픈 전 안내 */
+.opening-soon { background: #fff7e0; border: 1px dashed #d9b77a; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+.opening-soon-h { margin: 0 0 6px; }
+.opening-soon .muted { margin: 0 0 10px; }
+.opening-soon .kakao-channel-btn { display: inline-block; }

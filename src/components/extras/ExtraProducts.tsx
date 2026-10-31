@@ -34,7 +34,7 @@ export default function ExtraProducts({ years, checkoutOpen }: { years: [number,
                     내 사주 입력하고 신청하기
                   </a>
                 ) : (
-                  <p className="lp-soon">결제 준비 중</p>
+                  <p className="lp-soon">정식 오픈 준비 중</p>
                 )
               ) : (
                 <p className="lp-soon">준비 중</p>
