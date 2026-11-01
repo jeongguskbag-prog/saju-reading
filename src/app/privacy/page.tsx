@@ -113,7 +113,7 @@ export default function Privacy() {
         <tbody>
           <tr><td>토스페이먼츠(주)</td><td>결제 처리</td></tr>
           <tr><td>(주)카카오</td><td>카카오 로그인(회원 가입을 고른 경우), 카카오톡 채널 1:1 상담, 감정서 완성 알림톡 전달(카카오톡으로 받기를 고른 경우)</td></tr>
-          <tr><td>Vercel Inc.</td><td>웹사이트 호스팅</td></tr>
+          <tr><td>Vercel Inc.</td><td>웹사이트 호스팅, 방문 통계(쿠키 없는 익명 집계)</td></tr>
           <tr><td>Upstash, Inc.</td><td>주문·감정서·회원 정보 저장</td></tr>
           <tr><td>Anthropic, PBC</td><td>AI 풀이 작성</td></tr>
           <tr><td>Resend, Inc.</td><td>감정서 완성 메일 발송</td></tr>
@@ -163,6 +163,10 @@ export default function Privacy() {
         서비스 개선을 위해 날짜별 방문 단계 수(첫 화면 방문, 무료 사주 보기, 감정서 고르기)만 셉니다. 같은 분을 하루 한 번만 세려고 브라우저
         저장소에 임의 번호 하나를 두며, 이 번호는 이름·연락처·생년월일과 연결하지 않고 서버에는 이틀만 남습니다. 브라우저 저장소를 지우면 함께
         지워집니다.
+      </p>
+      <p>
+        또 호스팅 업체 Vercel의 방문 통계(Vercel Web Analytics)로 페이지별 방문 수, 들어온 경로(검색·SNS 등), 나라, 기기 종류를 셉니다. 이 통계는
+        쿠키를 쓰지 않고 개인을 알아볼 수 없는 집계 숫자로만 남습니다.
       </p>
 
       <h2>7. 틱톡(TikTok) 연동</h2>

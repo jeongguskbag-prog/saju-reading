@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { BRAND } from "@/lib/product";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import FontLinks from "@/components/FontLinks";
 import { headers } from "next/headers";
 import { SITES, type SiteLocale } from "@/lib/site-copy";
@@ -42,6 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {/* 인쇄(PDF) 때는 이 상자 밖의 요소(휴대폰 앱·확장 프로그램이 끼워 넣은 버튼 등)를 모두 숨긴다. */}
         <div id="app-root">{children}</div>
+        <Analytics />
       </body>
     </html>
   );
