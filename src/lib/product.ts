@@ -124,14 +124,14 @@ export const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
  * 사업자등록·통신판매업 신고 후 채운다.
  */
 export const BUSINESS = {
-  companyName: "", // 상호
-  ceo: "", // 대표자
-  bizNumber: "", // 사업자등록번호 000-00-00000
+  companyName: "천기록", // 상호 (간이과세자, 2026-11-02 등록)
+  ceo: "박정구", // 대표자
+  bizNumber: "626-09-03267", // 사업자등록번호
   mailOrderNumber: "", // 통신판매업 신고번호 제0000-지역-0000호
-  address: "", // 사업장 주소
+  address: "충청남도 천안시 서북구 성정15길 8-3, 206호(성정동)", // 사업장 주소
   phone: "", // 고객센터 전화
   email: "help@chungirok.com", // 고객센터 이메일(기타 문의). ImprovMX로 운영자 Gmail에 전달된다.
-  privacyOfficer: "", // 개인정보 보호책임자(이름)
+  privacyOfficer: "박정구", // 개인정보 보호책임자(이름)
 };
 
 export const orPending = (v: string) => v || "등록 예정";
