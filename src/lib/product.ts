@@ -129,7 +129,7 @@ export const BUSINESS = {
   bizNumber: "626-09-03267", // 사업자등록번호
   mailOrderNumber: "제2026-충남천안-2462호", // 통신판매업 신고번호
   address: "충청남도 천안시 서북구 성정15길 8-3, 206호(성정동)", // 사업장 주소
-  phone: "", // 고객센터 전화
+  phone: "010-9170-0015", // 고객센터 전화 (임시: 대표 개인 번호)
   email: "help@chungirok.com", // 고객센터 이메일(기타 문의). ImprovMX로 운영자 Gmail에 전달된다.
   privacyOfficer: "박정구", // 개인정보 보호책임자(이름)
 };
