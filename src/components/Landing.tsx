@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import ExtraProducts from "./extras/ExtraProducts";
 import SeasonBanner from "./SeasonBanner";
+import TasteBanner from "./TasteBanner";
 import TrackVisit from "./TrackVisit";
 import { releaseMinutes, waitLabel } from "@/lib/release";
 import ConsultIntro from "./ConsultIntro";
@@ -94,6 +95,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
         </div>
       </header>
 
+      {site === "ko" && <TasteBanner />}
       {site === "ko" && <SeasonBanner />}
       <TrackVisit />
 
