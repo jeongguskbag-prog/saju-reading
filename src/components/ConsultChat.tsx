@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { loadSdk } from "./PurchaseBox";
+import { requestTossPayment } from "@/lib/toss-pay";
 
 export interface ConsultProfile {
   id: string;
@@ -125,18 +125,7 @@ export default function ConsultChat({
       const res = await fetch("/api/consult/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ packId, profileId, agree }) });
       const order = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(order.error ?? "주문을 만들지 못했습니다.");
-      const TossPayments = await loadSdk();
-      await TossPayments(order.clientKey)
-        .payment({ customerKey: order.customerKey })
-        .requestPayment({
-          method: "CARD",
-          amount: { currency: "KRW", value: order.amount },
-          orderId: order.orderId,
-          orderName: order.orderName,
-          successUrl: `${location.origin}/pay/success`,
-          failUrl: `${location.origin}/pay/fail`,
-          customerName: order.customerName,
-        });
+      await requestTossPayment(order);
     } catch (err) {
       const code = (err as { code?: string }).code;
       setError(code === "USER_CANCEL" || code === "PAY_PROCESS_CANCELED" ? "결제를 취소했습니다." : (err as Error).message);

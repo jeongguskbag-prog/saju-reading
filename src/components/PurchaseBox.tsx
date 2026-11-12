@@ -15,6 +15,7 @@ import IchingFields, { emptyIchingForm, toIchingRequest, type IchingForm } from 
 import TaekilFields, { emptyTaekilForm, toTaekilRequest, type TaekilForm } from "./extras/TaekilFields";
 import { DEFAULT_PRODUCT, PRODUCTS, REPORT_VALID_DAYS, sellableProducts, withProductYears, won, type ProductId } from "@/lib/product";
 import OpeningSoon from "./OpeningSoon";
+import { requestTossPayment } from "@/lib/toss-pay";
 
 export interface CheckoutInfo {
   enabled: boolean;
@@ -33,30 +34,7 @@ type PayMethod = "CARD" | "MOBILE_PHONE";
 type Target = "email" | "kakao" | "sms";
 const TARGET_LABEL: Record<Target, string> = { email: "이메일", kakao: "카카오톡", sms: "문자" };
 
-interface TossPaymentsInstance {
-  payment(opts: { customerKey: string }): {
-    requestPayment(opts: Record<string, unknown>): Promise<void>;
-  };
-}
-
-declare global {
-  interface Window {
-    TossPayments?: (clientKey: string) => TossPaymentsInstance;
-  }
-}
-
-const SDK_URL = "https://js.tosspayments.com/v2/standard";
-
-export function loadSdk(): Promise<NonNullable<Window["TossPayments"]>> {
-  if (window.TossPayments) return Promise.resolve(window.TossPayments);
-  return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = SDK_URL;
-    s.onload = () => (window.TossPayments ? resolve(window.TossPayments) : reject(new Error("결제 모듈을 불러오지 못했습니다.")));
-    s.onerror = () => reject(new Error("결제 모듈을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요."));
-    document.head.appendChild(s);
-  });
-}
+export { loadSdk } from "@/lib/toss-pay";
 
 /** 무료 결과의 등급 카드 아래: 감정서를 고르고, 성함을 받아 토스 결제창을 연다. */
 export default function PurchaseBox({ input, checkout, years }: { input: BirthInput; checkout: CheckoutInfo; years: [number, number] }) {
@@ -185,19 +163,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
       });
       const order = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(order.error ?? "주문을 만들지 못했습니다.");
-      const TossPayments = await loadSdk();
-      const payment = TossPayments(order.clientKey).payment({ customerKey: order.customerKey });
-      await payment.requestPayment({
-        method: checkout.mobilePhone ? payMethod : "CARD",
-        amount: { currency: "KRW", value: order.amount },
-        orderId: order.orderId,
-        orderName: order.orderName,
-        successUrl: `${location.origin}/pay/success`,
-        failUrl: `${location.origin}/pay/fail`,
-        ...(order.customerEmail ? { customerEmail: order.customerEmail } : {}),
-        ...(order.customerMobilePhone ? { customerMobilePhone: order.customerMobilePhone } : {}),
-        customerName: order.customerName,
-      });
+      await requestTossPayment(order, checkout.mobilePhone ? payMethod : "CARD");
     } catch (err) {
       // 결제창을 닫은 경우 등. 화면에 남아 다시 시도할 수 있게 한다.
       const code = (err as { code?: string }).code;

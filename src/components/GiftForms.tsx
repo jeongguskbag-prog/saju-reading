@@ -3,7 +3,7 @@
 import { useState } from "react";
 import YearField from "./YearField";
 import { MOBILE_RE } from "@/lib/phone";
-import { loadSdk } from "./PurchaseBox";
+import { requestTossPayment } from "@/lib/toss-pay";
 
 type Target = "email" | "kakao" | "sms";
 const TARGET_LABEL: Record<Target, string> = { email: "이메일", kakao: "카카오톡", sms: "문자" };
@@ -104,20 +104,7 @@ export function GiftBuyForm({ products, offered, testMode }: { products: GiftPro
       });
       const order = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(order.error ?? "주문을 만들지 못했습니다.");
-      const TossPayments = await loadSdk();
-      await TossPayments(order.clientKey)
-        .payment({ customerKey: order.customerKey })
-        .requestPayment({
-          method: "CARD",
-          amount: { currency: "KRW", value: order.amount },
-          orderId: order.orderId,
-          orderName: order.orderName,
-          successUrl: `${location.origin}/pay/success`,
-          failUrl: `${location.origin}/pay/fail`,
-          ...(order.customerEmail ? { customerEmail: order.customerEmail } : {}),
-          ...(order.customerMobilePhone ? { customerMobilePhone: order.customerMobilePhone } : {}),
-          customerName: order.customerName,
-        });
+      await requestTossPayment(order);
     } catch (err) {
       const code = (err as { code?: string }).code;
       setError(code === "USER_CANCEL" || code === "PAY_PROCESS_CANCELED" ? "결제를 취소했습니다." : (err as Error).message);
