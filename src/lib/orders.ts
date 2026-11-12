@@ -45,7 +45,7 @@ export interface Order {
   notify?: NotifyTarget[];
   /** 휴대폰으로 받는 곳(카카오톡 알림톡·문자, 둘 다 가능) */
   channels?: PhoneChannel[];
-  /** 토스 카드 영수증 주소 */
+  /** 토스 결제 영수증 주소 */
   receiptUrl?: string;
   /** 결제 상세(토스 승인 응답에서 필요한 것만: 카드사·가린 카드번호·할부·승인번호, 간편결제) */
   payment?: {

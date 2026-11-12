@@ -78,7 +78,7 @@ ${receiptLines(order)
   .join("\n")}
 감정서는 약 ${orderWaitLabel(order)} 후 선택하신 곳으로 보내 드립니다(그때부터 아래 링크에서도 열림).
 감정서 보기: ${links.report}
-주문 조회: ${links.lookup}${order.receiptUrl ? `\n카드 영수증: ${order.receiptUrl}` : ""}`;
+주문 조회: ${links.lookup}${order.receiptUrl ? `\n결제 영수증: ${order.receiptUrl}` : ""}`;
 }
 
 export function receiptEmail(order: Order, links: ReceiptLinks) {
@@ -95,7 +95,7 @@ ${lines.map(([k, v]) => `${k}: ${v}`).join("\n")}
 
 주문 조회: ${links.lookup}
 주문번호와 이 메일 주소(또는 휴대폰 번호)로 감정서를 다시 찾을 수 있습니다. 열람 기간은 결제일로부터 ${REPORT_VALID_DAYS}일입니다.
-${order.receiptUrl ? `\n카드 영수증: ${order.receiptUrl}\n` : ""}
+${order.receiptUrl ? `\n결제 영수증: ${order.receiptUrl}\n` : ""}
 - 天機錄 운명연구원`;
   const e = escapeHtml;
   const html = `<div style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.8;color:#2a2926;max-width:560px;margin:0 auto;padding:8px">
@@ -107,7 +107,7 @@ ${lines.map(([k, v]) => `<tr><th style="text-align:left;padding:8px 10px;border-
 <p style="margin:0 0 6px"><a href="${e(links.report)}" style="display:inline-block;background:#b0262c;color:#ffffff;padding:13px 24px;border-radius:4px;text-decoration:none;font-weight:700">감정서 보기</a></p>
 <p style="font-size:13px;color:#57544d;margin:0 0 18px">감정서는 <b>약 ${e(orderWaitLabel(order))} 후</b> 선택하신 곳으로 보내 드리며, 그때부터 위 버튼으로도 열립니다.<br>취소는 감정서를 보내 드리기 전까지 위 버튼으로 연 화면의 '신청 취소하기'로 가능하며, <b>발송 뒤에는 환불되지 않습니다.</b></p>
 <p style="font-size:13px;color:#57544d">감정서 주소를 잃어버리셨다면 <a href="${e(links.lookup)}" style="color:#b0262c">주문 조회</a>에서 주문번호와 이 메일 주소(또는 휴대폰 번호)로 다시 찾을 수 있습니다. 열람 기간은 결제일로부터 ${REPORT_VALID_DAYS}일입니다.</p>
-${order.receiptUrl ? `<p style="font-size:13px"><a href="${e(order.receiptUrl)}" style="color:#b0262c">카드 영수증 보기</a></p>` : ""}
+${order.receiptUrl ? `<p style="font-size:13px"><a href="${e(order.receiptUrl)}" style="color:#b0262c">결제 영수증 보기</a></p>` : ""}
 <p style="margin-top:20px">- 天機錄 운명연구원</p>
 </div>`;
   return { subject, html, text };
