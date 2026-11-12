@@ -44,7 +44,7 @@ describe("결제 확인 발송", () => {
     expect(sms).toContain("결제 일시: 2026.10.15 12:05");
     expect(sms).toContain(`https://x.test/r/${o.token}`);
     expect(sms).toContain("https://x.test/order");
-    expect(sms).toContain("카드 영수증");
+    expect(sms).toContain("결제 영수증");
     expect(receiptEmail(o, links).subject).toContain(o.id);
     const k = receiptKakaoText(receiptKakaoVariables(o, links));
     expect(k).not.toContain("#{");
