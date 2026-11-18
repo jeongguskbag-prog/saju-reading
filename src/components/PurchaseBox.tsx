@@ -20,6 +20,8 @@ import { requestTossPayment } from "@/lib/toss-pay";
 export interface CheckoutInfo {
   enabled: boolean;
   testMode: boolean;
+  /** 정식 오픈 전 손님 테스트 결제(승인 직후 자동 취소, 감정서 없음) */
+  reviewOnly?: boolean;
   /** 휴대폰 결제를 열었는지(토스 계약 후 TOSS_MOBILE_PHONE=1) */
   mobilePhone: boolean;
   /** 감정서 링크를 문자로 받을 수 있는지(솔라피 설정) */
@@ -368,7 +370,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
             HTML 문서를 보내 드립니다. 그때부터 화면에서도 열립니다.
           </p>
           <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
-          {checkout.testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}
+          {checkout.testMode && <p className="muted">{checkout.reviewOnly ? "정식 오픈 준비 중이라 토스페이먼츠 테스트 결제로 연결됩니다. 실제로 돈이 빠져나가지 않으며, 결제는 승인 직후 자동 취소되고 감정서는 발급되지 않습니다." : "테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다."}</p>}
           <SupportBox compact />
         </form>
       ) : (

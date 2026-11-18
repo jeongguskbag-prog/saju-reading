@@ -72,7 +72,7 @@ export default async function ConsultPage({ searchParams }: { searchParams: Prom
     );
   }
 
-  const { enabled, testMode } = checkoutConfig({ admin: await isAdminViewer() });
+  const { enabled, testMode, reviewOnly } = checkoutConfig({ admin: await isAdminViewer() });
   const profiles: ConsultProfile[] = member.profiles.map((p) => ({ id: p.id, name: p.input.name ?? "이름 없음", line: line(p), self: p.self }));
   return (
     <SiteShell nav="consult">
@@ -85,6 +85,7 @@ export default async function ConsultPage({ searchParams }: { searchParams: Prom
             packs={Object.values(QUESTION_PACKS).map((p) => ({ ...p }))}
             checkoutOpen={enabled}
             testMode={testMode}
+            reviewOnly={reviewOnly}
             justPaid={paid === "1"}
           />
         </section>

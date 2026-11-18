@@ -213,9 +213,16 @@ describe("상품·열람 기간·완성 메일", () => {
 
   it("핵심 명식록 링크로 2부를 요청하면 거절(400)", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant-x");
-    const paid = await paidOrder("core");
-    const res = await readingPOST(new Request("http://x/api/reading", { method: "POST", body: JSON.stringify({ token: paid.token, part: "part2" }) }));
-    expect(res.status).toBe(400);
+    // 열람 기간(결제일 기준) 안에서 시험한다. 실제 오늘 날짜에 따라 '기간 만료(410)'가 나지 않도록 시계를 맞춘다.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-16T03:00:00Z"));
+    try {
+      const paid = await paidOrder("core");
+      const res = await readingPOST(new Request("http://x/api/reading", { method: "POST", body: JSON.stringify({ token: paid.token, part: "part2" }) }));
+      expect(res.status).toBe(400);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("결제 후 30일이 지나면 열람 기간 만료(410)", async () => {
@@ -305,18 +312,21 @@ describe("휴대폰 결제 설정", () => {
 });
 
 describe("실제 사이트의 테스트 결제", () => {
-  it("Production의 test_ 키 결제는 관리자에게만 열고, 손님에게는 닫는다", () => {
+  it("Production의 test_ 키 결제: 손님은 심사용(자동 취소), 관리자는 감정서까지", () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant-x");
     vi.stubEnv("TOSS_SECRET_KEY", "test_sk_x");
     vi.stubEnv("TOSS_CLIENT_KEY", "test_ck_x");
     vi.stubEnv("VERCEL_ENV", "production");
     vi.stubEnv("ALLOW_PUBLIC_TEST_PAYMENTS", "");
-    expect(checkoutConfig().enabled).toBe(false);
-    expect(checkoutConfig().clientKey).toBeNull();
+    expect(checkoutConfig().enabled).toBe(true);
+    expect(checkoutConfig().clientKey).toBe("test_ck_x");
+    expect(checkoutConfig().reviewOnly).toBe(true);
     expect(checkoutConfig({ admin: true }).enabled).toBe(true);
+    expect(checkoutConfig({ admin: true }).reviewOnly).toBe(false);
     expect(checkoutConfig({ admin: true }).testMode).toBe(true);
     vi.stubEnv("ALLOW_PUBLIC_TEST_PAYMENTS", "1");
     expect(checkoutConfig().enabled).toBe(true);
+    expect(checkoutConfig().reviewOnly).toBe(false);
     vi.stubEnv("ALLOW_PUBLIC_TEST_PAYMENTS", "");
     vi.stubEnv("VERCEL_ENV", "preview");
     expect(checkoutConfig().enabled).toBe(true); // 미리보기는 늘 테스트 가능
@@ -325,6 +335,25 @@ describe("실제 사이트의 테스트 결제", () => {
     vi.stubEnv("TOSS_SECRET_KEY", "live_sk_x");
     expect(checkoutConfig().enabled).toBe(true);
     expect(checkoutConfig().testMode).toBe(false);
+    expect(checkoutConfig().reviewOnly).toBe(false);
+  });
+
+  it("심사용 테스트 결제는 승인 직후 자동 취소하고 감정서 토큰을 만들지 않는다", async () => {
+    const order = await createOrder(input, "a@b.co", "core", now);
+    const fetchMock = vi.fn(async (url: string) =>
+      new Response(JSON.stringify(String(url).endsWith("/confirm") ? { orderId: order.id, status: "DONE", totalAmount: order.amount, method: "카드" } : { status: "CANCELED" }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const r = await confirmOrder({ paymentKey: "pk_r", orderId: order.id, amount: order.amount }, now, { reviewOnly: true });
+    expect(r.reviewOnly).toBe(true);
+    expect(r.justPaid).toBe(false);
+    expect(r.order.status).toBe("cancelled");
+    expect(r.order.token).toBeUndefined();
+    expect(String(fetchMock.mock.calls[1][0])).toContain("/v1/payments/pk_r/cancel");
+    // 새로고침해도 다시 승인·취소하지 않는다.
+    const again = await confirmOrder({ paymentKey: "pk_r", orderId: order.id, amount: order.amount }, now, { reviewOnly: true });
+    expect(again.reviewOnly).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 

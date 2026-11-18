@@ -6,7 +6,8 @@ import { completeReport } from "@/lib/fulfill";
 import { scheduleDelivery } from "@/lib/delivery";
 import { sendReceipt } from "@/lib/receipt";
 import { creditQuestionOrder } from "@/lib/consult";
-import { confirmOrder, OrderError } from "@/lib/orders";
+import { checkoutConfig, confirmOrder, OrderError, productOf } from "@/lib/orders";
+import { isAdminViewer } from "@/lib/checkout-access";
 import { originFrom } from "@/lib/site";
 import { StoreError } from "@/lib/store";
 import { trackStep } from "@/lib/funnel";
@@ -24,24 +25,27 @@ export default async function PaySuccess({ searchParams }: { searchParams: Param
   let packDone = false;
   let giftCode: string | null = null;
   let message = "결제 정보를 확인하지 못했습니다.";
+  let review: { orderId: string; amount: number; product: string; method?: string } | null = null;
   if (paymentKey && orderId && amount && /^\d+$/.test(amount)) {
     try {
-      const { order, justPaid } = await confirmOrder({ paymentKey, orderId, amount: Number(amount) });
+      const { reviewOnly } = checkoutConfig({ admin: await isAdminViewer() });
+      const { order, justPaid, reviewOnly: wasReview } = await confirmOrder({ paymentKey, orderId, amount: Number(amount) }, new Date(), { reviewOnly });
+      if (wasReview) review = { orderId: order.id, amount: order.amount, product: productOf(order).name, method: order.method };
       if (justPaid && !order.questionPack) await trackStep("paid");
       // AI 상담 질문권: 감정서를 쓰지 않고 회원에게 질문권만 넣는다(새로고침해도 한 번만).
-      if (order.questionPack) {
+      if (order.questionPack && !wasReview) {
         await creditQuestionOrder(order);
         packDone = true;
       }
       // 선물 주문: 감정서를 쓰지 않고 결제 확인과 선물 링크를 사는 분께 보낸 뒤 선물 링크 화면으로.
-      if (order.gift) {
+      if (order.gift && !wasReview) {
         giftCode = order.gift.code;
         if (justPaid) {
           const origin = originFrom(await headers());
           after(() => sendReceipt(order, origin).catch((e) => console.error("선물 결제 확인 발송 실패", e)));
         }
       }
-      token = order.questionPack || order.gift ? null : (order.token ?? null);
+      token = wasReview || order.questionPack || order.gift ? null : (order.token ?? null);
       if (justPaid && token) {
         const origin = originFrom(await headers());
         const t = token;
@@ -61,6 +65,27 @@ export default async function PaySuccess({ searchParams }: { searchParams: Param
         message = "결제 승인 중 오류가 났습니다. 잠시 후 이 페이지를 새로고침해 주세요.";
       }
     }
+  }
+  if (review) {
+    return (
+      <SiteShell>
+        <section className="card pay-result">
+          <h2>테스트 결제가 정상적으로 완료되었습니다</h2>
+          <p>
+            천기록은 지금 정식 오픈을 준비하고 있어 <b>토스페이먼츠 테스트 결제</b>로 연결되어 있습니다. 실제로 돈이 빠져나가지 않으며,
+            이 결제는 승인 직후 자동으로 취소되었습니다.
+          </p>
+          <dl className="pay-review">
+            <div><dt>주문번호</dt><dd>{review.orderId}</dd></div>
+            <div><dt>상품</dt><dd>{review.product}</dd></div>
+            <div><dt>결제 금액</dt><dd>{review.amount.toLocaleString("ko-KR")}원{review.method ? ` (${review.method})` : ""}</dd></div>
+            <div><dt>상태</dt><dd>테스트 결제 · 자동 취소</dd></div>
+          </dl>
+          <p className="muted">정식 오픈 후에는 같은 과정으로 결제하시면 감정서가 작성되어 고르신 곳으로 발송됩니다.</p>
+          <a className="btn-secondary link-btn" href="/#saju-form">처음으로 돌아가기</a>
+        </section>
+      </SiteShell>
+    );
   }
   if (packDone) redirect("/consult?paid=1");
   if (giftCode) redirect(`/gift/${giftCode}?new=1`);

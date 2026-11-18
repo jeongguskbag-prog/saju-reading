@@ -21,6 +21,7 @@ export default function ConsultChat({
   packs,
   checkoutOpen,
   testMode,
+  reviewOnly = false,
   justPaid,
 }: {
   profiles: ConsultProfile[];
@@ -28,6 +29,7 @@ export default function ConsultChat({
   packs: Pack[];
   checkoutOpen: boolean;
   testMode: boolean;
+  reviewOnly?: boolean;
   justPaid: boolean;
 }) {
   const [profileId, setProfileId] = useState(profiles.find((p) => p.self)?.id ?? profiles[0]?.id ?? "");
@@ -220,7 +222,7 @@ export default function ConsultChat({
           <h2 id="packs-h">질문권</h2>
           {checkoutOpen ? (
             <>
-              {testMode && <p className="muted small">지금은 테스트 결제 모드입니다(실제로 돈이 나가지 않습니다).</p>}
+              {testMode && <p className="muted small">{reviewOnly ? "정식 오픈 준비 중이라 토스페이먼츠 테스트 결제로 연결됩니다. 실제로 돈이 빠져나가지 않으며, 결제는 승인 직후 자동 취소되고 질문권은 발급되지 않습니다." : "지금은 테스트 결제 모드입니다(실제로 돈이 나가지 않습니다)."}</p>}
               <div className="consult-pack-list">
                 {packs.map((p) => (
                   <button key={p.id} type="button" className="consult-pack" onClick={() => buy(p.id)} disabled={Boolean(buying)}>

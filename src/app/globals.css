@@ -1364,3 +1364,9 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .opening-soon-h { margin: 0 0 6px; }
 .opening-soon .muted { margin: 0 0 10px; }
 .opening-soon .kakao-channel-btn { display: inline-block; }
+
+/* 심사용 테스트 결제 완료 화면 */
+.pay-review { display: grid; gap: 6px; margin: 16px 0; padding: 14px 16px; border: 1px solid var(--line, #e3ddd2); border-radius: 12px; }
+.pay-review div { display: flex; gap: 12px; }
+.pay-review dt { min-width: 72px; color: var(--muted, #7a7266); }
+.pay-review dd { margin: 0; font-weight: 600; word-break: break-all; }

@@ -15,7 +15,7 @@ export const metadata: Metadata = { alternates: { canonical: "/", languages: lan
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const { enabled, testMode, mobilePhone, sms, kakao, release } = checkoutConfig({ admin: await isAdminViewer() });
+  const { enabled, testMode, reviewOnly, mobilePhone, sms, kakao, release } = checkoutConfig({ admin: await isAdminViewer() });
   // FREE_READING=1이면 예전처럼 바로 무료 풀이, 아니면 등급까지 무료 + 리포트 구매.
   const free = isFreeReading() && isAiEnabled();
   const reviews = await listReviews({ limit: 9 });

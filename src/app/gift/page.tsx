@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: `감정서 선물하기 — ${BRAND.n
 
 /** 감정서 선물하기: 사는 분이 상품과 받는 분을 고르고 결제하면 선물 링크가 생긴다. */
 export default async function GiftPage() {
-  const { enabled, testMode, sms, kakao } = checkoutConfig({ admin: await isAdminViewer() });
+  const { enabled, testMode, reviewOnly, sms, kakao } = checkoutConfig({ admin: await isAdminViewer() });
   const y = new Date(Date.now() + 9 * 3_600_000).getUTCFullYear();
   const products = GIFT_PRODUCTS.filter(isGiftProduct).map((id) => ({
     id,
@@ -38,7 +38,7 @@ export default async function GiftPage() {
       </section>
       <section className="card">
         {enabled && products.length ? (
-          <GiftBuyForm products={products} offered={offered} testMode={testMode} />
+          <GiftBuyForm products={products} offered={offered} testMode={testMode} reviewOnly={reviewOnly} />
         ) : (
           <OpeningSoon what="감정서 선물하기" />
         )}

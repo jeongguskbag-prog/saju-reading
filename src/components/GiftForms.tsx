@@ -74,7 +74,7 @@ function checkContact(targets: Target[], email: string, phone: string): string |
 }
 
 /** 선물 사기: 상품·보내는 분·받는 분·메시지·결제 */
-export function GiftBuyForm({ products, offered, testMode }: { products: GiftProductOption[]; offered: Target[]; testMode: boolean }) {
+export function GiftBuyForm({ products, offered, testMode, reviewOnly = false }: { products: GiftProductOption[]; offered: Target[]; testMode: boolean; reviewOnly?: boolean }) {
   const [productId, setProductId] = useState(products[0]?.id ?? "");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -160,7 +160,7 @@ export function GiftBuyForm({ products, offered, testMode }: { products: GiftPro
         결제가 끝나면 선물 링크가 만들어집니다. 그 링크를 받는 분께 카카오톡·문자로 전해 주세요. 받는 분이 링크에서 생년월일시를 넣으면 명식 미리보기가 바로
         열리고, 감정서 본문은 정해진 시간 뒤 받는 분께 보내 드립니다.
       </p>
-      {testMode && <p className="muted">테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다.</p>}
+      {testMode && <p className="muted">{reviewOnly ? "정식 오픈 준비 중이라 토스페이먼츠 테스트 결제로 연결됩니다. 실제로 돈이 빠져나가지 않으며, 결제는 승인 직후 자동 취소되고 선물 링크는 발급되지 않습니다." : "테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다."}</p>}
     </form>
   );
 }

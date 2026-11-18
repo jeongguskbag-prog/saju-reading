@@ -20,7 +20,7 @@ export default async function SavedProfilePage({ params }: { params: Promise<{ i
   if (!member) redirect("/my");
   const profile = member.profiles.find((p) => p.id === id);
   if (!profile) notFound();
-  const { enabled, testMode, mobilePhone, sms, kakao, release } = checkoutConfig({ admin: await isAdminViewer() });
+  const { enabled, testMode, reviewOnly, mobilePhone, sms, kakao, release } = checkoutConfig({ admin: await isAdminViewer() });
   // 첫 화면과 같은 방식(FREE_READING=1이면 바로 무료 풀이, 아니면 등급까지 무료 + 감정서 신청).
   const free = isFreeReading() && isAiEnabled();
   return (

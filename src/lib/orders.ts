@@ -29,6 +29,8 @@ export interface Order {
   /** 결제 취소 시각·사유(관리자가 취소한 주문) */
   cancelledAt?: string;
   cancelReason?: string;
+  /** 정식 오픈 전 심사용 테스트 결제(승인 직후 자동 취소, 감정서 없음) */
+  reviewTest?: boolean;
   createdAt: string;
   paidAt?: string;
   paymentKey?: string;
@@ -108,6 +110,8 @@ export function checkoutConfig(opts: { admin?: boolean } = {}): {
   enabled: boolean;
   clientKey: string | null;
   testMode: boolean;
+  /** 정식 오픈 전(테스트 키) 손님 결제: 결제창·카드 인증까지 그대로 거치고, 승인 직후 자동 취소하며 감정서는 만들지 않는다(토스 심사용). */
+  reviewOnly: boolean;
   mobilePhone: boolean;
   sms: boolean;
   kakao: boolean;
@@ -116,16 +120,18 @@ export function checkoutConfig(opts: { admin?: boolean } = {}): {
   const clientKey = process.env.TOSS_CLIENT_KEY || null;
   const secret = process.env.TOSS_SECRET_KEY;
   const testKey = Boolean(clientKey?.startsWith("test_"));
-  // 테스트 키는 돈이 나가지 않는 결제라 누구나 감정서를 받아 갈 수 있다. 그래서 실제 사이트(production)에서는
-  // 관리 화면에 로그인한 브라우저(관리자)에게만 테스트 결제를 열고, 손님에게는 '결제 준비 중'으로 보인다.
-  // 손님에게도 테스트 결제를 열려면 Vercel에 ALLOW_PUBLIC_TEST_PAYMENTS=1. live_ 키로 바꾸면 누구나 실제 결제를 한다.
-  const testBlocked =
+  // 테스트 키는 돈이 나가지 않는 결제라, 그대로 열면 누구나 감정서를 받아 갈 수 있다. 그래서 실제 사이트(production)에서
+  // 관리자가 아닌 손님의 테스트 결제는 '심사용'으로만 연다: 결제창과 카드 결제 과정은 똑같이 보이고(토스페이먼츠 심사),
+  // 승인되면 바로 자동 취소하고 감정서는 만들지 않는다. 관리 화면에 로그인한 브라우저(관리자)는 테스트 결제로 감정서까지 받는다.
+  // 손님에게도 테스트 결제로 감정서를 주려면 Vercel에 ALLOW_PUBLIC_TEST_PAYMENTS=1. live_ 키로 바꾸면 누구나 실제 결제를 한다.
+  const reviewOnly =
     testKey && process.env.VERCEL_ENV === "production" && process.env.ALLOW_PUBLIC_TEST_PAYMENTS !== "1" && !opts.admin;
-  const enabled = SALES_OPEN && !testBlocked && Boolean(clientKey && secret && getStore() && isAiEnabled());
+  const enabled = SALES_OPEN && Boolean(clientKey && secret && getStore() && isAiEnabled());
   return {
     enabled,
     clientKey: enabled ? clientKey : null,
     testMode: testKey,
+    reviewOnly: enabled && reviewOnly,
     // 휴대폰 결제는 토스페이먼츠와 별도 계약이 필요해, 계약 후 TOSS_MOBILE_PHONE=1로 켠다.
     mobilePhone: enabled && process.env.TOSS_MOBILE_PHONE === "1",
     // 감정서 링크를 문자로 받기(솔라피 키·발신번호가 있을 때)
@@ -269,7 +275,8 @@ async function tossConfirm(paymentKey: string, orderId: string, amount: number):
 export async function confirmOrder(
   params: { paymentKey: string; orderId: string; amount: number },
   now = new Date(),
-): Promise<{ order: Order; justPaid: boolean }> {
+  opts: { reviewOnly?: boolean } = {},
+): Promise<{ order: Order; justPaid: boolean; reviewOnly?: boolean }> {
   const store = requireStore();
   const order = await getOrder(params.orderId);
   if (!order) throw new OrderError("주문을 찾을 수 없습니다. 결제 시간이 오래 지났다면 다시 주문해 주세요.", 404);
@@ -277,6 +284,8 @@ export async function confirmOrder(
     if (order.paymentKey !== params.paymentKey) throw new OrderError("이미 결제가 끝난 주문입니다.", 409);
     return { order, justPaid: false };
   }
+  // 심사용 테스트 결제를 새로고침한 경우: 이미 자동 취소한 주문
+  if (order.status === "cancelled" && order.reviewTest && order.paymentKey === params.paymentKey) return { order, justPaid: false, reviewOnly: true };
   // 결제창을 거치며 금액이 바뀌지 않았는지 서버에 저장한 금액과 비교한다.
   if (params.amount !== order.amount) throw new OrderError("결제 금액이 주문 금액과 다릅니다.");
 
@@ -298,6 +307,22 @@ export async function confirmOrder(
   }
   if (payment.status !== "DONE" || payment.totalAmount !== order.amount || payment.orderId !== order.id) {
     throw new OrderError("결제 승인 결과가 주문과 맞지 않습니다. 고객센터로 문의해 주세요.", 502);
+  }
+  if (opts.reviewOnly) {
+    // 심사용 테스트 결제: 승인까지 확인한 뒤 바로 취소하고, 감정서·선물·질문권은 만들지 않는다.
+    await tossCancel(params.paymentKey, order.id, "정식 오픈 전 테스트 결제 자동 취소");
+    if (order.coupon) await releaseCouponUse(order.coupon.code).catch(() => undefined);
+    const cancelled: Order = {
+      ...order,
+      status: "cancelled",
+      paymentKey: params.paymentKey,
+      method: payment.method,
+      cancelledAt: now.toISOString(),
+      cancelReason: "정식 오픈 전 테스트 결제 자동 취소",
+      reviewTest: true,
+    };
+    await store.set(orderKey(order.id), cancelled);
+    return { order: cancelled, justPaid: false, reviewOnly: true };
   }
   const paid: Order = {
     ...order,
@@ -343,6 +368,25 @@ export async function setReleaseAt(orderId: string, at: Date): Promise<Order | n
   return next;
 }
 
+/** 토스에 전액 취소를 요청한다. 이미 취소된 결제(ALREADY_CANCELED_PAYMENT)는 성공으로 본다. */
+async function tossCancel(paymentKey: string, orderId: string, reason: string): Promise<void> {
+  const secret = process.env.TOSS_SECRET_KEY;
+  if (!secret) throw new OrderError("결제 설정이 없습니다.", 503);
+  const base = (process.env.TOSS_API_BASE || "https://api.tosspayments.com").replace(/\/$/, "");
+  const res = await fetch(`${base}/v1/payments/${encodeURIComponent(paymentKey)}/cancel`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${secret}:`).toString("base64")}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": `cancel-${orderId}`,
+    },
+    body: JSON.stringify({ cancelReason: reason.slice(0, 200) || "고객 요청" }),
+    cache: "no-store",
+  });
+  const data = (await res.json().catch(() => ({}))) as { status?: string; code?: string; message?: string };
+  if (!res.ok && data.code !== "ALREADY_CANCELED_PAYMENT") throw new OrderError(data.message || "결제를 취소하지 못했습니다.", res.status >= 500 ? 502 : 400);
+}
+
 /**
  * 관리자 결제 취소: 토스에 전액 취소를 요청하고 주문을 '취소'로 바꾼다. 취소한 주문의 감정서는 열리지 않고 보내지 않는다.
  * 감정서 공개(발송) 전 취소 요청은 전액 환불한다(환불 규정).
@@ -357,22 +401,7 @@ export async function cancelOrder(orderId: string, reason: string, now = new Dat
   if (order.gift && !order.gift.redeemedOrderId && !(await requireStore().setIfAbsent(`gift-redeem:${order.gift.code}`, now.toISOString(), 600))) {
     throw new OrderError("받는 분이 지금 선물을 받는 중입니다. 잠시 뒤 다시 확인해 주세요.", 409);
   }
-  const secret = process.env.TOSS_SECRET_KEY;
-  if (!secret) throw new OrderError("결제 설정이 없습니다.", 503);
-  const base = (process.env.TOSS_API_BASE || "https://api.tosspayments.com").replace(/\/$/, "");
-  const res = await fetch(`${base}/v1/payments/${encodeURIComponent(order.paymentKey)}/cancel`, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${secret}:`).toString("base64")}`,
-      "Content-Type": "application/json",
-      "Idempotency-Key": `cancel-${order.id}`,
-    },
-    body: JSON.stringify({ cancelReason: reason.slice(0, 200) || "고객 요청" }),
-    cache: "no-store",
-  });
-  const data = (await res.json().catch(() => ({}))) as { status?: string; code?: string; message?: string };
-  // 이미 취소된 결제(ALREADY_CANCELED_PAYMENT)는 우리 기록만 맞춘다.
-  if (!res.ok && data.code !== "ALREADY_CANCELED_PAYMENT") throw new OrderError(data.message || "결제를 취소하지 못했습니다.", res.status >= 500 ? 502 : 400);
+  await tossCancel(order.paymentKey, order.id, reason);
   const cancelled: Order = { ...order, status: "cancelled", cancelledAt: now.toISOString(), cancelReason: reason.slice(0, 200) };
   if (order.coupon) await releaseCouponUse(order.coupon.code).catch(() => undefined);
   await requireStore().set(orderKey(order.id), cancelled);
