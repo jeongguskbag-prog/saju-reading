@@ -12,6 +12,7 @@ import IchingReport from "./IchingReport";
 import ZiweiReport from "./ZiweiReport";
 import LoveReport from "./LoveReport";
 import StarReport from "./StarReport";
+import GlanceReport from "./GlanceReport";
 
 const NUM = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
 
@@ -83,6 +84,7 @@ export default function ExtraReport({
   const state = parts[kind];
   const data: ExtraResult | null = state?.status === "done" && "extra" in state.result ? state.result.extra : null;
   const pending = <Pending state={state} onRetry={onRetry} label={title} />;
+  if (kind === "glance") return <GlanceReport chart={chart} data={data as never} pending={pending} notice={notice} title={title} />;
   if (kind === "money" || kind === "career") return <StarReport kind={kind} chart={chart} data={data as never} pending={pending} notice={notice} title={title} />;
   if (kind === "love") return <LoveReport chart={chart} data={data as never} pending={pending} notice={notice} title={title} />;
   if (kind === "ziwei") return <ZiweiReport chart={chart} data={data as never} pending={pending} notice={notice} title={title} />;

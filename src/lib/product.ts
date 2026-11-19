@@ -95,6 +95,14 @@ export const PRODUCTS: Record<ProductId, Product> = {
     summary: "배우자성·배우자 자리·도화로 보는 나의 연애 성향, 앞으로 3년 인연이 드는 해와 달, 잘 맞는 상대",
     available: true,
   },
+  glance: {
+    id: "glance",
+    name: "천기록 한 장 운세",
+    price: 990,
+    parts: ["glance"],
+    summary: "다음 해(연초까지는 올해) 세운을 내 명식에 겹쳐 한 해의 흐름, 연애·재물·일 한 줄씩, 좋은 달과 살필 달을 한 장으로",
+    available: true,
+  },
   money: {
     id: "money",
     name: "천기록 재물운 숏 감정서",
@@ -124,7 +132,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
 /** 화면에 보여 줄 순서(사주 감정서 줄) */
 export const PRODUCT_ORDER: CoreProductId[] = ["core", "full", "naming"];
 /** 추가 상품 줄 */
-export const EXTRA_ORDER: ExtraKind[] = ["love", "money", "career", "gunghap", "newyear", "taekil", "iching", "ziwei"];
+export const EXTRA_ORDER: ExtraKind[] = ["glance", "love", "money", "career", "gunghap", "newyear", "taekil", "iching", "ziwei"];
 export const DEFAULT_PRODUCT: ProductId = "full";
 export const sellableProducts = () => [...PRODUCT_ORDER, ...EXTRA_ORDER].map((id) => PRODUCTS[id]).filter((p) => p.available);
 /** 사주 감정서 줄만(앱·외국어 화면처럼 추가 상품을 아직 열지 않은 곳) */

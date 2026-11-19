@@ -11,6 +11,7 @@ const NEXT: Record<ProductId, ProductId[]> = {
   iching: ["love", "newyear"],
   ziwei: ["full", "gunghap"],
   love: ["gunghap", "money"],
+  glance: ["newyear", "money"],
   money: ["career", "full"],
   career: ["money", "full"],
 };
