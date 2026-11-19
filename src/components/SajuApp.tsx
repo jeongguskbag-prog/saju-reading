@@ -18,6 +18,7 @@ import ShareTypeCard from "./ShareTypeCard";
 import MemberSaveBar from "./MemberSaveBar";
 import PurchaseBox, { type CheckoutInfo } from "./PurchaseBox";
 import RecommendBox from "./RecommendBox";
+import LuckyColorCard from "./LuckyColorCard";
 import { useLocale, useT } from "./LocaleProvider";
 import { messages, type Messages } from "@/lib/messages";
 import type { Region } from "@/lib/saju/locale";
@@ -416,6 +417,7 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
               checkout && !aiEnabled && lastInput.current ? (
                 <>
                   {locale === "ko" && <ShareTypeCard chart={chart} />}
+                  {locale === "ko" && <LuckyColorCard chart={chart} />}
                   {locale === "ko" && checkout.enabled && <RecommendBox chart={chart} onPick={(id) => setPick((p) => ({ id, n: (p?.n ?? 0) + 1 }))} />}
                   <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} pick={pick} />
                 </>

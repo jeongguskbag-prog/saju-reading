@@ -7,6 +7,8 @@ import { productOf } from "@/lib/orders";
 import { BRAND } from "@/lib/product";
 import { calculateSaju } from "@/lib/saju/calc";
 import { dailyFortune } from "@/lib/saju/daily";
+import { luckyColor } from "@/lib/saju/lucky-color";
+import { LuckyColorView } from "@/components/LuckyColorCard";
 import { questionsLeft } from "@/lib/consult";
 import { familyRows, revisitNotices } from "@/lib/revisit";
 import { newyearSeason } from "@/lib/season";
@@ -100,6 +102,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   const self = member.profiles.find((p) => p.self);
   const selfChart = self ? calculateSaju(self.input) : null;
   const fortune = selfChart ? dailyFortune(selfChart) : null;
+  const lucky = selfChart ? luckyColor(selfChart) : null;
   // 이달의 운세·길일 달력: ?cal=YYYY-MM(앞뒤 12달까지), ?purpose=move 등
   const kNow = new Date(Date.now() + 9 * 3_600_000);
   const todayYmd = kNow.toISOString().slice(0, 10);
@@ -151,8 +154,14 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
             </p>
             <p>{fortune.text}</p>
             <p>{fortune.tone}</p>
+            {lucky && (
+              <>
+                <h3 className="my-lucky-h">오늘의 행운 색</h3>
+                <LuckyColorView c={lucky} compact />
+              </>
+            )}
             <p className="muted">
-              오늘 도움이 되는 기운: {fortune.lucky.element} · 색 {fortune.lucky.colors} · 숫자 {fortune.lucky.numbers} · 방위 {fortune.lucky.direction}
+              내 사주에 도움이 되는 기운: {fortune.lucky.element} · 숫자 {fortune.lucky.numbers} · 방위 {fortune.lucky.direction}
             </p>
             <p className="muted small">일진의 십신({fortune.god})과 참고 용신 부합도({fortune.score}/100)로 정한 참고용 운세입니다.</p>
           </>
