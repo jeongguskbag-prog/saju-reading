@@ -75,7 +75,8 @@ export function luckyColor(chart: SajuChart, now = new Date()): LuckyColor {
   const dayEls: Element[] = [STEM_ELEMENT[stem], BRANCH_ELEMENT[branch]];
   const u = chart.analysis.usefulness;
   const ko = (e: Element) => ELEMENT_KO[e];
-  const day = `오늘 일진 ${gz}(${STEM_KO[stem as Stem]}${BRANCH_KO[branch]})은 ${ko(dayEls[0])}·${ko(dayEls[1])}의 기운`;
+  const els = dayEls[0] === dayEls[1] ? ko(dayEls[0]) : `${ko(dayEls[0])}·${ko(dayEls[1])}`;
+  const day = `오늘 일진 ${gz}(${STEM_KO[stem]}${BRANCH_KO[branch]})은 ${els}의 기운`;
 
   let element: Element;
   let reason: string;

@@ -18,7 +18,7 @@ export function LuckyColorView({ c, compact = false }: { c: LuckyColor; compact?
       </p>
       <p className="lucky-color-reason">{c.reason}</p>
       <p className="lucky-color-tip">
-        추천: {c.tip} · 오늘은 {c.avoid.names}({c.avoid.elementKo})을 조금 줄여 보세요.
+        추천: {c.tip} · {c.avoid.names} 계열({c.avoid.elementKo} 기운)은 오늘 조금 줄여 보세요.
       </p>
     </div>
   );
