@@ -39,9 +39,27 @@ const TARGET_LABEL: Record<Target, string> = { email: "이메일", kakao: "카�
 export { loadSdk } from "@/lib/toss-pay";
 
 /** 무료 결과의 등급 카드 아래: 감정서를 고르고, 성함을 받아 토스 결제창을 연다. */
-export default function PurchaseBox({ input, checkout, years }: { input: BirthInput; checkout: CheckoutInfo; years: [number, number] }) {
+export default function PurchaseBox({
+  input,
+  checkout,
+  years,
+  pick,
+}: {
+  input: BirthInput;
+  checkout: CheckoutInfo;
+  years: [number, number];
+  /** 맞춤 추천에서 고른 감정서(n은 같은 상품을 다시 눌러도 반응하게 하는 번호) */
+  pick?: { id: ProductId; n: number } | null;
+}) {
   const products = sellableProducts();
   const [productId, setProductId] = useState<ProductId>(DEFAULT_PRODUCT);
+  const boxRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!pick || !products.some((p) => p.id === pick.id)) return;
+    setProductId(pick.id);
+    boxRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pick?.n]);
   const [name, setName] = useState(input.name ?? "");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -196,7 +214,7 @@ export default function PurchaseBox({ input, checkout, years }: { input: BirthIn
   }
 
   return (
-    <section className="card purchase no-print" aria-labelledby="purchase-h">
+    <section ref={boxRef} className="card purchase no-print" aria-labelledby="purchase-h">
       <h2 id="purchase-h">1:1 맞춤 감정서 신청</h2>
       <p className="purchase-lead">
         이 명식을 바탕으로 의뢰인 한 분만을 위한 감정서를 써서 책자로 엮어 드립니다. 결제하면 명식 미리보기를 바로 보여 드리고, 감정서

@@ -1370,3 +1370,11 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .pay-review div { display: flex; gap: 12px; }
 .pay-review dt { min-width: 72px; color: var(--muted, #7a7266); }
 .pay-review dd { margin: 0; font-weight: 600; word-break: break-all; }
+
+/* 무료 결과 아래 맞춤 추천 */
+.recommend h3 { margin: 0 0 4px; }
+.recommend ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 12px; }
+.recommend li { padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.recommend-title { margin: 0 0 6px; font-weight: 700; font-size: 16px; word-break: keep-all; }
+.recommend-reason { margin: 0 0 12px; color: var(--text-2); font-size: 14px; line-height: 1.65; word-break: keep-all; }
+.recommend .btn-secondary { width: 100%; }

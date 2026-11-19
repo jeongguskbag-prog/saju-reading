@@ -17,6 +17,7 @@ import { trackClient } from "@/lib/track-client";
 import ShareTypeCard from "./ShareTypeCard";
 import MemberSaveBar from "./MemberSaveBar";
 import PurchaseBox, { type CheckoutInfo } from "./PurchaseBox";
+import RecommendBox from "./RecommendBox";
 import { useLocale, useT } from "./LocaleProvider";
 import { messages, type Messages } from "@/lib/messages";
 import type { Region } from "@/lib/saju/locale";
@@ -109,6 +110,7 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [chart, setChart] = useState<SajuChart | null>(null);
+  const [pick, setPick] = useState<{ id: ProductId; n: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [parts, setParts] = useState<PartStates>({});
@@ -414,7 +416,8 @@ export default function SajuApp({ aiEnabled, checkout, regions = ["KR"], product
               checkout && !aiEnabled && lastInput.current ? (
                 <>
                   {locale === "ko" && <ShareTypeCard chart={chart} />}
-                  <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} />
+                  {locale === "ko" && checkout.enabled && <RecommendBox chart={chart} onPick={(id) => setPick((p) => ({ id, n: (p?.n ?? 0) + 1 }))} />}
+                  <PurchaseBox input={lastInput.current} checkout={checkout} years={chart.analysis.reportYears} pick={pick} />
                 </>
               ) : (
                 afterGrade
