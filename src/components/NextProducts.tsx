@@ -10,7 +10,9 @@ const NEXT: Record<ProductId, ProductId[]> = {
   taekil: ["gunghap", "newyear"],
   iching: ["love", "newyear"],
   ziwei: ["full", "gunghap"],
-  love: ["gunghap", "full"],
+  love: ["gunghap", "money"],
+  money: ["career", "full"],
+  career: ["money", "full"],
 };
 
 /** 감정서 끝: 다음에 보면 좋은 감정서(판매 중인 것만). 누르면 첫 화면에서 그 상품을 골라 둔다. */

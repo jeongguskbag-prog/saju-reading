@@ -95,6 +95,22 @@ export const PRODUCTS: Record<ProductId, Product> = {
     summary: "배우자성·배우자 자리·도화로 보는 나의 연애 성향, 앞으로 3년 인연이 드는 해와 달, 잘 맞는 상대",
     available: true,
   },
+  money: {
+    id: "money",
+    name: "천기록 재물운 숏 감정서",
+    price: 6900,
+    parts: ["money"],
+    summary: "재성·식상·비겁으로 보는 나의 돈 그릇, 돈이 들어오고 새는 길, 앞으로 3년과 대운에서 재물이 드는 때",
+    available: true,
+  },
+  career: {
+    id: "career",
+    name: "천기록 커리어 숏 감정서",
+    price: 6900,
+    parts: ["career"],
+    summary: "격국·관성·인성으로 보는 나의 일하는 방식과 잘 맞는 일의 결, 앞으로 3년과 대운에서 일이 풀리는 때",
+    available: true,
+  },
   ziwei: {
     id: "ziwei",
     name: "천기록 자미두수 명반",
@@ -108,7 +124,7 @@ export const PRODUCTS: Record<ProductId, Product> = {
 /** 화면에 보여 줄 순서(사주 감정서 줄) */
 export const PRODUCT_ORDER: CoreProductId[] = ["core", "full", "naming"];
 /** 추가 상품 줄 */
-export const EXTRA_ORDER: ExtraKind[] = ["love", "gunghap", "newyear", "taekil", "iching", "ziwei"];
+export const EXTRA_ORDER: ExtraKind[] = ["love", "money", "career", "gunghap", "newyear", "taekil", "iching", "ziwei"];
 export const DEFAULT_PRODUCT: ProductId = "full";
 export const sellableProducts = () => [...PRODUCT_ORDER, ...EXTRA_ORDER].map((id) => PRODUCTS[id]).filter((p) => p.available);
 /** 사주 감정서 줄만(앱·외국어 화면처럼 추가 상품을 아직 열지 않은 곳) */

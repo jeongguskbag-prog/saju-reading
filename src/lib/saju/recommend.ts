@@ -70,12 +70,12 @@ export function recommendFor(chart: SajuChart, now = new Date(), available?: Pro
   const wealth = count(chart, ["정재", "편재"]);
   if (wealth >= 3 || wealth === 0) {
     add({
-      product: "full",
+      product: "money",
       title: wealth >= 3 ? "재성(財星)이 많은 사주입니다" : "재성(財星)이 드러나지 않은 사주입니다",
       reason:
         wealth >= 3
-          ? `명식에 재성이 ${wealth}개 있습니다. 돈이 들어오는 길과 새는 길, 대운별 재물 흐름을 종합 감정서에서 자세히 봅니다.`
-          : "명식에 재성이 보이지 않습니다. 재물을 어떻게 만들고 지키는지, 대운에서 재성이 들어오는 때를 종합 감정서에서 봅니다.",
+          ? `명식에 재성이 ${wealth}개 있습니다. 돈이 들어오는 길과 새는 길, 앞으로 3년과 대운에서 재물이 드는 때를 재물운 감정서에서 짚어 드립니다.`
+          : "명식에 재성이 보이지 않습니다. 재물을 어떻게 만들고 지키는지, 대운에서 재성이 들어오는 때를 재물운 감정서에서 짚어 드립니다.",
     });
   }
 
@@ -83,9 +83,9 @@ export function recommendFor(chart: SajuChart, now = new Date(), available?: Pro
   const career = count(chart, ["정관", "편관"]);
   if (career >= 3) {
     add({
-      product: "core",
+      product: "career",
       title: "관성(官星)이 강한 사주입니다",
-      reason: `명식에 관성이 ${career}개 있습니다. 조직·책임·평판과 맞는 일, 지금 대운에서 일이 풀리는 방향을 핵심 명식록에서 짚어 드립니다.`,
+      reason: `명식에 관성이 ${career}개 있습니다. 조직·책임·평판과 맞는 일, 앞으로 3년과 대운에서 일이 풀리는 때를 커리어 감정서에서 짚어 드립니다.`,
     });
   }
 

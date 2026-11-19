@@ -12,6 +12,8 @@ export const DEFAULT_RELEASE_MINUTES: Record<ProductId, number> = {
   gunghap: 60,
   ziwei: 60,
   love: 20,
+  money: 20,
+  career: 20,
   full: 60,
   naming: 90,
 };
