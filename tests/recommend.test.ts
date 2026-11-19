@@ -30,6 +30,13 @@ describe("무료 결과 맞춤 추천", () => {
     expect(all[0].title).toContain("2027년");
   });
 
+  it("11월에는 저무는 올해 대신 내년부터 인연 시기를 본다", () => {
+    for (const y of [1980, 1985, 1990, 1995]) {
+      const love = recommendFor(calculateSaju({ ...base, year: y }, now), now, ["love"])[0];
+      if (love?.product === "love") expect(love.title).not.toContain("2026년");
+    }
+  });
+
   it("팔지 않는 상품은 추천하지 않는다", () => {
     const recs = recommendFor(calculateSaju(base, now), now, ["core"]);
     expect(recs.every((r) => r.product === "core")).toBe(true);

@@ -44,10 +44,11 @@ export function recommendFor(chart: SajuChart, now = new Date(), available?: Pro
   const { year, month } = kst(now);
   const marital = chart.input.life?.marital;
 
-  // 1) 연애·인연: 올해·내년 세운에 배우자성이나 도화가 들어오는지
+  // 1) 연애·인연: 앞으로 두 해(11·12월이면 올해 대신 내년부터) 세운에 배우자성이나 도화가 들어오는지
   const peach = [peachOf(chart.pillars.year.branch as Branch), peachOf(dayBranch)];
   const loveYears: string[] = [];
-  for (const y of [year, year + 1]) {
+  const from = month >= 11 ? year + 1 : year;
+  for (const y of [from, from + 1]) {
     const [s, b] = yearGanZhi(y) as [Stem, Branch];
     if (spouseGods.includes(tenGod(dayStem, s)) || spouseGods.includes(branchTenGod(dayStem, b)) || peach.includes(b)) loveYears.push(`${y}년`);
   }
