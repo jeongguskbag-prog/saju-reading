@@ -410,12 +410,12 @@ const ZH_HK: SiteCopy = { ...toHK(ZH_TW), numberLocale: "zh-HK" };
 
 const EN: SiteCopy = {
   numberLocale: "en-US",
-  brand: { name: "Cheongirok", tagline: "Korean Four Pillars Reading" },
+  brand: { name: "Cheongirok", tagline: "Saju · Four Pillars of Destiny" },
   landing: {
     slipSub: "Korean Four Pillars Reading",
     h1: "Eight characters from the moment you were born, read across a lifetime",
     heroSub:
-      "Cheongirok calculates your Four Pillars (Saju, also known as BaZi) and your ten-year luck pillars precisely, and prepares a personal reading for each client. See your chart type for free first.",
+      "A personality, career, wealth and life-cycle report from your Saju (Four Pillars of Destiny, also known as BaZi). Cheongirok calculates your chart and ten-year luck pillars precisely and prepares a personal reading for each client. See your chart type for free first.",
     ctaGrade: "See my chart type",
     ctaPrice: "About the readings",
     trustEyebrow: "How Cheongirok works",

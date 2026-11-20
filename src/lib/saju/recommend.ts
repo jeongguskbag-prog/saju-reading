@@ -44,6 +44,16 @@ export function recommendFor(chart: SajuChart, now = new Date(), available?: Pro
   const { year, month } = kst(now);
   const marital = chart.input.life?.marital;
 
+  // 0) 대운 전환기: 지금 대운이 올해나 내년에 끝나면(곧 10년 흐름이 바뀌면) 평생 대운까지 보는 종합 감정서
+  const next = chart.daeun.periods.find((p) => p.startYear > year);
+  if (next && next.startYear - year <= 2) {
+    add({
+      product: "full",
+      title: `${next.startYear}년, 10년 대운이 바뀌는 시기입니다`,
+      reason: `${next.startYear}년부터 새 대운(${next.stem}${next.branch})이 시작됩니다. 바뀌기 전후의 흐름과 평생 대운, 가까운 두 해의 세운까지 종합 감정서에서 이어서 짚어 드립니다.`,
+    });
+  }
+
   // 1) 연애·인연: 앞으로 두 해(11·12월이면 올해 대신 내년부터) 세운에 배우자성이나 도화가 들어오는지
   const peach = [peachOf(chart.pillars.year.branch as Branch), peachOf(dayBranch)];
   const loveYears: string[] = [];

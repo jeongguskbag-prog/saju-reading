@@ -1413,3 +1413,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .wait-steps li.done::before { content: "✓"; color: var(--el-wood); font-weight: 700; }
 .wait-steps li.now { border-color: var(--accent); }
 .wait-steps li.now::before { content: "✎"; color: var(--accent); }
+.topic-banner { background: var(--surface-2); border-bottom: 1px solid var(--border); padding: 28px 16px; text-align: center; }
+.topic-banner .topic-title { font-family: var(--display); font-size: 24px; margin: 0 0 8px; color: var(--text); }
+.topic-banner .topic-lead { margin: 0 0 16px; color: var(--text-2); word-break: keep-all; }
+.topic-banner .topic-note { margin: 10px 0 0; font-size: 13px; color: var(--text-3); }

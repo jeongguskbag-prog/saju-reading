@@ -23,6 +23,7 @@ import TopicCards from "./TopicCards";
 import { Basis, Compare, Excerpt, FlowBand, ForWhom, HowWeRead, PART_QUESTIONS, Receive } from "./LandingStory";
 import StickyCta from "./StickyCta";
 import FoldHashOpener from "./FoldHashOpener";
+import TopicBanner from "./TopicBanner";
 import BottomNav from "./BottomNav";
 import type { Review } from "@/lib/reviews";
 import { FloatingKakao, SupportBox } from "./SupportLinks";
@@ -115,6 +116,7 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
         </div>
       </header>
 
+      {site === "ko" && <TopicBanner />}
       {site === "ko" && <TasteBanner />}
       {site === "ko" && <SeasonBanner />}
       <TrackVisit />

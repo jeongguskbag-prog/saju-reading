@@ -2,6 +2,7 @@
 
 import { DEFAULT_RELEASE_MINUTES, waitLabel } from "@/lib/release";
 import { useEffect, useRef, useState } from "react";
+import { topicFrom } from "@/lib/topic";
 import { isMobile as isMobilePhone } from "@/lib/phone";
 import { trackClient } from "@/lib/track-client";
 import type { BirthInput } from "@/lib/saju/calc";
@@ -103,7 +104,9 @@ export default function PurchaseBox({
   // 첫 화면 배너 등에서 ?p=상품으로 들어오면 그 상품을 골라 둔다.
   useEffect(() => {
     if (!window.AndroidBridge) trackClient("choose");
-    const want = new URLSearchParams(location.search).get("p");
+    const q = new URLSearchParams(location.search);
+    // ?p=상품 이 먼저, 없으면 ?topic=주제(유튜브·블로그 링크)의 감정서
+    const want = q.get("p") ?? topicFrom(q.get("topic"))?.product ?? null;
     if (want && sellableProducts().some((p) => p.id === want)) setProductId(want as ProductId);
   }, []);
   const product = PRODUCTS[productId];
