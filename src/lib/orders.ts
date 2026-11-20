@@ -264,7 +264,12 @@ async function tossConfirm(paymentKey: string, orderId: string, amount: number):
     cache: "no-store",
   });
   const data = (await res.json().catch(() => ({}))) as TossPayment & { code?: string; message?: string };
-  if (!res.ok) throw new OrderError(data.message || "결제 승인에 실패했습니다.", res.status >= 500 ? 502 : 400);
+  if (!res.ok) {
+    // 토스 오류 코드를 남겨 둔다(Vercel 로그·주문 조회 때 원인을 바로 알 수 있도록). 손님 화면에는 코드도 함께 보여 준다.
+    console.error("토스 결제 승인 실패", { orderId, status: res.status, code: data.code, message: data.message });
+    const msg = data.message || "결제 승인에 실패했습니다.";
+    throw new OrderError(data.code ? `${msg} (오류 코드: ${data.code})` : msg, res.status >= 500 ? 502 : 400);
+  }
   return data;
 }
 
