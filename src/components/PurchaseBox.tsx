@@ -412,6 +412,10 @@ export default function PurchaseBox({
           <p className="purchase-time">
             ⏳ 결제 직후 <b>명식 미리보기</b>를 보여 드리고, 감정서 본문은 작성·검수를 거쳐 <b>약 {wait} 뒤</b> 고르신 곳으로 PDF 파일과
             HTML 문서를 보내 드립니다. 그때부터 화면에서도 열립니다.
+            <span className="purchase-why">
+              기다리시는 동안 절기·출생지 경도(진태양시)·서머타임을 보정해 명식과 대운·세운을 계산하고, 그 값을 근거로 장마다 풀이를 쓴 뒤
+              검수합니다. 접수 순서대로 보내 드리니 결제 직후 바로 오지 않아도 정상입니다.
+            </span>
           </p>
           <p className="muted">감정서 링크는 결제일로부터 {REPORT_VALID_DAYS}일 동안 열 수 있습니다. 기간 안에 PDF로 저장해 두세요.</p>
           {checkout.testMode && <p className="muted">{checkout.reviewOnly ? "정식 오픈 준비 중이라 토스페이먼츠 테스트 결제로 연결됩니다. 실제로 돈이 빠져나가지 않으며, 결제는 승인 직후 자동 취소되고 감정서는 발급되지 않습니다." : "테스트 결제 모드입니다. 실제로 돈이 빠져나가지 않습니다."}</p>}

@@ -1392,3 +1392,24 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .lucky-color.compact .lucky-swatch { width: 32px; height: 32px; }
 .lucky-color-main { margin: 0 0 6px; font-size: 18px; }
 .lucky-color-reason, .lucky-color-tip { margin: 0 0 6px; font-size: 14px; line-height: 1.65; color: var(--text-2); word-break: keep-all; }
+
+/* 깊은 설명 접기 상자 */
+.lp-more .lp-folds { display: grid; gap: 10px; margin-top: 20px; }
+.lp-fold { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.lp-fold > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 16px 44px 16px 18px; position: relative; }
+.lp-fold > summary::-webkit-details-marker { display: none; }
+.lp-fold > summary::after { content: "+"; position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 22px; color: var(--accent); }
+.lp-fold[open] > summary::after { content: "−"; }
+.lp-fold > summary b { font-size: 16px; }
+.lp-fold > summary span { font-size: 13px; color: var(--text-3); }
+.lp-fold-body > .lp-section { padding: 8px 18px 28px; background: transparent; }
+.lp-fold-body > .lp-section > .lp-inner > h2 { display: none; }
+@media print { .lp-more { display: none !important; } }
+.purchase-why { display: block; margin-top: 6px; font-size: 13px; color: var(--text-2); }
+.wait-steps { list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 8px; }
+.wait-steps li { position: relative; padding: 10px 12px 10px 38px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; color: var(--text-2); background: var(--surface); }
+.wait-steps li b { color: var(--text); margin-right: 6px; }
+.wait-steps li::before { content: "○"; position: absolute; left: 14px; top: 10px; color: var(--text-3); }
+.wait-steps li.done::before { content: "✓"; color: var(--el-wood); font-weight: 700; }
+.wait-steps li.now { border-color: var(--accent); }
+.wait-steps li.now::before { content: "✎"; color: var(--accent); }

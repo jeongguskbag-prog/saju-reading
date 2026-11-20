@@ -335,6 +335,23 @@ export default function ReportClient({ token, partKeys, productName, productId, 
               <>그때부터 이 화면에서 열립니다. 아래 버튼으로 이 화면 주소를 꼭 복사해 두세요.</>
             )}
           </p>
+          {/* 기다리는 이유를 보여 준다: 즉시 나오는 운세에 익숙한 분이 '멈춘 것'으로 오해하지 않도록. */}
+          <ol className="wait-steps" aria-label="감정서 준비 순서">
+            <li className="done">
+              <b>명식 계산</b> 절기 시각·출생지 경도(진태양시)·서머타임 보정
+            </li>
+            {withDaeun && (
+              <li className="done">
+                <b>{isNewyear ? "세운·월운 계산" : "대운·세운 계산"}</b> {isNewyear ? "한 해의 간지와 열두 달 흐름" : "10년 대운과 가까운 해의 흐름"}
+              </li>
+            )}
+            <li className="now">
+              <b>풀이 작성·검수</b> 계산값을 근거로 장마다 문장을 쓰고 다시 확인합니다
+            </li>
+            <li>
+              <b>발송</b> 약 {waitText} 뒤, 접수 순서대로
+            </li>
+          </ol>
           <p className="muted">
             이 창은 닫으셔도 됩니다. 사이트 아래 &apos;주문 조회&apos;에서 주문번호와 연락처로 언제든 다시 찾을 수 있습니다. 주문번호 {orderId}
           </p>

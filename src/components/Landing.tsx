@@ -22,9 +22,29 @@ import ReviewsSection from "./ReviewsSection";
 import TopicCards from "./TopicCards";
 import { Basis, Compare, Excerpt, FlowBand, ForWhom, HowWeRead, PART_QUESTIONS, Receive } from "./LandingStory";
 import StickyCta from "./StickyCta";
+import FoldHashOpener from "./FoldHashOpener";
 import BottomNav from "./BottomNav";
 import type { Review } from "@/lib/reviews";
 import { FloatingKakao, SupportBox } from "./SupportLinks";
+
+const FOLD = {
+  ko: { title: "천기록을 더 깊이 알아보기", lead: "계산 순서와 근거, 감정서 구성이 궁금하시면 펼쳐 보세요." },
+  zh: { title: "深入了解天機錄", lead: "想了解推算順序、依據與報告結構，請點開查看。" },
+  en: { title: "Learn more about Chungirok", lead: "Open any section to see how we calculate, what we base it on, and what the report contains." },
+} as const;
+
+/** 접기 상자: 펼치면 원래 섹션을 그대로 보여 준다(섹션 안 제목은 접기 제목과 겹쳐 CSS로 숨긴다). */
+function Fold({ label, hint, children, id }: { label: string; hint?: string; children: ReactNode; id?: string }) {
+  return (
+    <details className="lp-fold" id={id}>
+      <summary>
+        <b>{label}</b>
+        {hint && <span>{hint}</span>}
+      </summary>
+      <div className="lp-fold-body">{children}</div>
+    </details>
+  );
+}
 
 const HANJA_NUM = ["一", "二", "三", "四", "五"];
 
@@ -153,32 +173,13 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
         </div>
       </Section>
 
-      {site === "ko" && <FlowBand />}
-      {site === "ko" && <ForWhom />}
-      {site === "ko" && <TopicCards years={years} />}
-      {site === "ko" && <HowWeRead />}
-      {site === "ko" && <Basis />}
-
-      <Section id="contents" tone="sunk" title={L.contentsTitle} lead={L.contentsLead}>
-        <ol className="lp-toc">
-          {CHAPTER_KEYS.map((k, i) => {
-            const c = chapters[k];
-            return (
-              <li key={k}>
-                <span className="lp-toc-num" aria-label={c.label}>第{HANJA_NUM[i]}部</span>
-                <div>
-                  {site === "ko" && PART_QUESTIONS[k] && <span className="lp-toc-q">{PART_QUESTIONS[k]}</span>}
-                  <b>{withYears(c.title, years)}</b>
-                  <p>{c.sections.map((s) => withYears(s, years)).join(", ")}</p>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      </Section>
-
-      {site === "ko" && <Excerpt />}
-      {site === "ko" && <Compare />}
+      <section id="saju-form" className="lp-section lp-form" aria-labelledby="saju-form-h">
+        <div className="lp-inner narrow">
+          <h2 id="saju-form-h">{L.formTitle}</h2>
+          <p className="lp-lead">{L.formLead}</p>
+          {form}
+        </div>
+      </section>
 
       <Section
         id="price"
@@ -232,8 +233,42 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
         </ol>
       </Section>
 
-      {site === "ko" && <Receive />}
+      {site === "ko" && <ReviewsSection reviews={reviews} />}
 
+      {/* 깊은 설명(계산 순서·근거·5부 구성·비교표 등)은 접어 두고, 궁금한 분만 펼쳐 본다(모바일 스크롤 이탈 줄이기). */}
+      <section id="more" className="lp-section lp-more" aria-labelledby="more-h">
+        <div className="lp-inner">
+          <h2 id="more-h">{FOLD[cfg.locale === "zh-Hant" ? "zh" : cfg.locale === "en" ? "en" : "ko"].title}</h2>
+          <p className="lp-lead">{FOLD[cfg.locale === "zh-Hant" ? "zh" : cfg.locale === "en" ? "en" : "ko"].lead}</p>
+          <div className="lp-folds">
+            {site === "ko" && <Fold label="대운은 10년마다 바뀝니다" hint="다섯 유형과 대운 이야기"><FlowBand /></Fold>}
+            {site === "ko" && <Fold label="이런 분께 권합니다" hint="큰 결정 앞, 흐름이 궁금할 때"><ForWhom /></Fold>}
+            {site === "ko" && <Fold label="감정서에서 이렇게 풀어 드립니다" hint="재물·직업·관계·건강·시기"><TopicCards years={years} /></Fold>}
+            {site === "ko" && <Fold label="천기록은 이렇게 읽습니다" hint="01~05 계산 순서"><HowWeRead /></Fold>}
+            {site === "ko" && <Fold label="풀이의 근거" hint="고전 명리 이론과 계산값"><Basis /></Fold>}
+            <Fold label={L.contentsTitle} hint={site === "ko" ? "제1부~제5부 구성" : ""} id="contents-fold">
+      <Section id="contents" tone="sunk" title={L.contentsTitle} lead={L.contentsLead}>
+        <ol className="lp-toc">
+          {CHAPTER_KEYS.map((k, i) => {
+            const c = chapters[k];
+            return (
+              <li key={k}>
+                <span className="lp-toc-num" aria-label={c.label}>第{HANJA_NUM[i]}部</span>
+                <div>
+                  {site === "ko" && PART_QUESTIONS[k] && <span className="lp-toc-q">{PART_QUESTIONS[k]}</span>}
+                  <b>{withYears(c.title, years)}</b>
+                  <p>{c.sections.map((s) => withYears(s, years)).join(", ")}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </Section>
+            </Fold>
+            {site === "ko" && <Fold label="이런 문장으로 쓰여 있습니다" hint="감정서 본문 발췌"><Excerpt /></Fold>}
+            {site === "ko" && <Fold label="무엇이 담기는지 한눈에 비교" hint="감정서별 비교표"><Compare /></Fold>}
+            {site === "ko" && <Fold label="결제 후 받으시는 것" hint="PDF·HTML·명식 미리보기"><Receive /></Fold>}
+            <Fold label={L.methodTitle} hint={site === "ko" ? "절기·진태양시·서머타임 보정" : ""}>
       <Section id="method" tone="sunk" title={L.methodTitle}>
         <dl className="lp-method">
           {L.method.map((m) => (
@@ -244,18 +279,12 @@ export default function Landing({ form, checkoutOpen = false, site = "ko", revie
           ))}
         </dl>
       </Section>
-
-      {site === "ko" && <ConsultIntro />}
-
-      {site === "ko" && <ReviewsSection reviews={reviews} />}
-
-      <section id="saju-form" className="lp-section lp-form" aria-labelledby="saju-form-h">
-        <div className="lp-inner narrow">
-          <h2 id="saju-form-h">{L.formTitle}</h2>
-          <p className="lp-lead">{L.formLead}</p>
-          {form}
+            </Fold>
+            {site === "ko" && <Fold label="AI 사주 상담" hint="내 명식으로 묻고 답하기"><ConsultIntro /></Fold>}
+          </div>
         </div>
       </section>
+      <FoldHashOpener />
 
       <Section id="help" tone="sunk" title={L.helpTitle}>
         <SupportBox site={site} />
