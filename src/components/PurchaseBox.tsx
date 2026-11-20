@@ -213,6 +213,26 @@ export default function PurchaseBox({
     }
   }
 
+  // 고른 감정서의 '발송' 줄을 누르면 아래 입력 칸으로 바로 내려가 첫 칸에 커서를 둔다(목록이 길어 입력 칸을 찾기 어렵다는 의견).
+  const fillRef = useRef<HTMLDivElement>(null);
+  const goFill = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const box = fillRef.current;
+    if (!box) return;
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+    const first = box.querySelector<HTMLElement>("input:not([type=hidden]):not([type=radio]):not([type=checkbox]), select, textarea");
+    first?.focus({ preventScroll: true });
+  };
+  const waitLine = (id: ProductId) => {
+    const text = `⏳ 약 ${waitLabel(checkout.release?.[id] ?? DEFAULT_RELEASE_MINUTES[id])} 뒤 발송`;
+    if (productId !== id) return <span className="plan-wait">{text}</span>;
+    return (
+      <button type="button" className="plan-wait plan-go" onClick={goFill}>
+        {text} · <b>바로 입력하기 ↓</b>
+      </button>
+    );
+  };
+
   return (
     <section ref={boxRef} className="card purchase no-print" aria-labelledby="purchase-h">
       <h2 id="purchase-h">1:1 맞춤 감정서 신청</h2>
@@ -237,7 +257,7 @@ export default function PurchaseBox({
                 <span className="plan-name">{p.name}</span>
                 <span className="plan-price">{won(p.price)}</span>
                 <span className="plan-sum">{withProductYears(p.summary, years)}</span>
-                <span className="plan-wait">⏳ 약 {waitLabel(checkout.release?.[p.id] ?? DEFAULT_RELEASE_MINUTES[p.id])} 뒤 발송</span>
+                {waitLine(p.id)}
               </label>
             ))}
             {extraProducts.length > 0 && (
@@ -249,13 +269,14 @@ export default function PurchaseBox({
                     <span className="plan-name">{p.name}</span>
                     <span className="plan-price">{won(p.price)}</span>
                     <span className="plan-sum">{withProductYears(p.summary, years)}</span>
-                    <span className="plan-wait">⏳ 약 {waitLabel(checkout.release?.[p.id] ?? DEFAULT_RELEASE_MINUTES[p.id])} 뒤 발송</span>
+                    {waitLine(p.id)}
                   </label>
                 ))}
               </>
             )}
           </fieldset>
           <SamplePreview productId={productId} />
+          <div ref={fillRef} className="fill-anchor" aria-hidden="true" />
           {isNaming ? (
             <NamingFields value={naming} onChange={setNaming} />
           ) : (
