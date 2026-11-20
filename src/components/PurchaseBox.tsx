@@ -220,8 +220,13 @@ export default function PurchaseBox({
     const box = fillRef.current;
     if (!box) return;
     box.scrollIntoView({ behavior: "smooth", block: "start" });
-    const first = box.querySelector<HTMLElement>("input:not([type=hidden]):not([type=radio]):not([type=checkbox]), select, textarea");
-    first?.focus({ preventScroll: true });
+    // 기준점(빈 div) 뒤에 이어지는 칸들 중 아직 비어 있는 첫 칸(없으면 첫 칸)에 커서를 둔다.
+    const fields: HTMLInputElement[] = [];
+    for (let el = box.nextElementSibling; el; el = el.nextElementSibling) {
+      fields.push(...el.querySelectorAll<HTMLInputElement>("input:not([type=hidden]):not([type=radio]):not([type=checkbox]), select, textarea"));
+    }
+    const target = fields.find((f) => !f.value) ?? fields[0];
+    target?.focus({ preventScroll: true });
   };
   const waitLine = (id: ProductId) => {
     const text = `⏳ 약 ${waitLabel(checkout.release?.[id] ?? DEFAULT_RELEASE_MINUTES[id])} 뒤 발송`;
